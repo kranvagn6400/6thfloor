@@ -143,6 +143,22 @@
   // ---------- Rooms grid ----------
   // Renders room cards in a simple grid (no corridor, no entrance,
   // no connector dots — just clean room cards).
+  // The unit whose rooms the home view shows ("1" = الوحدة الأولى, "3" = الثالثة) and the
+  // unit whose pills page is open; the bottom nav lights the matching tab.
+  let currentUnit = "1", pillsUnit = "1";
+  function setUnit(u) { currentUnit = u === "3" ? "3" : "1"; }
+  function setPillsUnit(u) { pillsUnit = u === "3" ? "3" : "1"; markNav(); }
+  function navKey(name) {
+    const v = name || showView._lastView;
+    if (v === "home") return currentUnit === "3" ? "unit3" : "home";
+    if (v === "pills") return pillsUnit === "3" ? "pills3" : "pills1";
+    return v;
+  }
+  function markNav(name) {
+    const k = navKey(name);
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("active", n.dataset.nav === k));
+  }
+
   function renderRooms(patientsMap) {
     const container = document.getElementById("rooms-grid");
     // The rooms slide in on the first drawing only — a redraw (sync, poll)
@@ -153,7 +169,7 @@
     const out = document.createDocumentFragment();
 
     let lastGroup = "";
-    global.PharmacyWard.ROOMS.forEach(room => {
+    global.PharmacyWard.ROOMS.filter(r => r.unit === currentUnit).forEach(room => {
       const group = room.unit + "-" + room.kind;
       if (group !== lastGroup) {
         lastGroup = group;
@@ -1183,9 +1199,7 @@
     views.forEach(v => {
       v.hidden = v.dataset.view !== name;
     });
-    document.querySelectorAll(".nav-item").forEach(n => {
-      n.classList.toggle("active", n.dataset.nav === name);
-    });
+    markNav(name);
     // Only scroll to top when switching to a DIFFERENT view.
     // If we're already on this view (e.g. returning to 'home' after
     // adding meds), don't scroll — preserve the user's scroll
@@ -1730,6 +1744,7 @@
   }
 
   global.PharmacyUI = {
+    setUnit, setPillsUnit, markNav,
     getScrollY,
     setScrollY,
     h,

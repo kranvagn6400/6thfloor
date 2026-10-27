@@ -145,8 +145,40 @@
     ]);
   }
 
+  // In-app yes/no box (the browser's confirm() is blocked in embedded browsers, so logout did nothing there)
+  function askConfirm(message, yes, no) {
+    return new Promise(resolve => {
+      const ov = document.createElement("div");
+      ov.style.cssText = "position:fixed;inset:0;z-index:100000;background:rgba(15,40,70,.45);display:flex;align-items:center;justify-content:center;padding:20px";
+      const box = document.createElement("div");
+      box.setAttribute("role", "dialog");
+      box.dir = "rtl";
+      box.style.cssText = "background:var(--surface,#fff);color:var(--text,#12304a);border-radius:18px;padding:22px 20px 16px;max-width:340px;width:100%;box-shadow:0 20px 50px -12px rgba(0,0,0,.4);font:inherit";
+      const p = document.createElement("p");
+      p.style.cssText = "margin:0 0 16px;font-weight:700;line-height:1.7;white-space:pre-line";
+      p.textContent = message;
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;gap:10px;justify-content:flex-start";
+      const done = v => { ov.remove(); resolve(v); };
+      const mk = (label, primary, v) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = label;
+        b.style.cssText = "flex:1;padding:11px 8px;border-radius:12px;font:inherit;font-weight:800;cursor:pointer;border:1px solid var(--border,#cbd5e1);" +
+          (primary ? "background:var(--primary,#1f6fa8);color:#fff;border-color:transparent" : "background:var(--surface,#fff);color:var(--text,#12304a)");
+        b.addEventListener("click", () => done(v));
+        return b;
+      };
+      row.appendChild(mk(yes || "نعم", true, true));
+      row.appendChild(mk(no || "إلغاء", false, false));
+      box.appendChild(p); box.appendChild(row); ov.appendChild(box);
+      ov.addEventListener("click", e => { if (e.target === ov) done(false); });
+      document.body.appendChild(ov);
+    });
+  }
+
   async function userLogout() {
-    if (!confirm("هل تريد تسجيل الخروج؟")) return;
+    if (!(await askConfirm("هل تريد تسجيل الخروج؟", "تسجيل الخروج", "إلغاء"))) return;
     flushPendingPatientChanges();
     flashHint("جارٍ حفظ التعديلات…");
     let synced = true;
@@ -154,9 +186,9 @@
       const r = await withTimeout(SBSync.pushPatients(), 8000, { ok: false });
       synced = !!(r && r.ok);
     }
-    if (!synced && !confirm(
+    if (!synced && !(await askConfirm(
       "⚠ تعذّر رفع آخر التعديلات إلى السحابة (لا يوجد اتصال؟).\n\n" +
-      "إذا خرجت الآن ستُحذف من هذا الجهاز.\nاضغط «إلغاء» للبقاء والمحاولة لاحقاً.")) {
+      "إذا خرجت الآن ستُحذف من هذا الجهاز.\nاضغط «إلغاء» للبقاء والمحاولة لاحقاً.", "خروج", "إلغاء"))) {
       return;
     }
     // Discharged / dead records: wiped only once every one is in the cloud
@@ -628,10 +660,11 @@
     // re-apply it here so live role changes (login / logout /
     // switching user) also update the buttons.
     const root = document.documentElement;
-    root.classList.remove('role-admin', 'role-doctor', 'role-pharmacist', 'role-tv');
+    root.classList.remove('role-admin', 'role-doctor', 'role-pharmacist', 'role-tv', 'limited-admin');
     const isTv = !!(Auth.isTv && Auth.isTv());
     if (isAdmin) {
       root.classList.add('role-admin');
+      if (Auth.isLimitedAdmin && Auth.isLimitedAdmin()) root.classList.add('limited-admin');
     } else if (isDoctor) {
       root.classList.add('role-doctor');
     } else if (isTv) {
@@ -698,16 +731,9 @@
     const logoutBtn = $("logout-btn");
     if (logoutBtn) logoutBtn.hidden = !isAdmin;
 
-    // Seniors tab: doctors + admins only (hidden for pharmacists).
-    // The tab button is initially display:none in HTML, so we need
-    // to explicitly clear that for authorized roles.
-    const seniorsTab = document.querySelector('.nav-item[data-nav="seniors"]');
-    if (seniorsTab) {
-      seniorsTab.style.display = (isAdmin || isDoctor) ? "" : "none";
-    }
-    // تربيتي + الحبوب tabs: pharmacists + admin
+    // Bottom tabs (الوحدتان، حبوب الوحدتين، المرضى): pharmacists + admin
     const pharmacyTabs = isAdmin || (Auth && Auth.isPharmacist && Auth.isPharmacist());
-    ["tarbeet", "pills"].forEach(nav => {
+    ["unit3", "pills1", "pills3"].forEach(nav => {
       const tab = document.querySelector('.nav-item[data-nav="' + nav + '"]');
       if (tab) tab.style.display = pharmacyTabs ? "" : "none";
     });
@@ -3046,21 +3072,18 @@
       const item = e.target.closest(".nav-item");
       if (!item) return;
       const nav = item.dataset.nav;
-      if (nav === "home") {
+      if (nav === "home" || nav === "unit3") {
         state.currentBed = null;
+        UI.setUnit(nav === "unit3" ? "3" : "1");
+        UI.renderRooms(state.patients);
         UI.showView("home");
+        UI.markNav();
       } else if (nav === "patients") {
         UI.showView("patients");
         UI.renderPatientsList(state.patients);
-      } else if (nav === "seniors") {
-        renderSeniorsView();
-        UI.showView("seniors");
-      } else if (nav === "tarbeet") {
+      } else if (nav === "pills1" || nav === "pills3") {
         state.currentBed = null;
-        global.PharmacyTarbeet.openMine();
-      } else if (nav === "pills") {
-        state.currentBed = null;
-        global.PharmacyPillsPage.open();
+        global.PharmacyPillsPage.open(nav === "pills3" ? "3" : "1");
       }
     });
 

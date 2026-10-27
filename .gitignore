@@ -37,3 +37,4 @@ download/chart_sample.*
 
 # real setup code lives here - never commit
 security.sql
+.claude/

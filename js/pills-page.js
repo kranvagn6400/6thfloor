@@ -249,26 +249,14 @@
     const app = App();
     const g = groups(app.orderingState().patients, app.state.medications);
     box.innerHTML = "";
-    // One section at a time — men's and women's tablets never on the same page
-    const parts = [
-      { key: "men", title: "الرجال", cls: "is-men", items: g.men },
-      { key: "women", title: "النساء", cls: "is-women", items: g.women }
-    ];
-    if (g.icu.length) parts.push({ key: "icu", title: "العناية — غير محدد", cls: "is-icu", items: g.icu });
-    if (!parts.some(p => p.key === shown)) shown = "men";
-    const tabs = el("div", "pills-tabs");
-    parts.forEach(p => {
-      const b = el("button", "pills-tab " + p.cls + (p.key === shown ? " is-active" : ""), p.title + " (" + p.items.length + ")");
-      b.type = "button";
-      b.addEventListener("click", () => { shown = p.key; render(); });
-      tabs.appendChild(b);
-    });
-    box.appendChild(tabs);
-    const cur = parts.find(p => p.key === shown);
+    // One unit at a time — الوحدة الأولى (women) or الوحدة الثالثة (men), chosen by the bottom tab
+    const cur = shown === "men"
+      ? { title: "حبوب الوحدة الثالثة", cls: "is-men", items: g.men }
+      : { title: "حبوب الوحدة الأولى", cls: "is-women", items: g.women };
     box.appendChild(section(cur.title, cur.cls, cur.items));
     updatePickCount();
   }
-  let shown = "men";   // the open section (الرجال / النساء)
+  let shown = "women";   // the open unit: "women" = الوحدة الأولى, "men" = الوحدة الثالثة
 
   function isOpen() {
     const v = document.getElementById("view-pills");
@@ -282,8 +270,10 @@
     render();
   }
 
-  function open() {
+  function open(unit) {
     if (!roleOk()) return;
+    shown = unit === "3" ? "men" : "women";
+    global.PharmacyUI.setPillsUnit(unit === "3" ? "3" : "1");
     global.PharmacyUI.showView("pills");
     render();
   }

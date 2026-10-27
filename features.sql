@@ -759,3 +759,9 @@ update public.profiles set can_edit_quotes = true
 
 -- أعد تحميل مخطط الـ API حتى تظهر الجداول الجديدة فوراً للتطبيق
 notify pgrst, 'reload schema';
+
+
+-- ---------- 23) مسؤولة الطابق (مسؤول بصلاحيات أقل) ----------
+-- limited_admin: يبقى role = 'admin' (فتعمل كل سياسات RLS) لكن الواجهة تخفي: كتالوج الأدوية، طباعة كل الأوراق،
+-- مظهر المناسبات، التهاني والترحيب، طلب إضافة دواء، وضع التلفاز، زخرفة الشريط، مسح طلبات الأدوية.
+alter table public.profiles add column if not exists limited_admin boolean not null default false;

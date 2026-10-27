@@ -2,6 +2,7 @@
 // Emerald is the default (no attribute). Run: node scripts/gen-palettes.js
 const fs = require("fs");
 const PALETTES = [
+  { id: "sky6",     name: "أبيض وسماوي",  h: 203, s: 85, dl: 12, extra: true },   // 6th Floor default: white + sky blue
   { id: "violet",   name: "بنفسجي",       h: 263, s: 52 },
   { id: "pink",     name: "وردي داكن",    h: 336, s: 62 },
   { id: "cyan",     name: "سماوي",        h: 192, s: 72 },
@@ -63,6 +64,12 @@ ${L} .nav-item.active .nav-icon { box-shadow: 0 6px 14px -6px rgba(${rgb(h, s, 2
 ${D} .nav-item.active .nav-icon { color: ${hsl(h, Math.min(28, s * 4), 6.5)}; }
 `;
 }
+css += `
+/* 6th Floor default: white surfaces, sky-blue accents (login included) */
+html[data-palette="sky6"] { --bg: #F3F9FE; --surface: #FFFFFF; }
+html[data-palette="sky6"] .login-screen { background: radial-gradient(90% 60% at 100% 0%, rgba(125, 200, 245, 0.45) 0%, transparent 60%), radial-gradient(80% 60% at 0% 100%, rgba(186, 225, 250, 0.7) 0%, transparent 60%), linear-gradient(160deg, #FFFFFF 0%, #EAF5FD 100%); }
+html[data-palette="sky6"] .login-screen::before { opacity: .25; }
+`;
 css += `
 /* Patient card + rooms: the controls that had their own colours follow the theme */
 html[data-palette] .discharge-btn { background: color-mix(in srgb, var(--primary) 9%, var(--surface)); color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--surface)); }

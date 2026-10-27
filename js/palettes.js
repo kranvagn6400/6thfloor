@@ -5,10 +5,11 @@
 (function (global) {
   "use strict";
   var KEY = "pharma.palette";
-  var LIST = [{"id":"","name":"زمردي","c":"#17433D","c2":"#1D9E75"},{"id":"violet","name":"بنفسجي","c":"#33214f","c2":"#6537ae"},{"id":"pink","name":"وردي داكن","c":"#541c33","c2":"#ba2c65"},{"id":"cyan","name":"سماوي","c":"#184b58","c2":"#20a4c5"},{"id":"charcoal","name":"رمادي فحمي","c":"#33373d","c2":"#657081"},{"id":"teal","name":"فيروزي","c":"#155b56","c2":"#19ccc0"},{"id":"purple","name":"أرجواني","c":"#461c54","c2":"#962cba"},{"id":"skyblue","name":"أزرق سماوي","c":"#182c58","c2":"#2054c5"},{"id":"classic","name":"الأزرق القديم","c":"#132a5d","c2":"#2563EB"},{"id":"black","name":"أسود","c":"#171717","c2":"#303030"}];
+  var LIST = [{"id":"","name":"زمردي","c":"#17433D","c2":"#1D9E75"},{"id":"sky6","name":"أبيض وسماوي","c":"#1c6492","c2":"#6dc0f3"},{"id":"violet","name":"بنفسجي","c":"#33214f","c2":"#6537ae"},{"id":"pink","name":"وردي داكن","c":"#541c33","c2":"#ba2c65"},{"id":"cyan","name":"سماوي","c":"#184b58","c2":"#20a4c5"},{"id":"charcoal","name":"رمادي فحمي","c":"#33373d","c2":"#657081"},{"id":"teal","name":"فيروزي","c":"#155b56","c2":"#19ccc0"},{"id":"purple","name":"أرجواني","c":"#461c54","c2":"#962cba"},{"id":"skyblue","name":"أزرق سماوي","c":"#182c58","c2":"#2054c5"},{"id":"classic","name":"الأزرق القديم","c":"#132a5d","c2":"#2563EB"},{"id":"black","name":"أسود","c":"#171717","c2":"#303030"}];
   var root = document.documentElement;
 
-  function saved() { try { return localStorage.getItem(KEY) || ""; } catch (e) { return ""; } }
+  // 6th Floor: white + sky blue unless the user picked another (an explicit "" = emerald)
+  function saved() { try { var v = localStorage.getItem(KEY); return v === null ? "sky6" : v; } catch (e) { return "sky6"; } }
   function valid(id) { return LIST.some(function (p) { return p.id === id; }); }
 
   function apply(id) {

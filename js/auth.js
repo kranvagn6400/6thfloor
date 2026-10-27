@@ -62,7 +62,8 @@
         gender:      account.gender || "male",
         canEditCatalog: !!account.canEditCatalog,
         canExitPatients: !!account.canExitPatients,
-        canEditQuotes: !!account.canEditQuotes
+        canEditQuotes: !!account.canEditQuotes,
+        limitedAdmin: !!account.limitedAdmin
       }));
       return true;
     } catch (e) { return false; }
@@ -120,7 +121,7 @@
     return m;
   }
 
-  const PERM_COLS = ", can_edit_catalog, can_exit_patients, can_edit_quotes";
+  const PERM_COLS = ", can_edit_catalog, can_exit_patients, can_edit_quotes, limited_admin";
 
   // Build the UI account from a profiles row. display_name may carry a
   // '|male' / '|female' suffix used by the welcome message.
@@ -134,7 +135,8 @@
       gender:      parts[1] === "female" ? "female" : "male",
       canEditCatalog: row.can_edit_catalog === true,     // features.sql §19
       canExitPatients: row.can_exit_patients === true,   // features.sql §22
-      canEditQuotes: row.can_edit_quotes === true        // features.sql §22
+      canEditQuotes: row.can_edit_quotes === true,       // features.sql §22
+      limitedAdmin: row.limited_admin === true           // features.sql §23 (مسؤولة الطابق)
     };
   }
 
@@ -144,7 +146,7 @@
     let res;
     for (const cols of [base + PERM_COLS, base + ", can_edit_catalog", base]) {
       res = await client.from("profiles").select(cols).eq("id", userId).maybeSingle();
-      if (!res.error || !/can_edit_catalog|can_exit_patients|can_edit_quotes/.test(res.error.message || "")) break;
+      if (!res.error || !/can_edit_catalog|can_exit_patients|can_edit_quotes|limited_admin/.test(res.error.message || "")) break;
     }
     if (res.error) throw res.error;
     return res.data;
@@ -360,10 +362,16 @@
     const s = loadSession();
     return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canEditQuotes)));
   }
+  // The floor manager (آية): an admin with fewer powers — no catalogue, print-all, TV mode, ornaments,
+  // occasions, greetings, new-medicine requests (features.sql §23; the hiding is in theme.css)
+  function isLimitedAdmin() {
+    const s = loadSession();
+    return !!(s && s.role === "admin" && s.limitedAdmin);
+  }
   // The admin, or a pharmacist the admin allowed (features.sql §19)
   function canEditCatalog() {
     const s = loadSession();
-    return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canEditCatalog)));
+    return !!(s && ((s.role === "admin" && !s.limitedAdmin) || (s.role === "pharmacist" && s.canEditCatalog)));
   }
 
   async function toggleUserActive(userId, currentActive) {
@@ -442,7 +450,7 @@
     usernameToEmail,
     // session
     loadSession, saveSession, clearSession, verifySession,
-    isLoggedIn, getCurrentUser, isAdmin, isPharmacist, isDoctor, isTv, canEditCatalog, setCatalogEditor,
+    isLoggedIn, getCurrentUser, isAdmin, isPharmacist, isDoctor, isTv, isLimitedAdmin, canEditCatalog, setCatalogEditor,
     canExitPatients, canEditQuotes, setUserFlag,
     // login / logout
     login, logout,

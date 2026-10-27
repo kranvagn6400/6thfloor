@@ -2435,3 +2435,11 @@ html[data-theme="dark"] .pills-print-sel { background: var(--fill, var(--primary
 
 /* 6th Floor has no handover / receipt form */
 #settings-handover-btn, #admin-handover-btn, .admin-discharged-section:has(#admin-handover-btn) { display: none !important; }
+
+/* 6th Floor: the floor manager (limited admin) does not get these */
+html.limited-admin #admin-tv-btn, html.limited-admin #settings-tv-btn, html.limited-admin #display-mode-btn,
+html.limited-admin #print-all-sheets-btn, html.limited-admin #admin-print-sheets-btn,
+html.limited-admin #admin-med-request-btn, html.limited-admin #settings-med-request-btn,
+html.limited-admin #admin-occasion-section, html.limited-admin #admin-greetings-section,
+html.limited-admin #admin-ornament-section, html.limited-admin #med-requests-clear-btn,
+html.limited-admin #settings-catalog-btn, html.limited-admin .admin-layout { display: none !important; }
