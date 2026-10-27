@@ -545,7 +545,7 @@
     }
   }
 
-  // Origin floor selector (مريض الردهة / ط9 / ط7 / ط6)
+  // Origin floor selector (مريض الردهة / ط10 / ط9 / ط8 / ط7)
   function renderOrigin(patient) {
     const B = global.PharmacyBoarders;
     const select = document.getElementById("patient-origin-select");

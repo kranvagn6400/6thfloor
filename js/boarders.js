@@ -2,7 +2,7 @@
    boarders.js  —  Patients hosted from other wards (مرضى مستضافون)
    ============================================================
    A patient's `originWard` ('' = our own ward patient) says which
-   ward they belong to — chosen by floor (ط10 / ط9 / ط7 / ط6). Rules for
+   ward they belong to — chosen by floor (ط10 / ط9 / ط8 / ط7). Rules for
    this floor (Baghdad Teaching Hospital, 6th floor, internal medicine,
    units 1 and 3):
      - Boarders come only from other medical wards or oncology.
@@ -17,14 +17,14 @@
 (function (global) {
   "use strict";
 
-  // Offered in the origin list (in this order): our ward, ط10, ط9, ط7, ط6.
+  // Offered in the origin list (in this order): our floor (6th), ط10, ط9, ط8, ط7.
   // `legacy` entries are kept only so older records still display.
   const ORIGINS = [
     { key: "",             label: "مريض الردهة",  option: "مريض الردهة" },
     { key: "floor-10",     label: "الطابق 10",    option: "ط10", floor: "10" },
     { key: "floor-9",      label: "الطابق 9",     option: "ط9", floor: "9" },
+    { key: "floor-8",      label: "الطابق 8",     option: "ط8", floor: "8" },
     { key: "hematology-7", label: "الطابق 7 — أمراض الدم", option: "ط7", floor: "7", noOrder: true },
-    { key: "floor-6",      label: "الطابق 6",     option: "ط6", floor: "6" },
     { key: "medical",      label: "ردهة باطنية أخرى", legacy: true },
     { key: "oncology",     label: "الأورام",          legacy: true }
   ];

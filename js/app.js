@@ -2978,7 +2978,7 @@
       if (Auth && Auth.isDoctor() && !Auth.isAdmin()) return;   // field hidden for doctors
       const p = ensurePatient(state.currentBed.key);
       p.originWard = originSelect.value;
-      p.originNote = "";   // the floor comes with the choice (ط9 / ط7 / ط6)
+      p.originNote = "";   // the floor comes with the choice (ط10 / ط9 / ط8 / ط7)
       persistPatient(state.currentBed.key);
       refreshPatientViewOnly();
     });
