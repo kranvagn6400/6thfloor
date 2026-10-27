@@ -115,6 +115,9 @@
     if (/invalid_setup_code/.test(m)) return "رمز الإعداد غير صحيح";
     if (/admin_exists/.test(m)) return "يوجد مسؤول بالفعل — سجّل الدخول بحسابه";
     if (/forbidden/.test(m)) return "هذا الإجراء للمسؤول فقط";
+    if (/protected_account/.test(m)) return "هذا الحساب محمي — لا يعدّله إلا المسؤول ذو الصلاحية القصوى";
+    if (/bad_username/.test(m)) return "اسم الدخول غير صالح";
+    if (/admin_create_user|could not find the function/i.test(m)) return "شغّل القسمين 24 و25 من features.sql في Supabase";
     if (/password_too_short|password should be/i.test(m)) return `كلمة المرور يجب أن تكون ${MIN_PASSWORD} أحرف على الأقل`;
     if (/cannot_delete_self/.test(m)) return "لا يمكنك حذف حسابك";
     if (/failed to fetch|network/i.test(m)) return "تعذّر الاتصال بالخادم — تحقق من الإنترنت";
@@ -270,7 +273,10 @@
 
   // Signs the new user up on a throwaway client (so the admin stays
   // signed in), then the admin inserts the matching profile row.
+  // role "floor-admin" = an admin with limited powers (profiles.limited_admin, features.sql §23)
   async function createUser(creatorUsername, username, password, displayName, role, gender) {
+    const limited = role === "floor-admin";
+    if (limited) role = "admin";
     if (!username || !password || !displayName) {
       return { ok: false, error: "أدخل جميع الحقول" };
     }
@@ -281,6 +287,18 @@
     }
     const { client, error: cErr } = getClientOrError();
     if (!client) return { ok: false, error: cErr };
+    // The server creates the user (features.sql §24): the browser's signUp refuses the internal e-mail ("email invalid")
+    try {
+      const { data: newId, error: rErr } = await client.rpc("admin_create_user", {
+        p_email: usernameToEmail(username), p_username: normalizeUsername(username), p_password: password,
+        p_display_name: displayName.trim() + "|" + gender, p_role: role, p_limited: limited
+      });
+      if (!rErr) return { ok: true, user: { id: newId, username: normalizeUsername(username) } };
+      if (!/could not find the function|admin_create_user|PGRST202/i.test(rErr.message || "")) {
+        return { ok: false, error: translateError(rErr.message) };
+      }
+      // the function is not installed yet → fall back to signUp (needs a valid e-mail domain)
+    } catch (e) { return { ok: false, error: translateError(errMsg(e)) }; }
     const temp = global.PharmacySupabase.createEphemeralClient();
     if (!temp) return { ok: false, error: "تعذّر إنشاء عميل Supabase" };
     try {
@@ -361,6 +379,11 @@
   function canEditQuotes() {
     const s = loadSession();
     return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canEditQuotes)));
+  }
+  // The supreme admin (مصطفى حسين): admin and not the limited floor manager. Only he can touch his own kind.
+  function isSuperAdmin() {
+    const s = loadSession();
+    return !!(s && s.role === "admin" && !s.limitedAdmin);
   }
   // The floor manager (آية): an admin with fewer powers — no catalogue, print-all, TV mode, ornaments,
   // occasions, greetings, new-medicine requests (features.sql §23; the hiding is in theme.css)
@@ -450,7 +473,7 @@
     usernameToEmail,
     // session
     loadSession, saveSession, clearSession, verifySession,
-    isLoggedIn, getCurrentUser, isAdmin, isPharmacist, isDoctor, isTv, isLimitedAdmin, canEditCatalog, setCatalogEditor,
+    isLoggedIn, getCurrentUser, isAdmin, isPharmacist, isDoctor, isTv, isLimitedAdmin, isSuperAdmin, canEditCatalog, setCatalogEditor,
     canExitPatients, canEditQuotes, setUserFlag,
     // login / logout
     login, logout,

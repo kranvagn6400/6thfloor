@@ -4540,6 +4540,7 @@
       const password = $("user-password").value;
       const role = $("user-role").value;
       const gender = $("user-gender").value;
+      if (role === "admin" && !(Auth && Auth.isSuperAdmin && Auth.isSuperAdmin())) { flashHint("إنشاء مسؤول بصلاحية قصوى للمسؤول الأعلى فقط"); return; }
       if (!displayName || !username || !password) {
         flashHint("أدخل جميع الحقول الثلاثة");
         return;
@@ -4717,7 +4718,7 @@
       const row = document.createElement("div");
       row.className = "admin-user-row" + (u.active === false ? " is-inactive" : "");
       const roleLabel =
-        u.role === "admin" ? "مسؤول" :
+        u.role === "admin" ? (u.limited_admin ? "مسؤول الطابق" : "مسؤول ذو صلاحية قصوى") :
         u.role === "doctor" ? "طبيب" :
         u.role === "tv" ? "تلفاز (عرض فقط)" :
         "صيدلي";
@@ -4753,6 +4754,11 @@
       // Don't let admin delete or disable their own account
       if (currentUser && currentUser.username === u.username) {
         row.querySelectorAll(".btn-user-toggle, .btn-user-delete").forEach(b => b.remove());
+      }
+      // The supreme admin's account is untouchable by anyone else (the database refuses it too, features.sql §25)
+      if (u.role === "admin" && !u.limited_admin && !(Auth.isSuperAdmin && Auth.isSuperAdmin())) {
+        const acts = row.querySelector(".admin-user-actions");
+        if (acts) acts.innerHTML = '<span class="admin-user-locked">🔒 حساب محمي</span>';
       }
       container.appendChild(row);
     });
