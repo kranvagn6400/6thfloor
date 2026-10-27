@@ -11,9 +11,11 @@ accounts. Never touch, push to or mention the Ward 5 app / accounts here. Talk t
   Bed keys stay room-N-bed-M with the floor-unique room id; room.title / PharmacyWard.roomTitle(id) is what
   users see ("غرفة 3 · الوحدة الأولى", "خاص 2 · …"); bedLabel numbers 1..46 inside each unit. Gender comes
   from the unit (roomGender). No ICU room.
-- Bottom nav (right → left): الوحدة الأولى · حبوب الأولى · المرضى · حبوب الثالثة · الوحدة الثالثة. Units are
-  shown one at a time (ui.js setUnit / renderRooms filter); pills page per unit (PharmacyPillsPage.open("1"|"3")).
-  No تربيتي / الأخصائيون tabs, no handover (hidden by CSS).
+- Bottom nav (right → left): الوحدة الأولى · حبوب الأولى · المرضى · حبوب الثالثة · الوحدة الثالثة. A unit page has a عام / خاص
+  switch (UI.setKind): general rooms or that unit's private rooms. The header «الطلبية» and chart-send buttons act on the open
+  page + kind (flowPatientsMap / pickFlowUnit in app.js): general → that unit's chart, private → «ردهة الخاص» (both units
+  accumulate in it; the order stays per unit); on pills / patients pages they say «اختر الوحدة أولاً». Pills page per unit
+  (PharmacyPillsPage.open("1"|"3")). No تربيتي / الأخصائيون tabs, no handover (hidden by CSS).
 - Accounts: only the admin Mustafa Hussein (username mustafa — supervises the app, not a pharmacist here), the floor
   manager Aya Thaer (username aya, role admin + profiles.limited_admin, features.sql §23: no medicine catalogue,
   print-all, occasions, greetings, new-medicine request/clear, TV mode, header ornament — hidden by html.limited-admin
