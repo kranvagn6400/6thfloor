@@ -321,9 +321,10 @@
   // to «ردهة الخاص» (where the other unit's private patients already are or will be)
   // kind "general" / "private" = only that kind; empty = both (the settings button)
   async function sendChart(state, supplyDistribution, onProgress, date, unit, kind) {
-    unit = unit === "3" ? "3" : "1";
-    const targets = [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }]
-      .filter((t, i) => !kind || (kind === "private") === (i === 1));
+    // unit "p" = the private rooms of BOTH units → «ردهة الخاص»; "1" / "3" = that unit (kind picks general / private)
+    unit = unit === "3" || unit === "p" ? unit : "1";
+    const targets = unit === "p" ? [{ rooms: "p", server: "p" }]
+      : [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }].filter((t, i) => !kind || (kind === "private") === (i === 1));
     let first = null, any = false;
     for (const t of targets) {
       if (!collectPatientsFromApp(state, supplyDistribution, t.rooms).length) continue;

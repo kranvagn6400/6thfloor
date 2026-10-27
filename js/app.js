@@ -1537,21 +1537,22 @@
   let _flowUnit = null, _flowKind = "general";
   function pickFlowUnit() {
     if (!(UI.currentView && UI.currentView() === "home")) { flashHint("اختر الوحدة أولاً"); return false; }
-    _flowUnit = UI.getUnit();
+    // «خاص» mode = the private rooms of BOTH units together (one chart, one order); «عام» = this unit only
     _flowKind = UI.getKind();
+    _flowUnit = _flowKind === "private" ? "p" : UI.getUnit();
     return true;
   }
   function flowUnitName() {
     const u = global.PharmacyWard.UNITS.find(x => x.id === _flowUnit);
-    return u ? u.name + (_flowKind === "private" ? " — الخاص" : " — العام") : "";
+    return _flowUnit === "p" ? "ردهة الخاص (الوحدتان)" : (u ? u.name + " — العام" : "");
   }
   // storage key part: the sent supplies are kept per unit and kind
-  function flowKey() { return _flowUnit + (_flowKind === "private" ? "p" : ""); }
+  function flowKey() { return _flowUnit; }
   function flowPatientsMap() {
     const all = orderedPatientsMap();
     if (!_flowUnit) return all;
     const out = {};
-    global.PharmacyWard.ROOMS.filter(r => r.unit === _flowUnit && r.kind === _flowKind).forEach(room => room.beds.forEach(b => {
+    global.PharmacyWard.ROOMS.filter(r => _flowUnit === "p" ? r.kind === "private" : (r.unit === _flowUnit && r.kind === "general")).forEach(room => room.beds.forEach(b => {
       const k = global.PharmacyWard.bedKey(room.id, b.number);
       if (all[k]) out[k] = all[k];
     }));
@@ -3869,7 +3870,7 @@
             try {
               const day = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) ? dateInput.value : global.PharmacyChartSync.todayISO();
               if (day !== global.PharmacyChartSync.todayISO() && !confirm("الإرسال إلى جارت يوم " + day + " (ليس اليوم)؟")) return;
-              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit, _flowKind);
+              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit);
               if (r.cancelled) return;
               flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
               if (r.ok) { saveSentSupplies(supplyDistribution, day, flowKey()); closeMedSummary(); }
@@ -4075,13 +4076,13 @@
         flashHint("تعذّر تحميل وحدة جسر الجارت");
         return;
       }
-      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]]);
+      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]]);
       if (!unit) return;
       UI.showView("home");
       flashHint("يتم إرسال بيانات المرضى إلى الجارت...");
       setTimeout(async () => {
         try {
-          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit);
+          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit, unit === "p" ? "private" : "general");
           if (!r.cancelled) flashHint(global.PharmacyChartSync.describe(r));
         } catch (err) {
           flashHint("تعذّر الإرسال: " + (err.message || err));
