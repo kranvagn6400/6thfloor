@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="theme-color" content="#17433D" />
+  <script>try{var _p=localStorage.getItem("pharma.palette");if(_p)document.documentElement.setAttribute("data-palette",_p);var _o=localStorage.getItem("pharma.ornament");if(_o)document.documentElement.setAttribute("data-ornament",_o);var _q=JSON.parse(localStorage.getItem("pharma.ornament.pos")||"null");if(_q){var _s=document.documentElement.style;_s.setProperty("--orn-size",_q.size+"px");_s.setProperty("--orn-x",_q.x+"%");_s.setProperty("--orn-y",_q.y+"%")}}catch(e){}</script>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="6th Floor" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>6th Floor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800&family=Cairo:wght@400;600;700;800&family=Amiri:wght@700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- PWA manifest + icons -->
+  <link rel="manifest" href="manifest.json?v=5" />
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png?v=20261008b" />
+  <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png?v=20261008b" />
+  <link rel="icon" type="image/png" sizes="512x512" href="img/icon-512.png?v=20261008b" />
+  <link rel="apple-touch-icon" href="img/apple-touch-icon-180.png?v=20261008b" />
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon-180.png?v=20261008b" />
+  <link rel="apple-touch-icon" sizes="192x192" href="img/icon-192.png?v=20261008b" />
+  <link rel="apple-touch-icon" sizes="512x512" href="img/icon-512.png?v=20261008b" />
+  <link rel="stylesheet" href="css/styles.css?v=20261008o" />
+  <link rel="stylesheet" href="css/theme.css?v=304" />
+  <link rel="stylesheet" href="css/palettes.css?v=304" />
+  <link rel="stylesheet" href="css/ornaments.css?v=304" />
+  <link rel="stylesheet" href="css/occasions.css?v=304" />
+  <style>
+    /* Pre-paint auth gate: hide the wrong screen before JS loads to
+       prevent a flash of unauthenticated content (1-2s where the
+       home page is visible before the login overlay appears).
+       The script in <head> sets one of these classes synchronously. */
+    html.is-authed    #login-screen { display: none !important; }
+    html.is-unauthed  #app          { display: none !important; }
+    /* While we're still deciding (no class set yet — extremely rare
+       race), hide the app to be safe. */
+    html:not(.is-authed):not(.is-unauthed) #app { display: none !important; }
+
+    /* ----- Pre-paint role-visibility gate (anti-FOUC) -----
+       The header buttons that are role-specific (chart, summary,
+       pills-form, all-sheets, darkmode, display, logout) are visible
+       by default in the HTML. The JS applyRoleVisibility() then hides
+       the inappropriate ones — but only AFTER JS loads, which means
+       the user sees a brief flash of ALL buttons before the wrong
+       ones disappear (1-2 frames of 'admin buttons' for doctors/
+       pharmacists).
+
+       Fix: hide ALL role-specific buttons by default with CSS, then
+       show them when the appropriate role class is on <html>. The
+       pre-paint script in <head> adds role-admin / role-doctor /
+       role-pharmacist synchronously, so the right buttons are
+       visible from the very first frame — no flash.
+
+       Note: applyRoleVisibility() (JS) still runs as a fallback +
+       to handle live role changes (e.g. login). The CSS rules use
+       !important to win over the .hidden attribute's display:none
+       and over the inline styles on some buttons. */
+    #print-chart-btn,
+    #print-all-sheets-btn,
+    #print-pills-form-btn,
+    #distribute-send-btn,
+    #order-list-btn,
+    #admin-tools-btn,
+    #darkmode-toggle,
+    #display-mode-btn,
+    #logout-btn {
+      display: none !important;
+    }
+    /* Admin sees everything (except the chart print button, retired
+       for now — see applyRoleVisibility) */
+    html.role-admin #print-pills-form-btn,
+    html.role-admin #distribute-send-btn,
+    html.role-admin #order-list-btn,
+    html.role-admin #admin-tools-btn {
+      display: inline-grid !important;
+      place-items: center;
+    }
+    /* The admin's header, right to left: the rocket, الطلبية, الحكمة, الإشعارات, ⚙ الإعدادات,
+       then his own settings. Printing all sheets, the display mode, dark / light and logout
+       moved into ⚙. */
+    html.role-admin #distribute-send-btn { order: 1; }
+    html.role-admin #order-list-btn      { order: 2; }
+    html.role-admin #quote-btn           { order: 3; }
+    html.role-admin #notifications-btn   { order: 4; }
+    html.role-admin #open-admin          { order: 5; }
+    html.role-admin #admin-tools-btn     { order: 6; }
+    /* Doctor sees only the print-all-sheets button (for printing
+       all patient sheets). The chart / pills-form / distribute-send
+       are pharmacist-only, and darkmode / display / logout are
+       admin-only (doctors access them via the settings view). */
+    html.role-doctor #print-all-sheets-btn {
+      display: inline-grid !important;
+      place-items: center;
+    }
+    /* Pharmacist sees, right to left: send patient data to the chart,
+       pills form, notifications, settings. Printing the chart is
+       admin-only; print-all-sheets is admin+doctor; darkmode / display
+       / logout are admin-only (pharmacists use the settings view). */
+    html.role-pharmacist #print-pills-form-btn,
+    html.role-pharmacist #distribute-send-btn,
+    html.role-pharmacist #order-list-btn {
+      display: inline-grid !important;
+      place-items: center;
+    }
+    html.role-pharmacist #distribute-send-btn  { order: 1; }
+    html.role-pharmacist #order-list-btn       { order: 1; }
+    html.role-pharmacist #print-pills-form-btn { order: 2; }
+    html.role-pharmacist #quote-btn            { order: 3; }
+    html.role-pharmacist #notifications-btn    { order: 3; }
+    html.role-pharmacist #open-admin           { order: 4; }
+  </style>
+  <script>
+    // Synchronous pre-paint auth check.
+    // Must run in <head> before any visible content is painted so the
+    // correct screen is visible from the very first frame.
+    //
+    // Also adds a role class (role-admin / role-doctor / role-pharmacist)
+    // to <html> so the role-visibility CSS gate above can show the
+    // correct header buttons from the very first frame — preventing
+    // the brief 'admin buttons flash' that doctors + pharmacists were
+    // seeing before applyRoleVisibility() JS ran.
+    try {
+      var raw = localStorage.getItem('pharma.session.v1');
+      var isAuthed = false;
+      var role = "";
+      // A UI session without a Supabase Auth session is stale (e.g.
+      // from before the security upgrade) — treat as logged out.
+      if (raw && !localStorage.getItem('pharma.sb-auth.v1')) {
+        localStorage.removeItem('pharma.session.v1');
+        raw = null;
+      }
+      if (raw) {
+        var s = JSON.parse(raw);
+        if (s && s.username && s.role) {
+          isAuthed = true;
+          role = String(s.role).toLowerCase();
+        }
+      }
+      var root = document.documentElement;
+      root.classList.add(isAuthed ? 'is-authed' : 'is-unauthed');
+      if (isAuthed && role) {
+        // Sanitize: only allow known role values to avoid CSS injection
+        if (role === 'admin' || role === 'doctor' || role === 'pharmacist') {
+          root.classList.add('role-' + role);
+        }
+      }
+    } catch (e) {
+      document.documentElement.classList.add('is-unauthed');
+    }
+  </script>
+</head>
+<body>
+  <!-- ===== Login overlay (shown until user logs in) ===== -->
+  <div id="login-screen" class="login-screen" hidden>
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="img/login-icon.png?v=20261008b" alt="الطابق السادس" class="login-brand-icon" />
+        <h1>الطابق السادس</h1>
+        <p>الباطنية</p>
+      </div>
+
+      <form id="login-form" class="login-form" autocomplete="off">
+        <div class="login-field">
+          <label for="login-username">اسم المستخدم</label>
+          <input type="text" id="login-username" placeholder="" autocomplete="off" autocapitalize="off" spellcheck="false" />
+        </div>
+        <div class="login-field">
+          <label for="login-password">كلمة المرور</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="off" />
+        </div>
+        <div id="login-error" class="login-error" hidden></div>
+        <button type="submit" class="login-submit">دخول</button>
+      </form>
+
+
+      <div class="login-quick">
+        <button type="button" class="login-quick-btn install" id="install-app-btn" hidden>
+          <span class="login-quick-icon install-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </span>
+          <span class="login-quick-text">
+            <strong>تحميل التطبيق</strong>
+            <small>تثبيت على الهاتف</small>
+          </span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== App Shell ===== -->
+  <div id="app" class="app">
+
+    <!-- ===== Top Header / Dashboard ===== -->
+    <header class="app-header">
+      <div class="occasion-deco" id="occasion-deco" aria-hidden="true" hidden></div>
+      <div class="brand">
+        <div class="brand-text">
+          <h1>الطابق السادس</h1>
+          <span class="occasion-chip" id="occasion-chip" hidden></span>
+        </div>
+        <div class="brand-actions">
+          <button class="brand-chart" id="print-chart-btn" type="button" aria-label="طباعة التشارت" title="طباعة التشارت">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><rect x="13" y="5" width="22" height="12" rx="2" class="f-white s-em3" stroke-width="1.8"/><rect x="5" y="15" width="38" height="18" rx="5" class="f-em"/><circle cx="36" cy="21" r="2" class="f-au2"/><rect x="13" y="27" width="22" height="16" rx="2" class="f-white s-em3" stroke-width="1.8"/><path d="M18 33h12M18 38h8" class="s-au" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="brand-chart" id="print-all-sheets-btn" type="button" aria-label="طباعة كل أوراق المرضى" title="طباعة كل أوراق المرضى (PDF موحّد)" style="background:#06c">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><rect x="15" y="5" width="25" height="31" rx="4" class="f-em2"/><rect x="8" y="11" width="25" height="32" rx="4" class="f-white s-em3" stroke-width="2"/><path d="M14 20h13M14 26h13M14 32h8" class="s-au" stroke-width="2.4" stroke-linecap="round"/></svg>
+          </button>
+          <!-- «حكمة اليوم»: today's saying of the ward display (daily-quotes.js), everyone -->
+          <button class="brand-chart" id="quote-btn" type="button" aria-label="حكمة اليوم" title="حكمة اليوم">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4c1.6 9.6 6.4 14.4 16 16-9.6 1.6-14.4 6.4-16 16-1.6-9.6-6.4-14.4-16-16 9.6-1.6 14.4-6.4 16-16z" class="f-au2"/><path d="M38 31c.7 3.6 2.4 5.3 6 6-3.6.7-5.3 2.4-6 6-.7-3.6-2.4-5.3-6-6 3.6-.7 5.3-2.4 6-6z" class="f-em"/></svg>
+          </button>
+          <button class="brand-chart" id="notifications-btn" type="button" aria-label="الإشعارات" title="الإشعارات" style="background:#e80;position:relative">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 9a10 10 0 0 0-10 10c0 9-4 12-4 12h28s-4-3-4-12A10 10 0 0 0 24 9z" class="f-em"/><path d="M20 35a4 4 0 0 0 8 0" class="f-em3"/><path d="M8 9a17 17 0 0 0-3 10M40 9a17 17 0 0 1 3 10" fill="none" class="s-au" stroke-width="3" stroke-linecap="round"/></svg>
+            <span class="notif-badge" id="notif-badge" hidden>0</span>
+          </button>
+          <!-- Distribute + Send button (combines supply-order modal + med
+               summary + chart bridge). Pharmacist + admin only. Icon:
+               rocket (🚀) — represents sending data to the external
+               جارت الجارت app. -->
+          <button class="brand-chart" id="distribute-send-btn" type="button" aria-label="إرسال بيانات المرضى إلى الجارت" title="إرسال بيانات المرضى إلى الجارت" style="background:#0c7">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+          </button>
+          <!-- «الطلبية»: every medicine with its total daily count + the supplies
+               last sent to the chart — for writing the order by hand -->
+          <button class="brand-chart" id="order-list-btn" type="button" aria-label="الطلبية" title="الطلبية — الأدوية ومجموعها والمستلزمات المرسلة" style="background:#f5b301;color:#fff">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3h6v3H9z"/><path d="M9 11h6M9 15h6"/></svg>
+          </button>
+          <button class="brand-display" id="display-mode-btn" type="button" aria-label="وضع العرض" title="وضع العرض (شاشة العرض)">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="9" width="38" height="25" rx="4" class="f-em3"/><path d="M10 22h7l3-6 4 11 3-5h11" fill="none" class="s-au2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 41h12M24 34v7" class="s-em" stroke-width="2.6" stroke-linecap="round"/></svg>
+          </button>
+          <button class="brand-pdf" id="export-pdf-btn" type="button" aria-label="تصدير PDF" title="تصدير التشارت كـ PDF" hidden>
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path d="M12 5h17l9 9v26a3 3 0 0 1-3 3H12a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z" class="f-white s-em3" stroke-width="2"/><path d="M29 5v9h9" class="f-em2"/><path d="M24 20v14m-6-6 6 6 6-6" fill="none" class="s-au" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="brand-settings" id="open-admin" type="button" aria-label="الإعدادات" title="الإعدادات">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path d="M38.94 19.87 L43.74 20.77 L43.74 27.23 L38.94 28.13 A15.5 15.5 0 0 1 37.49 31.64 L37.49 31.64 L40.24 35.68 L35.68 40.24 L31.64 37.49 A15.5 15.5 0 0 1 28.13 38.94 L28.13 38.94 L27.23 43.74 L20.77 43.74 L19.87 38.94 A15.5 15.5 0 0 1 16.36 37.49 L16.36 37.49 L12.32 40.24 L7.76 35.68 L10.51 31.64 A15.5 15.5 0 0 1 9.06 28.13 L9.06 28.13 L4.26 27.23 L4.26 20.77 L9.06 19.87 A15.5 15.5 0 0 1 10.51 16.36 L10.51 16.36 L7.76 12.32 L12.32 7.76 L16.36 10.51 A15.5 15.5 0 0 1 19.87 9.06 L19.87 9.06 L20.77 4.26 L27.23 4.26 L28.13 9.06 A15.5 15.5 0 0 1 31.64 10.51 L31.64 10.51 L35.68 7.76 L40.24 12.32 L37.49 16.36 A15.5 15.5 0 0 1 38.94 19.87Z" class="f-em"/><circle cx="24" cy="24" r="8.5" class="f-au2"/><circle cx="24" cy="24" r="3.6" class="f-hole"/></svg>
+          </button>
+          <!-- The admin's own settings (users, catalogue, theme, audit… — what the other pharmacists do not have) -->
+          <button class="brand-settings" id="admin-tools-btn" type="button" aria-label="إعدادات المسؤول" title="إعدادات المسؤول" hidden>
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="7" width="38" height="34" rx="5" class="f-em"/><rect x="10" y="13" width="12" height="10" rx="2" class="f-em2"/><rect x="26" y="13" width="12" height="5" rx="2" class="f-au"/><rect x="26" y="21" width="12" height="2.5" rx="1" fill="#fff"/><rect x="10" y="27" width="28" height="3" rx="1.5" fill="#fff"/><rect x="10" y="33" width="18" height="3" rx="1.5" class="f-au"/></svg>
+          </button>
+          <button class="brand-logout" id="logout-btn" type="button" aria-label="تسجيل الخروج" title="تسجيل الخروج">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 6h16a3 3 0 0 1 3 3v30a3 3 0 0 1-3 3H10z" class="f-aubg s-au3" stroke-width="2"/><circle cx="23" cy="25" r="1.8" class="f-au3"/><path d="M27 24h15m-5-6 6 6-6 6" fill="none" class="s-red" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="brand-darkmode" id="darkmode-toggle" type="button" aria-label="الوضع الليلي" title="الوضع الليلي">
+            <svg class="ico" width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path d="M27 7a16 16 0 1 0 15 22A13 13 0 0 1 27 7z" class="f-au"/><path d="M27 7a16 16 0 0 0-9 3 13 13 0 0 1 9-3z" class="f-au2"/><path d="M36 9v6M33 12h6" class="s-em" stroke-width="2.2" stroke-linecap="round"/><circle cx="40" cy="21" r="1.8" class="f-em"/></svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== Main view container ===== -->
+    <main class="app-main" id="view-container">
+
+      <!-- ----- Home view: rooms grid ----- -->
+      <section class="view view-home" id="view-home" data-view="home">
+        <div class="section-title">
+          <h2>الغرف</h2>
+          <p>اختر سريرًا للوصول إلى المريض · لنقل مريض اسحبه إلى سرير فارغ (اضغط مطوّلاً على الهاتف)</p>
+        </div>
+        <div class="rooms-grid" id="rooms-grid">
+          <!-- rooms rendered by JS -->
+        </div>
+      </section>
+
+      <!-- ----- Patient view (full-screen) ----- -->
+      <section class="view view-patient" id="view-patient" data-view="patient" hidden>
+        <button class="back-btn" id="back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+
+        <div class="patient-header" id="patient-header">
+          <div class="patient-loc">
+            <span class="loc-chip" id="loc-room">غرفة —</span>
+            <span class="loc-chip" id="loc-bed">سرير —</span>
+          </div>
+          <!-- Doctors: the card in three sections (theme.css html.role-doctor) -->
+          <div class="doc-section-title doc-info-title">معلومات المريض</div>
+          <div class="patient-name-row">
+            <input
+              type="text"
+              id="patient-name-input"
+              class="patient-name-input"
+              placeholder="اسم المريض"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+          </div>
+          <div class="patient-demographics-row">
+            <input
+              type="text"
+              id="patient-age-input"
+              class="patient-age-input"
+              placeholder="العمر"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              inputmode="numeric"
+              maxlength="3"
+            />
+            <div class="patient-gender-toggle" role="group" aria-label="الجنس">
+              <button
+                type="button"
+                id="patient-gender-male"
+                class="patient-gender-btn"
+                data-gender="male"
+                aria-pressed="false"
+              >ذكر</button>
+              <button
+                type="button"
+                id="patient-gender-female"
+                class="patient-gender-btn"
+                data-gender="female"
+                aria-pressed="false"
+              >أنثى</button>
+            </div>
+          </div>
+          <div class="patient-plate-row">
+            <input
+              type="text"
+              id="patient-plate-input"
+              class="patient-plate-input"
+              placeholder="رقم الطبلة (6 أرقام) *"
+              maxlength="6"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              inputmode="numeric"
+            />
+            <div class="plate-dup-warn" id="plate-dup-warn" role="alert" hidden></div>
+          </div>
+          <!-- Origin floor: our patient, or a boarder (ط10 / ط9 / ط7 / ط6) — boarders.js -->
+          <div class="patient-origin-row">
+            <label class="patient-origin-label" for="patient-origin-select">من طابق آخر؟</label>
+            <select id="patient-origin-select" class="patient-origin-select"></select>
+          </div>
+          <!-- Weight / height → Cockcroft-Gault CrCl (clinical.js) -->
+          <div class="patient-body-row">
+            <input type="text" id="patient-weight-input" class="patient-age-input patient-body-input"
+                   placeholder="الوزن kg" inputmode="decimal" maxlength="5" autocomplete="off" />
+            <input type="text" id="patient-height-input" class="patient-age-input patient-body-input"
+                   placeholder="الطول cm (اختياري)" inputmode="decimal" maxlength="5" autocomplete="off" />
+          </div>
+          <div class="patient-doctor-row">
+            <input
+              type="text"
+              id="patient-doctor-input"
+              class="patient-doctor-input"
+              list="specialists-list"
+              placeholder="الطبيب المعالج (اختياري)"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+          </div>
+          <datalist id="specialists-list"></datalist>
+          <div class="patient-doctor-row patient-diagnosis-row">
+            <input
+              type="text"
+              id="patient-diagnosis-input"
+              class="patient-doctor-input"
+              placeholder="التشخيص (مثلاً: pneumonia, sepsis)"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+            />
+          </div>
+          <!-- Drug allergies: a button showing the current list; tapping it
+               opens the list of allergy classes to tick + a field for any
+               other allergy. Checked against every med added (clinical.js). -->
+          <div class="patient-allergy-row">
+            <button type="button" id="allergy-toggle" class="allergy-toggle"
+                    aria-expanded="false" aria-controls="allergy-panel">
+              <span class="allergy-toggle-label">⚠ الحساسية الدوائية</span>
+              <span class="allergy-toggle-value" id="allergy-summary">لا يوجد</span>
+              <span class="allergy-toggle-chevron" aria-hidden="true">‹</span>
+            </button>
+            <div class="allergy-panel" id="allergy-panel" hidden>
+              <div class="allergy-list" id="allergy-chips" role="group" aria-label="أصناف الحساسية"></div>
+              <input
+                type="text"
+                id="patient-allergies-input"
+                class="patient-doctor-input patient-allergies-input"
+                placeholder="حساسية أخرى غير موجودة في القائمة (اكتبها)"
+                autocomplete="off"
+                autocorrect="off"
+                spellcheck="false"
+              />
+            </div>
+          </div>
+          <div class="doc-labs-toolbar">
+            <div class="doc-section-title">التحاليل</div>
+            <div class="doc-labs-actions">
+              <button type="button" class="doc-labs-btn" id="labs-print-btn" aria-expanded="false">تحاليل الورقة</button>
+              <button type="button" class="doc-labs-btn" id="labs-toggle-btn" aria-expanded="false">عرض التحاليل</button>
+            </div>
+            <div class="labs-print-panel" id="labs-print-panel" hidden></div>
+          </div>
+          <div class="patient-labs-row" id="patient-labs-row">
+            <!-- Lab inputs rendered dynamically by ui.js renderPatientView -->
+          </div>
+          <!-- GFR (Glomerular Filtration Rate) calculator
+               Auto-computed from age + gender + S. Creatinine using
+               the CKD-EPI 2021 equation. Updates live as the user
+               types in any of those three fields. Hidden when any of
+               the three values is missing or invalid. -->
+          <div class="gfr-card" id="gfr-card" hidden>
+            <div class="gfr-card-head">
+              <span class="gfr-label">eGFR</span>
+              <span class="gfr-stage" id="gfr-stage"></span>
+            </div>
+            <div class="gfr-value-row">
+              <span class="gfr-value" id="gfr-value">—</span>
+              <span class="gfr-unit">mL/min/1.73m²</span>
+            </div>
+            <div class="gfr-formula" id="gfr-formula">CKD-EPI 2021</div>
+            <div class="gfr-crcl" id="gfr-crcl"></div>
+          </div>
+          <div class="patient-labs-history" id="patient-labs-history">
+            <!-- Previous lab entries rendered dynamically -->
+          </div>
+        </div>
+
+
+        <div class="meds-section">
+          <div class="meds-head">
+            <div class="meds-head-actions">
+              <button class="add-med-fab patient-print-btn" id="print-patient-sheet-btn" type="button" title="طباعة ورقة المريض A4">
+                <span aria-hidden="true">🖨</span> ورقة المريض
+              </button>
+              <button class="add-med-fab patient-print-btn patient-view-sheet-btn" id="view-patient-sheet-btn" type="button" title="عرض ورقة العلاج" hidden>
+                <span aria-hidden="true">📄</span> ورقة العلاج
+              </button>
+              <button class="add-med-fab patient-print-btn" id="print-patient-pills-btn" type="button" title="استمارة الحبوب لهذا المريض (PDF)">
+                <span aria-hidden="true">💊</span> استمارة الحبوب
+              </button>
+              <button class="add-med-fab" id="open-med-sheet" type="button">
+                <span aria-hidden="true">＋</span> إضافة علاج
+              </button>
+            </div>
+          </div>
+
+          <!-- Clinical alerts summary (interactions etc.) -->
+          <div class="clinical-alerts" id="clinical-alerts" hidden></div>
+
+          <div class="meds-list" id="meds-list">
+            <!-- patient medications rendered here -->
+          </div>
+
+          <div class="empty-meds" id="empty-meds">
+            <div class="empty-icon">℞</div>
+            <p>لا توجد علاجات بعد</p>
+            <span>اضغط «إضافة علاج» لبدء الإضافة</span>
+          </div>
+        </div>
+
+        <!-- Change history for this stay (patient_events, written by the server) -->
+        <div class="patient-history" id="patient-history">
+          <button class="patient-history-toggle" id="patient-history-toggle" type="button" aria-expanded="false">
+            <span aria-hidden="true">📜</span> سجل التغييرات
+            <span class="patient-history-chevron" aria-hidden="true">‹</span>
+          </button>
+          <div class="patient-history-list" id="patient-history-list" hidden></div>
+        </div>
+
+        <div class="patient-actions">
+          <!-- Discharge / death: pharmacists only for boarders (ui.js renderOrigin) -->
+          <button class="patient-action-btn discharge-btn" id="discharge-patient-btn" type="button">
+            خروج (Discharge)
+          </button>
+          <button class="patient-action-btn died-btn" id="died-patient-btn" type="button">
+            وفاة (Died)
+          </button>
+          <!-- Boarders only, pharmacists + admin only (ui.js renderOrigin) -->
+          <button class="patient-action-btn transfer-btn" id="transfer-ward-btn" type="button" hidden>
+            رجوع المريض إلى طابقه
+          </button>
+          <button class="delete-patient" id="delete-patient" type="button">
+            تفريغ السرير وحذف المريض
+          </button>
+        </div>
+      </section>
+
+      <!-- ----- Patients list view ----- -->
+      <section class="view view-patients" id="view-patients" data-view="patients" hidden>
+        <div class="section-title">
+          <h2>المرضى</h2>
+          <p>قائمة بجميع المرضى الحاليين</p>
+        </div>
+        <!-- Patient search (name / plate number / doctor / diagnosis) — on the patients page -->
+        <div class="ward-search" role="search">
+          <svg class="ward-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="ward-search-input" class="ward-search-input"
+                 placeholder="ابحث باسم المريض أو رقم الطبلة…" autocomplete="off" spellcheck="false" />
+          <div class="ward-search-results" id="ward-search-results" hidden></div>
+        </div>
+        <div class="patients-stat">
+          <span class="patients-stat-label">عدد المرضى:</span>
+          <span class="patients-stat-value" id="patients-count">0</span>
+        </div>
+        <div class="patients-list" id="patients-list">
+          <!-- patient rows -->
+        </div>
+        <div class="empty-state" id="empty-patients" hidden>
+          <div class="empty-icon">⌕</div>
+          <p>لا يوجد مرضى</p>
+          <span>عند إضافة مريض سيظهر هنا</span>
+        </div>
+      </section>
+
+      <!-- ----- Seniors (الأخصائيون) view ----- -->
+      <!-- Groups occupied patients by their attending physician.
+           Visible to admin + doctor roles only. JS hides the nav
+           tab for pharmacists via applySeniorsNavVisibility(). -->
+      <section class="view view-seniors" id="view-seniors" data-view="seniors" hidden>
+        <div class="section-title">
+          <h2>الأخصائيون ومرضاهم</h2>
+          <p>كل طبيب أخصائي ومرضاه في الردهة</p>
+        </div>
+        <div class="seniors-list" id="seniors-list">
+          <!-- rendered dynamically by renderSeniorsView() in app.js -->
+        </div>
+      </section>
+
+      <!-- ----- Discharged / Dead patients view ----- -->
+      <section class="view view-discharged" id="view-discharged" data-view="discharged" hidden>
+        <button class="back-btn" id="discharged-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+
+        <div class="section-title">
+          <h2>المرضى السابقون</h2>
+          <p>قائمة المرضى الذين خرجوا أو توفوا</p>
+        </div>
+
+        <div class="discharged-tabs">
+          <button class="discharged-tab active" data-tab="discharged" type="button">
+            خرجوا (<span id="discharged-count">0</span>)
+          </button>
+          <button class="discharged-tab" data-tab="dead" type="button">
+            وفيات (<span id="dead-count">0</span>)
+          </button>
+          <button class="discharged-tab" data-tab="transferred" id="transferred-tab" type="button">
+            عادوا لطوابقهم (<span id="transferred-count">0</span>)
+          </button>
+          <!-- Admin-only: clear all records in the active tab.
+               The button is hidden for non-admins via JS in
+               renderDischargedView(). -->
+          <button class="discharged-clear-all" id="discharged-clear-all-btn" type="button" hidden
+                  style="margin-right:auto;padding:6px 14px;background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;">
+            🗑 مسح كل القائمة
+          </button>
+        </div>
+
+        <div class="discharged-list" id="discharged-list">
+          <!-- rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ----- Antibiotic + Albumin monitoring view ----- -->
+      <!-- ----- Medication availability (admin only, med-availability.js) ----- -->
+      <section class="view view-availability" id="view-availability" data-view="availability" hidden>
+        <button class="back-btn" id="availability-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>توفر الأدوية</h2>
+          <p>اضغط على المفتاح لتغيير حالة الدواء — يُحفظ فوراً</p>
+        </div>
+        <div class="avail-summary" id="avail-summary"></div>
+        <div class="avail-toolbar">
+          <input type="search" id="avail-search" class="ward-search-input avail-search"
+                 placeholder="ابحث عن دواء…" autocomplete="off" spellcheck="false" />
+          <div class="avail-filters" role="group" aria-label="تصفية">
+            <button type="button" class="avail-filter is-active" data-filter="all">الكل</button>
+            <button type="button" class="avail-filter" data-filter="available">متوفر</button>
+            <button type="button" class="avail-filter" data-filter="unavailable">غير متوفر</button>
+          </div>
+        </div>
+        <div class="avail-list" id="avail-list"></div>
+      </section>
+
+      <!-- ----- Chart send log (pharmacist + admin, chart-send-log.js) ----- -->
+      <section class="view view-sendlog" id="view-sendlog" data-view="sendlog" hidden>
+        <button class="back-btn" id="sendlog-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>سجل الإرسال إلى الجارت</h2>
+          <p>كل إرسال محفوظ بجدوله ونتيجته — أعد إرساله عند حدوث خلل</p>
+        </div>
+        <div class="sendlog-account" id="sendlog-account"></div>
+        <div class="sendlog-list" id="sendlog-list"></div>
+      </section>
+
+      <!-- ----- التربيت: my rooms today (tarbeet.js) ----- -->
+      <section class="view view-tarbeet" id="view-tarbeet" data-view="tarbeet" hidden>
+        <button class="back-btn" id="tarbeet-back-btn" type="button" aria-label="رجوع" hidden>
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>تربيتي</h2>
+          <p>أسرّتك اليوم — ✓ تم التربيت · الملف المشطوب = الملف أو المريض غير موجود. اضغط العلامة المضاءة مرة أخرى لإلغائها.</p>
+        </div>
+        <div class="tarbeet-list" id="tarbeet-mine"></div>
+      </section>
+
+      <!-- ----- الحبوب (pills-page.js) ----- -->
+      <section class="view view-pills" id="view-pills" data-view="pills" hidden>
+        <div class="section-title">
+          <h2>الحبوب</h2>
+          <p>حبوب المرضى للرجال والنساء — عدّل الجرعة والتكرار والوقت وطريقة الاستخدام، فتُكتب في استمارة الحبوب. الحقل الفارغ يأخذ القيمة الرمادية.</p>
+        </div>
+        <div class="pills-list" id="pills-list"></div>
+      </section>
+
+      <!-- ----- التربيت: admin (tarbeet.js) ----- -->
+      <section class="view view-tarbeet-admin" id="view-tarbeet-admin" data-view="tarbeet-admin" hidden>
+        <button class="back-btn" id="tarbeet-admin-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>التربيت — توزيع الغرف</h2>
+          <p>صيدلاني لكل غرفة، ولأسرّة محددة عند الحاجة · يُحفظ فوراً</p>
+        </div>
+        <div class="tarbeet-list" id="tarbeet-admin"></div>
+      </section>
+
+      <!-- ----- Monthly report (from patient_events) ----- -->
+      <section class="view view-report" id="view-report" data-view="report" hidden>
+        <button class="back-btn" id="report-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>التقرير الشهري</h2>
+          <p>الدخول والخروج واستهلاك المضادات الحيوية</p>
+        </div>
+        <div class="report-toolbar">
+          <input type="month" id="report-month" class="report-month" />
+          <button type="button" class="btn-secondary report-export" id="report-export-btn">⬇ Excel</button>
+        </div>
+        <div class="report-body" id="report-body"></div>
+      </section>
+
+      <section class="view view-abx" id="view-abx" data-view="abx" hidden>
+        <button class="back-btn" id="abx-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+
+        <div class="section-title">
+          <h2>مراقبة الأدوية الحرجة</h2>
+          <p>المضادات الحيوية والألبومين وI.V.I.G وAranesp/Eprex وAmphoter/Caspo للمرضى الحاليين</p>
+        </div>
+
+        <div class="abx-stats" id="abx-stats">
+          <!-- summary cards rendered dynamically -->
+        </div>
+        <div class="abx-section abx-focus" id="abx-focus" hidden></div>
+
+        <div class="abx-section" data-abx-list>
+          <h3>المضادات الحيوية</h3>
+          <div class="abx-table" id="abx-antibiotics-table">
+            <!-- rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="abx-section" data-abx-list>
+          <h3>الألبومين</h3>
+          <div class="abx-table" id="abx-albumin-table">
+            <!-- rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="abx-section" data-abx-list>
+          <h3>أدوية حرجة أخرى</h3>
+          <div class="abx-table" id="abx-crit-table">
+            <!-- rendered dynamically -->
+          </div>
+        </div>
+
+        <button class="add-med-fab abx-save-btn" id="abx-report-btn" type="button">
+          <span aria-hidden="true">📊</span> التقرير الشهري
+        </button>
+      </section>
+
+      <!-- ----- Drug interactions (everyone: doctors, pharmacists, admin) ----- -->
+      <section class="view view-interactions" id="view-interactions" data-view="interactions" hidden>
+        <button class="back-btn" id="interactions-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>التداخلات الدوائية</h2>
+          <p>افحص دوائين، وراجع مرضى الردهة الذين لديهم تداخل</p>
+        </div>
+        <div class="ix-card">
+          <label class="ix-label" for="ix-a">الدواء الأول</label>
+          <select id="ix-a" class="ix-select" dir="ltr"></select>
+          <label class="ix-label" for="ix-b">الدواء الثاني</label>
+          <select id="ix-b" class="ix-select" dir="ltr"></select>
+          <div class="ix-result" id="ix-result" role="status" aria-live="polite"></div>
+        </div>
+        <div class="ix-section">
+          <h3>مرضى لديهم تداخل الآن</h3>
+          <div id="ix-patients"></div>
+        </div>
+        <div class="ix-section">
+          <h3>كل التداخلات المسجّلة <span id="ix-count"></span></h3>
+          <div id="ix-all"></div>
+        </div>
+        <p class="ix-note">قواعد مساعدة للمراجعة، وليست قائمة كاملة بالتداخلات — غياب تداخل هنا لا يعني أنه غير موجود، فراجع المراجع الدوائية.</p>
+        <p class="ix-note" id="ix-source" hidden>مصدر البيانات: <a href="https://ddinter2.scbdd.com" target="_blank" rel="noopener" dir="ltr">DDInter 2.0</a> — Computational Biology &amp; Drug Design Group، جامعة وسط الجنوب (Central South University)، بترخيص CC BY-NC-SA 4.0 (للاستعمال غير التجاري مع ذكر المصدر). تقول DDInter نفسها إن قاعدتها غير مكتملة.</p>
+      </section>
+
+      <!-- ----- تسليم واستلام (pharmacists + admin, handover.js) ----- -->
+      <section class="view view-handover" id="view-handover" data-view="handover" hidden>
+        <button class="back-btn" id="handover-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>تسليم واستلام</h2>
+          <p>استمارة تسليم واستلام الخفر: الألبومين دائمًا، والعلاجات الحرجة الأخرى باختيارك</p>
+        </div>
+        <div class="ix-card">
+          <label class="ix-label" for="hv-date">التاريخ</label>
+          <input id="hv-date" class="ix-select" type="date" />
+          <label class="ix-label" for="hv-giver">الصيدلي المسلم (الصباحي)</label>
+          <input id="hv-giver" class="ix-select" type="text" autocomplete="off" />
+          <label class="ix-label" for="hv-receiver">الصيدلي المستلم (الخفر)</label>
+          <input id="hv-receiver" class="ix-select" type="text" autocomplete="off" />
+        </div>
+        <div class="ix-section">
+          <h3>استحقاق صرف الألبومين</h3>
+          <div id="hv-albumin"></div>
+        </div>
+        <div class="ix-section">
+          <h3>متابعة العلاجات الأخرى <small>(اختر من يُضاف إلى التسليم)</small></h3>
+          <div id="hv-others"></div>
+        </div>
+        <button class="add-med-fab hv-print" id="hv-print" type="button">معاينة وطباعة</button>
+      </section>
+
+      <!-- ----- جدول الخفارات (pharmacists + admin, duty-roster.js) ----- -->
+      <section class="view view-roster" id="view-roster" data-view="roster" hidden>
+        <button class="back-btn" id="roster-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>جدول الخفارات</h2>
+          <p id="rs-sub"></p>
+        </div>
+        <div class="rs-next" id="rs-next-card" hidden>
+          <div class="rs-big" id="rs-next-num"></div>
+          <div class="rs-next-txt">
+            <strong id="rs-next-title"></strong>
+            <span id="rs-next-sub"></span>
+            <input id="rs-myname" class="rs-myname" type="text" autocomplete="off" placeholder="اسمك كما يُكتب في الجدول" list="rs-names" hidden>
+          </div>
+        </div>
+        <div class="rs-nav">
+          <button type="button" class="rs-btn" id="rs-prev">الشهر السابق</button>
+          <strong id="rs-month"></strong>
+          <button type="button" class="rs-btn" id="rs-next">الشهر التالي</button>
+          <button type="button" class="rs-btn rs-print" id="rs-print">🖨 طباعة</button>
+        </div>
+        <datalist id="rs-names"></datalist>
+        <div class="rs-wrap">
+          <table class="rs-table">
+            <thead><tr><th>اليوم</th><th>الخفارة الصباحية<br><small>(أيام العطل)</small></th><th>الخفارة الوسطية</th><th>خفارة المبيت</th></tr></thead>
+            <tbody id="rs-body"></tbody>
+          </table>
+        </div>
+        <p class="ix-note" id="rs-note"></p>
+      </section>
+
+      <!-- ----- Notifications view ----- -->
+      <section class="view view-notifications" id="view-notifications" data-view="notifications" hidden>
+        <button class="back-btn" id="notifications-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>الإشعارات</h2>
+          <p>تنبيهات من الأطباء — إضافة مرضى، تغيير علاجات، خروج، وفيات</p>
+        </div>
+        <div class="notif-actions">
+          <button class="notif-mark-all" id="notif-mark-all-btn" type="button">تعليم الكل كمقروء</button>
+          <!-- Admin-only: clear ALL notifications. Hidden for
+               non-admins via JS in renderNotifications(). -->
+          <button class="notif-mark-all" id="notif-clear-all-btn" type="button" hidden
+                  style="background:#FEF2F2;color:#DC2626;border:1.5px solid #FECACA;">
+            🗑 حذف كل الإشعارات
+          </button>
+        </div>
+        <div class="notif-list" id="notif-list"></div>
+      </section>
+
+      <section class="view view-admin" id="view-admin" data-view="admin" hidden>
+        <button class="back-btn" id="admin-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+
+        <div class="section-title">
+          <h2>إدارة الأدوية</h2>
+          <p>كتالوج الأدوية والجرعات الافتراضية — للمسؤول فقط</p>
+        </div>
+
+        <!-- The admin's gear opens this page (not the settings view), so the
+             critical-medicines monitor is reachable from here too -->
+        <div class="admin-discharged-section" hidden>
+          <h4>مراقبة الأدوية الحرجة</h4>
+          <p class="admin-discharged-hint">المضادات الحيوية والألبومين وI.V.I.G وAranesp/Eprex وAmphoter/Caspo للمرضى الحاليين.</p>
+          <button class="btn-discharged" id="admin-abx-btn" type="button">
+            <span aria-hidden="true">🛡</span> مراقبة الأدوية الحرجة
+          </button>
+        </div>
+
+        <div class="admin-discharged-section">
+          <h4>أدوات المسؤول</h4>
+          <div class="settings-list">
+          <button class="settings-row" id="admin-tv-btn" type="button">
+          <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="9" width="38" height="25" rx="4" class="f-em3"/><path d="M10 22h7l3-6 4 11 3-5h11" fill="none" class="s-au2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 41h12M24 34v7" class="s-em" stroke-width="2.6" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">وضع العرض (شاشة التلفاز)</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="admin-print-sheets-btn" type="button">
+          <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="15" y="5" width="25" height="31" rx="4" class="f-em2"/><rect x="8" y="11" width="25" height="32" rx="4" class="f-white s-em3" stroke-width="2"/><path d="M14 20h13M14 26h13M14 32h8" class="s-au" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">طباعة أوراق المرضى</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="admin-med-request-btn" type="button">
+          <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-40 22 22)"><path d="M14 16h8v13h-8a6.5 6.5 0 0 1 0-13z" class="f-em"/><path d="M22 16h8a6.5 6.5 0 0 1 0 13h-8z" class="f-au2"/><path d="M13 19.5h6" class="s-em2" stroke-width="1.8" stroke-linecap="round"/></g><circle cx="35" cy="35" r="8" class="f-au"/><path d="M35 31v8M31 35h8" class="s-white" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">طلب إضافة دواء جديد</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          </div>
+        </div>
+
+        <div class="admin-discharged-section" id="admin-occasion-section">
+          <h4>مظهر المناسبات</h4>
+          <p class="admin-discharged-hint">رمضان والأعياد ورأس السنة: التلقائي يتبع التقويم (الهجري للأعياد)، ويمكنك تثبيت مناسبة أو إيقافها لكل الأجهزة. للمسؤول وحده.</p>
+          <select id="admin-occasion-select" class="ix-select"></select>
+          <p class="admin-discharged-hint" id="admin-occasion-now"></p>
+        </div>
+
+        <div class="admin-discharged-section" id="admin-greetings-section">
+          <h4>التهاني والترحيب</h4>
+          <p class="admin-discharged-hint">بطاقة تهنئة (عيد ميلاد) أو ترحيب بزميل: تظهر له وحده عند فتح التطبيق في يومها، ويظهر للبقية تنبيه قصير. اختر الاسم من الحسابات الموجودة (إدارة المستخدمين). للمسؤول وحده، ويصل التغيير لكل الأجهزة.</p>
+          <div class="greet-list" id="admin-greet-list"></div>
+          <div class="greet-form">
+            <label class="greet-f">النوع <select id="greet-kind" class="ix-select"><option value="birthday">عيد ميلاد (يتكرر كل سنة)</option><option value="welcome">ترحيب أو مناسبة بتاريخ</option></select></label>
+            <label class="greet-f">لمن (اختر من الحسابات) <select id="greet-name" class="ix-select"><option value="">— اختر الحساب —</option></select></label>
+            <label class="greet-f"><span id="greet-date-label">اليوم</span> <input type="date" id="greet-date" class="spec-input"></label>
+            <label class="greet-f" id="greet-until-wrap" hidden>إلى يوم (اختياري) <input type="date" id="greet-until" class="spec-input"></label>
+            <label class="greet-f">عنوان البطاقة <input type="text" id="greet-title" class="spec-input" autocomplete="off" placeholder="مثال: كل عام وأنتِ بخير"></label>
+            <label class="greet-f">الرسالة (سطر جديد = سطر في البطاقة) <textarea id="greet-text" class="spec-input" rows="4" placeholder="نص الرسالة"></textarea></label>
+            <div class="greet-btns"><button type="button" class="btn-discharged" id="greet-save">إضافة</button><button type="button" class="spec-clear" id="greet-cancel" hidden>إلغاء التعديل</button></div>
+          </div>
+        </div>
+
+        <div class="admin-discharged-section" id="admin-specialists-section">
+          <h4>أسماء الأخصائيين</h4>
+          <p class="admin-discharged-hint">القائمة التي تُقترح عند كتابة اسم الأخصائي ويُوحَّد إملاؤها. عدّل الاسم في خانته فيتغير عند كل مريض يحمل اسمه القديم، أو احذفه، أو أضف اسمًا، أو امسح القائمة كلها. للمسؤول وحده، ويصل التغيير لكل الأجهزة.</p>
+          <div class="spec-list" id="admin-spec-list"></div>
+          <div class="spec-add">
+            <input type="text" id="admin-spec-new" class="spec-input" placeholder="اسم أخصائي جديد" autocomplete="off">
+            <button type="button" class="btn-discharged" id="admin-spec-add">إضافة</button>
+          </div>
+          <button type="button" class="spec-clear" id="admin-spec-clear">مسح كل الأسماء</button>
+        </div>
+
+        <div class="admin-discharged-section" id="admin-ornament-section">
+          <h4>زخرفة الشريط</h4>
+          <p class="admin-discharged-hint">الزخرفة التي تظهر على الشريط العلوي وشاشة الدخول لكل المستخدمين وكل الأجهزة. للمسؤول وحده.</p>
+          <div class="orn-chips" id="ornament-chips" role="group" aria-label="زخرفة الشريط"></div>
+          <div class="orn-preview" id="orn-preview" hidden></div>
+          <div class="orn-pos" id="orn-pos" hidden>
+            <label class="orn-slider"><span>الحجم</span><input type="range" id="orn-size" min="300" max="1600" step="20" value="700"><b id="orn-size-v"></b></label>
+            <label class="orn-slider"><span>الجزء: يمين ← يسار</span><input type="range" id="orn-x" min="0" max="100" step="1" value="50"><b id="orn-x-v"></b></label>
+            <label class="orn-slider"><span>الجزء: أعلى ← أسفل</span><input type="range" id="orn-y" min="0" max="100" step="1" value="50"><b id="orn-y-v"></b></label>
+            <button class="btn-discharged" id="orn-reset" type="button">إعادة الضبط</button>
+          </div>
+        </div>
+
+        <div class="admin-discharged-section" hidden>
+          <h4>جدول الخفارات</h4>
+          <p class="admin-discharged-hint">الصباحية (أيام العطل) والوسطية والمبيت: تكتب فيه أسماء الصيادلة ويراه الصيادلة.</p>
+          <p class="admin-discharged-hint" id="admin-roster-value" style="font-weight:800"></p>
+          <button class="btn-discharged" id="admin-roster-btn" type="button">
+            <span aria-hidden="true">🗓</span> جدول الخفارات
+          </button>
+        </div>
+
+        <div class="admin-discharged-section" hidden>
+          <h4>تسليم واستلام</h4>
+          <p class="admin-discharged-hint">استمارة تسليم واستلام الخفر: الألبومين والعلاجات الحرجة الأخرى.</p>
+          <button class="btn-discharged" id="admin-handover-btn" type="button">
+            <span aria-hidden="true">📋</span> تسليم واستلام
+          </button>
+        </div>
+
+        <div class="admin-discharged-section">
+          <h4>التربيت</h4>
+          <p class="admin-discharged-hint">حدّد الصيدلاني المسؤول عن تربيت كل غرفة، وتابع إنجاز اليوم.</p>
+          <button class="btn-discharged" id="admin-tarbeet-btn" type="button">
+            <span aria-hidden="true">🗂</span> التربيت — توزيع الغرف
+          </button>
+        </div>
+
+        <!-- ===== Discharged / Dead patients (admin access) ===== -->
+        <!-- Same link as in the pharmacist settings view — gives the
+             admin a quick way to look up a returning patient's
+             previous final diagnosis. Visible to admins only here
+             (the gear routes admins to this view, not the settings
+             view). -->
+        <!-- ===== Medication availability (admin only) ===== -->
+        <div class="admin-discharged-section" hidden>
+          <h4>توفر الأدوية في المستشفى</h4>
+          <p class="admin-discharged-hint">حدّد الأدوية المتوفرة وغير المتوفرة حالياً — يظهر ذلك للجميع عند إضافة العلاج.</p>
+          <button class="btn-discharged" id="admin-availability-btn" type="button">
+            <span aria-hidden="true">💊</span> توفر الأدوية
+          </button>
+        </div>
+
+        <div class="admin-discharged-section" hidden>
+          <h4>الإرسال إلى الجارت</h4>
+          <button class="btn-discharged" id="admin-sendlog-btn" type="button">
+            <span aria-hidden="true">📤</span> سجل الإرسال إلى الجارت
+          </button>
+        </div>
+
+        <div class="admin-discharged-section" hidden>
+          <h4>سجلات الخروج والوفيات</h4>
+          <p class="admin-discharged-hint">
+            استعرض المرضى الذين خرجوا أو توفوا للبحث عن تاريخهم السابق.
+            يحفظ النظام التشخيص النهائي لكل مريض عند الخروج ويظهره
+            تلقائياً عند عودة المريض.
+          </p>
+          <button class="btn-discharged" id="admin-discharged-btn" type="button">
+            <span aria-hidden="true">👤</span> عرض المرضى السابقين (خروج / وفيات)
+          </button>
+        </div>
+
+        <div class="admin-layout">
+          <!-- left: catalog list -->
+          <div class="admin-list-col">
+            <div class="admin-list-head">
+              <h3>قائمة الأدوية (<span id="admin-count">0</span>)</h3>
+              <button class="btn-add-small" id="admin-new-btn" type="button">
+                <span aria-hidden="true">＋</span> دواء جديد
+              </button>
+            </div>
+            <div class="admin-med-list" id="admin-med-list">
+              <!-- medication rows rendered here -->
+            </div>
+          </div>
+
+          <!-- right: editor form -->
+          <div class="admin-form-col" id="admin-form-col">
+            <div class="admin-form-card" id="admin-form-card" hidden>
+              <h3 id="admin-form-title">تعديل دواء</h3>
+              <div class="admin-form-grid">
+                <div class="admin-field">
+                  <label for="adm-name-trade">الاسم التجاري (يظهر كاسم رئيسي)</label>
+                  <input type="text" id="adm-name-trade" placeholder="مثال: تايفينول / كونترولوك" autocomplete="off" />
+                </div>
+                <div class="admin-field">
+                  <label for="adm-form">الشكل الدوائي</label>
+                  <select id="adm-form">
+                    <option value="vial">Vial (حقن وريدية/عضلية - مسحوق يُحل)</option>
+                    <option value="ampule">Ampule (أمبول - سائل جاهز)</option>
+                    <option value="prefilled-syringe">Prefilled Syringe (سرنجة جاهزة)</option>
+                    <option value="tablet">Tablet (أقراص/كبسولات)</option>
+                    <option value="syrup-and-oral-drop">OSD (Ointment, Syrup, Drops)</option>
+                    <option value="effervescent">Effervescent (فوار)</option>
+                    <option value="suppository">Suppository (تحاميل)</option>
+                    <option value="solution">Solution (محلول)</option>
+                    <option value="supplies">Supplies (مستلزمات طبية)</option>
+                  </select>
+                </div>
+                <div class="admin-field">
+                  <label for="adm-name-ar">الاسم العربي (احتياطي)</label>
+                  <input type="text" id="adm-name-ar" placeholder="مثال: باراسيتامول" autocomplete="off" />
+                </div>
+                <div class="admin-field">
+                  <label for="adm-name-en">الاسم العلمي (Lat. INN)</label>
+                  <input type="text" id="adm-name-en" placeholder="مثال: Paracetamol" autocomplete="off" dir="ltr" />
+                </div>
+                <div class="admin-field">
+                  <label for="adm-name-chart">اسم الدواء في الجارت الهدف</label>
+                  <input type="text" id="adm-name-chart" placeholder="مثال: Ceftriaxone 1g — الاسم كما يظهر في تطبيق الجارت" autocomplete="off" dir="ltr" />
+                </div>
+                <div class="admin-field">
+                  <label for="adm-dose">الجرعة الافتراضية (اختياري)</label>
+                  <input type="text" id="adm-dose" placeholder="مثال: 1 g أو اتركه فارغًا" autocomplete="off" />
+                </div>
+                <div class="admin-field">
+                  <label for="adm-freq">التكرار الافتراضي</label>
+                  <select id="adm-freq" dir="ltr">
+                    <option value="1×1">‎1×1‎</option>
+                    <option value="1×2">‎1×2‎</option>
+                    <option value="1×3">‎1×3‎</option>
+                    <option value="1×4">‎1×4‎</option>
+                    <option value="1×5">‎1×5‎</option>
+                    <option value="1×6">‎1×6‎</option>
+                    <option value="2×1">‎2×1‎</option>
+                    <option value="2×2">‎2×2‎</option>
+                    <option value="2×3">‎2×3‎</option>
+                    <option value="2×4">‎2×4‎</option>
+                    <option value="2×5">‎2×5‎</option>
+                    <option value="2×6">‎2×6‎</option>
+                    <option value="3×1">‎3×1‎</option>
+                    <option value="3×2">‎3×2‎</option>
+                    <option value="3×3">‎3×3‎</option>
+                    <option value="3×4">‎3×4‎</option>
+                    <option value="3×5">‎3×5‎</option>
+                    <option value="3×6">‎3×6‎</option>
+                    <option value="4×1">‎4×1‎</option>
+                    <option value="4×2">‎4×2‎</option>
+                    <option value="4×3">‎4×3‎</option>
+                    <option value="4×4">‎4×4‎</option>
+                    <option value="4×5">‎4×5‎</option>
+                    <option value="4×6">‎4×6‎</option>
+                    <option value="O/N">‎O/N‎ (عند الحاجة)</option>
+                    <option value="كل يومين">كل يومين</option>
+                    <option value="كل 3 أيام">كل 3 أيام</option>
+                    <option value="كل أسبوع">كل أسبوع</option>
+                    <option value="حسب القياس">حسب القياس</option>
+                    <option value="حسب الحاجة">حسب الحاجة</option>
+                    <option value="حسب البروتوكول">حسب البروتوكول</option>
+                    <option value="custom">قيمة مخصصة…</option>
+                  </select>
+                </div>
+                <div class="admin-field" id="adm-freq-custom-wrap" hidden>
+                  <label for="adm-freq-custom">التكرار المخصص</label>
+                  <input type="text" id="adm-freq-custom" placeholder="مثال: حسب القياس" autocomplete="off" />
+                </div>
+              </div>
+              <div class="admin-form-actions">
+                <button class="btn-secondary" id="admin-cancel" type="button">إلغاء</button>
+                <button class="btn-primary" id="admin-save" type="button">حفظ</button>
+              </div>
+            </div>
+
+            <div class="admin-empty" id="admin-empty">
+              <div class="empty-icon">⚙</div>
+              <p>اختر دواءً من القائمة لتعديله</p>
+              <span>أو اضغط «دواء جديد» لإضافة عنصر</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Medication Requests (admin only) ===== -->
+        <!-- Doctors can request new medications that aren't in the
+             catalog. The admin reviews + approves/rejects them here.
+             Approved meds are automatically added to the catalog. -->
+        <div class="admin-discharged-section" id="admin-med-requests-section">
+          <h4>طلبات إضافة أدوية جديدة</h4>
+          <p class="admin-discharged-hint">
+            يطلب الأطباء إضافة أدوية غير موجودة في الكتالوج. راجع الطلبات
+            ووافق عليها (تُضاف تلقائياً) أو ارفضها.
+          </p>
+          <div class="admin-med-requests-list" id="admin-med-requests-list">
+            <!-- rendered by app.js -->
+          </div>
+          <button class="btn-audit-refresh btn-log-clear" id="med-requests-clear-btn" type="button">مسح الطلبات المُراجَعة</button>
+        </div>
+
+        <div class="admin-discharged-section">
+          <h4>التقرير الشهري</h4>
+          <button class="btn-discharged" id="admin-report-btn" type="button">
+            <span aria-hidden="true">📊</span> التقرير الشهري
+          </button>
+        </div>
+
+        <!-- ===== User Management (admin only) ===== -->
+        <div class="admin-users-section" id="admin-users-section">
+          <h4>إدارة المستخدمين</h4>
+
+          <!-- Create new user form -->
+          <div class="admin-user-form">
+            <div class="admin-user-form-row">
+              <input type="text" id="user-display-name" placeholder="الاسم الظاهر (مثال: الصيدلي أحمد)" autocomplete="off" />
+              <input type="text" id="user-username" placeholder="اسم الدخول" autocomplete="off" autocapitalize="off" spellcheck="false" />
+            </div>
+            <div class="admin-user-form-row">
+              <input type="password" id="user-password" placeholder="كلمة المرور (8 أحرف على الأقل)"autocomplete="new-password" />
+              <select id="user-role">
+                <option value="pharmacist">صيدلي</option>
+                <option value="doctor">طبيب</option>
+                <option value="admin">مسؤول</option>
+                <option value="tv">تلفاز (عرض الردهة فقط)</option>
+              </select>
+              <select id="user-gender">
+                <option value="male">ذكر</option>
+                <option value="female">أنثى</option>
+              </select>
+            </div>
+            <button class="btn-create-user" id="user-create-btn" type="button">＋ إنشاء مستخدم</button>
+          </div>
+
+          <!-- Users list -->
+          <div class="admin-users-list" id="admin-users-list">
+            <!-- rendered by app.js -->
+          </div>
+          <button class="btn-refresh-users" id="user-refresh-btn" type="button">↻ تحديث القائمة</button>
+        </div>
+
+        <!-- ===== Display sayings (admin only, daily-quotes.js) ===== -->
+        <div class="admin-users-section" id="admin-quotes-section">
+          <h4>مقولات شاشة العرض</h4>
+          <p class="admin-audit-hint">اختر مقولة لتبقى على شاشة العرض، أو «تلقائي» لمقولة جديدة كل يوم. ويمكنك إضافة مقولات وحذفها.</p>
+          <div class="dq-list" id="admin-quotes"></div>
+        </div>
+
+        <!-- ===== Audit log (admin only) ===== -->
+        <div class="admin-audit-section" id="admin-audit-section">
+          <h4>سجل النشاط الحساس</h4>
+          <p class="admin-audit-hint">يظهر آخر 200 نشاط من جميع الأجهزة (إضافة/حذف مريض، حذف دواء، مسح بيانات).</p>
+          <button class="btn-audit-refresh" id="audit-refresh-btn" type="button">↻ تحديث السجل</button>
+          <button class="btn-audit-refresh btn-log-clear" id="audit-clear-btn" type="button">مسح السجل</button>
+          <div class="admin-audit-list" id="admin-audit-list">
+            <!-- rendered by app.js -->
+          </div>
+        </div>
+
+        <!-- Supabase cloud sync — pre-configured for this hospital deployment -->
+        <div class="admin-supabase-card">
+          <h4>☁️ المزامنة السحابية (Supabase)</h4>
+          <p class="admin-supabase-sub">
+            التطبيق مربوط تلقائيًا بقاعدة بيانات Supabase المشتركة لـ<strong>الطابق السادس — الباطنية</strong>.
+            كتالوج الأدوية يُزامَن عبر جميع الأجهزة تلقائيًا — لا حاجة لأي إعداد.
+          </p>
+          <div class="admin-supabase-status" id="sb-status">الحالة: جارٍ الاتصال…</div>
+          <!-- Hidden fields + controls kept for advanced override (rarely needed) -->
+          <details class="admin-supabase-advanced">
+            <summary>إعدادات متقدمة (لمسؤول النظام)</summary>
+            <div class="admin-supabase-grid">
+              <div class="admin-field">
+                <label for="sb-url">Project URL</label>
+                <input type="text" id="sb-url" placeholder="https://xxxxx.supabase.co" autocomplete="off" dir="ltr" />
+              </div>
+              <div class="admin-field">
+                <label for="sb-key">Anon Public Key</label>
+                <input type="password" id="sb-key" placeholder="eyJhbGciOi..." autocomplete="off" dir="ltr" />
+              </div>
+            </div>
+            <div class="admin-supabase-actions">
+              <button class="btn-test" id="sb-test" type="button">اختبار الاتصال</button>
+              <button class="btn-save-sb" id="sb-save" type="button">حفظ تجاوز الإعدادات</button>
+              <button class="btn-clear-sb" id="sb-clear" type="button">إلغاء التجاوز</button>
+            </div>
+            <div class="admin-supabase-actions">
+              <button class="btn-push-now" id="sb-push-now" type="button">⬆ رفع الكتالوج للسحابة</button>
+              <button class="btn-pull-now" id="sb-pull-now" type="button">⬇ سحب من السحابة</button>
+            </div>
+            <p class="admin-supabase-hint">
+              الإعداد الافتراضي مدمج في <code>js/supabase-config.js</code> ويُستخدم تلقائيًا.
+              التجاوز هنا يُخزَّن في هذا المتصفح فقط.
+              استخدم زر «رفع» لو فشلت المزامنة التلقائية، أو «سحب» لو احتجت آخر نسخة سحابية.
+            </p>
+          </details>
+        </div>
+
+        <div class="admin-danger-zone">
+          <h4>منطقة الخطر</h4>
+          <button class="btn-wipe" id="admin-restore-default-catalog" type="button">
+            إضافة الأدوية الافتراضية المفقودة ورفعها للسحابة
+          </button>
+          <button class="btn-wipe" id="admin-wipe" type="button">
+            مسح جميع بيانات المرضى
+          </button>
+        </div>
+
+      </section>
+
+      <!-- ===== Settings view (for non-admin pharmacists) =====
+           A simplified settings page shown when a non-admin pharmacist
+           taps the gear ⚙ button. Contains only:
+             - Dark / light mode toggle
+             - TV display mode entry
+             - Logout button
+           Admin-only sections (med catalog, user management, audit log)
+           remain accessible to admins via the same gear button, which
+           opens the full admin view (view-admin) for admins. -->
+      <section class="view view-settings" id="view-settings" data-view="settings" hidden>
+        <button class="back-btn" id="settings-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+
+        <div class="section-title">
+          <h2>الإعدادات</h2>
+          <p><span class="only-not-doctor">إعدادات المستخدم للصيدلي</span><span class="only-doctor">إعدادات المستخدم للطبيب</span></p>
+        </div>
+
+        <div class="settings-list">
+          <button class="settings-row" id="settings-abx-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 4 40 10v12c0 11-7 18-16 22C15 40 8 33 8 22V10z" class="f-em"/><circle cx="24" cy="23" r="6.5" class="f-au2"/><path d="M24 12.5v3.5M24 30v3.5M13.5 23h3.5M31 23h3.5M17 16l2.5 2.5M28.5 27.5 31 30M31 16l-2.5 2.5M19.5 27.5 17 30" class="s-au2" stroke-width="2" stroke-linecap="round"/><circle cx="22" cy="22" r="1.6" class="f-em3"/><circle cx="26" cy="25" r="1.2" class="f-em3"/></svg></span>
+            <span class="settings-row-label">مراقبة الأدوية الحرجة</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-handover-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="6" width="30" height="36" rx="4" class="f-bg s-em3" stroke-width="2"/><path d="M15 16h18M15 23h18M15 30h10" class="s-em2" stroke-width="2.4" stroke-linecap="round"/><path d="m27 36 4 4 8-9" fill="none" class="s-au" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="settings-row-label">التسليم والاستلام</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-roster-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="9" width="36" height="33" rx="5" class="f-bg s-em3" stroke-width="2"/><path d="M6 14a5 5 0 0 1 5-5h26a5 5 0 0 1 5 5v4H6z" class="f-em"/><path d="M15 5v8M33 5v8" class="s-au3" stroke-width="3" stroke-linecap="round"/><path d="M14 26h6M23 26h6M32 26h2M14 34h6M23 34h6" class="s-em2" stroke-width="2.6" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">جدول الخفارات</span>
+            <span class="settings-row-value" id="settings-roster-value"></span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-interactions-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><circle cx="18" cy="24" r="12" class="f-em"/><circle cx="30" cy="24" r="12" class="f-au2" fill-opacity=".85"/><path d="M24 17v8M24 29v2" class="s-em3" stroke-width="2.6" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">التداخلات الدوائية</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-availability-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-40 22 22)"><path d="M14 16h8v13h-8a6.5 6.5 0 0 1 0-13z" class="f-em"/><path d="M22 16h8a6.5 6.5 0 0 1 0 13h-8z" class="f-au2"/><path d="M13 19.5h6" class="s-em2" stroke-width="1.8" stroke-linecap="round"/></g><circle cx="35" cy="35" r="8" class="f-white s-em3" stroke-width="2"/><path d="m31.5 35 2.5 2.6 4.6-5" fill="none" class="s-em3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="settings-row-label">توفر الأدوية</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-discharged-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><circle cx="22" cy="16" r="8" class="f-em"/><path d="M7 41a15 12 0 0 1 30 0z" class="f-em2"/><circle cx="36" cy="34" r="9" class="f-white s-au3" stroke-width="2"/><path d="M36 29.5V34l3 2" fill="none" class="s-au3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="settings-row-label">المرضى السابقون</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <!-- Chart send log (pharmacist + admin; chart-send-log.js) -->
+          <button class="settings-row" id="settings-sendlog-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><circle cx="25" cy="25" r="17" class="f-bg s-em3" stroke-width="2.4"/><path d="M25 15v11l7 4" fill="none" class="s-em" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="m4 14 4 8 7-5" fill="none" class="s-au" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="settings-row-label">سجل الإرسال إلى الجارت</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <!-- Request new medication (doctors only). Opens a modal
+               where the doctor enters the med's trade name, generic
+               name, dose, form, frequency, and notes. The request is
+               stored locally and sent to the admin for approval. -->
+          <button class="settings-row" id="settings-med-request-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><g transform="rotate(-40 22 22)"><path d="M14 16h8v13h-8a6.5 6.5 0 0 1 0-13z" class="f-em"/><path d="M22 16h8a6.5 6.5 0 0 1 0 13h-8z" class="f-au2"/><path d="M13 19.5h6" class="s-em2" stroke-width="1.8" stroke-linecap="round"/></g><circle cx="35" cy="35" r="8" class="f-au"/><path d="M35 31v8M31 35h8" class="s-white" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">طلب إضافة دواء جديد</span>
+            <span class="settings-row-value" id="settings-med-request-value"></span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <!-- Catalogue editing for a pharmacist the admin allowed (features.sql §19) -->
+          <button class="settings-row" id="settings-catalog-btn" type="button" hidden>
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="6" width="28" height="36" rx="4" class="f-bg s-em3" stroke-width="2"/><path d="M14 16h16M14 22h16M14 28h10" class="s-em2" stroke-width="2.4" stroke-linecap="round"/><path d="m30 38 10-10 4 4-10 10h-4z" class="f-au"/></svg></span>
+            <span class="settings-row-label">إدارة كتالوج الأدوية</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <!-- Display sayings for a pharmacist the admin allowed (features.sql §22) -->
+          <button class="settings-row" id="settings-quotes-btn" type="button" hidden>
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M7 19h7l10-8v26l-10-8H7a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z" class="f-em"/><path d="M30 18a8 8 0 0 1 0 12" fill="none" class="s-au" stroke-width="2.6" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">مقولات شاشة العرض</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-password-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="9" y="21" width="30" height="21" rx="5" class="f-em"/><path d="M16 21v-6a8 8 0 0 1 16 0v6" fill="none" class="s-em3" stroke-width="3.2" stroke-linecap="round"/><circle cx="24" cy="30" r="3.2" class="f-au2"/><path d="M24 33v4" class="s-au2" stroke-width="3" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">تغيير كلمة المرور</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-darkmode-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M27 7a16 16 0 1 0 15 22A13 13 0 0 1 27 7z" class="f-au"/><path d="M27 7a16 16 0 0 0-9 3 13 13 0 0 1 9-3z" class="f-au2"/><path d="M36 9v6M33 12h6" class="s-em" stroke-width="2.2" stroke-linecap="round"/><circle cx="40" cy="21" r="1.8" class="f-em"/></svg></span>
+            <span class="settings-row-label">الوضع الليلي</span>
+            <span class="settings-row-value" id="settings-darkmode-value">—</span>
+          </button>
+          <div class="palette-row">
+            <span class="palette-row-label">ألوان التطبيق</span>
+            <div class="palette-swatches" id="palette-swatches" role="group" aria-label="ألوان التطبيق"></div>
+          </div>
+          <button class="settings-row settings-row-danger" id="settings-logout-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M10 6h16a3 3 0 0 1 3 3v30a3 3 0 0 1-3 3H10z" class="f-aubg s-au3" stroke-width="2"/><circle cx="23" cy="25" r="1.8" class="f-au3"/><path d="M27 24h15m-5-6 6 6-6 6" fill="none" class="s-red" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="settings-row-label">تسجيل الخروج</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-report-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="9" width="36" height="33" rx="5" class="f-bg s-em3" stroke-width="2"/><path d="M6 14a5 5 0 0 1 5-5h26a5 5 0 0 1 5 5v4H6z" class="f-em"/><path d="M15 5v8M33 5v8" class="s-au3" stroke-width="3" stroke-linecap="round"/><rect x="13" y="29" width="5" height="8" rx="1" class="f-em2"/><rect x="21.5" y="24" width="5" height="13" rx="1" class="f-em"/><rect x="30" y="27" width="5" height="10" rx="1" class="f-au"/></svg></span>
+            <span class="settings-row-label">التقرير الشهري</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-bridge-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 23 41 8 31 40l-8-13z" class="f-au2 s-au3" stroke-width="1.8" stroke-linejoin="round"/><path d="M23 27 41 8" class="s-au3" stroke-width="1.8" stroke-linecap="round"/><path d="M23 27v10l5-6" class="f-au"/><path d="M6 35h7M4 41h11" class="s-em" stroke-width="2.4" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">إرسال بيانات المرضى إلى الجارت</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+          <button class="settings-row" id="settings-tv-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="9" width="38" height="25" rx="4" class="f-em3"/><path d="M10 22h7l3-6 4 11 3-5h11" fill="none" class="s-au2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 41h12M24 34v7" class="s-em" stroke-width="2.6" stroke-linecap="round"/></svg></span>
+            <span class="settings-row-label">وضع العرض (شاشة التلفاز)</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
+</div>
+      </section>
+
+    </main>
+
+    <!-- ===== Bottom Navigation ===== -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-nav="home" type="button">
+        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span>
+        <span class="nav-label">الغرف</span>
+      </button>
+      <button class="nav-item" data-nav="patients" type="button">
+        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 3v2h6V3"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg></span>
+        <span class="nav-label">المرضى</span>
+      </button>
+      <!-- تربيتي: pharmacists + admin (tarbeet.js); shown by applyRoleVisibility -->
+      <button class="nav-item" data-nav="tarbeet" type="button" style="display:none">
+        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 9 1.5 1.5L12 8"/><line x1="14" y1="9.5" x2="16.5" y2="9.5"/><path d="m8 15 1.5 1.5L12 14"/><line x1="14" y1="15.5" x2="16.5" y2="15.5"/></svg></span>
+        <span class="nav-label">تربيتي</span>
+      </button>
+      <!-- الحبوب: pharmacists + admin (pills-page.js); shown by applyRoleVisibility -->
+      <button class="nav-item" data-nav="pills" type="button" style="display:none">
+        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l8-8a4.95 4.95 0 1 1 7 7l-8 8a4.95 4.95 0 1 1-7-7z"/><path d="M8.5 8.5l7 7"/></svg></span>
+        <span class="nav-label">الحبوب</span>
+      </button>
+      <!-- Seniors tab: doctors + admins only. Hidden for pharmacists
+           via applySeniorsNavVisibility() in app.js. -->
+      <button class="nav-item" data-nav="seniors" type="button" style="display:none">
+        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></svg></span>
+        <span class="nav-label">الأخصائيون</span>
+      </button>
+    </nav>
+
+    <!-- ===== Medication bottom-sheet ===== -->
+    <div class="sheet-overlay" id="sheet-overlay" hidden></div>
+    <aside class="med-sheet" id="med-sheet" aria-hidden="true" role="dialog" aria-label="إضافة علاج">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-header">
+        <h3>إضافة علاج</h3>
+        <button class="sheet-close" id="sheet-close" type="button" aria-label="إغلاق">✕</button>
+      </div>
+
+      <div class="sheet-search">
+        <input
+          type="search"
+          id="med-search"
+          placeholder="بحث عن دواء..."
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        <div class="med-avail-legend" aria-hidden="true">
+          <span><span class="med-avail-dot is-on"></span>متوفر</span>
+          <span><span class="med-avail-dot is-off"></span>غير متوفر</span>
+        </div>
+      </div>
+
+      <!-- Form tabs — rendered dynamically by ui.js renderSheetTabs() -->
+      <div class="sheet-tabs" id="sheet-tabs" role="tablist">
+        <!-- Tabs are injected by JS based on FORM_ORDER + counts -->
+      </div>
+
+      <div class="med-options" id="med-options">
+        <!-- medication checkboxes rendered here -->
+      </div>
+
+      <div class="sheet-selected" id="sheet-selected" hidden>
+        <div class="sheet-selected-head">
+          <h4>المحدد</h4>
+          <span id="selected-count">0</span>
+        </div>
+        <div class="selected-list" id="selected-list">
+          <!-- editable selected medications -->
+        </div>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="btn-secondary" id="sheet-cancel" type="button">إلغاء</button>
+        <button class="btn-primary" id="sheet-add" type="button" disabled>
+          إضافة
+        </button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- ===== Print-only chart (hidden on screen, visible when printing) ===== -->
+  <div id="chart-print-root" class="chart-print-root" aria-hidden="true"></div>
+
+  <!-- ===== Supply Order Modal (shown before printing the chart) ===== -->
+  <div class="supply-order-overlay" id="supply-order-overlay" hidden></div>
+  <div class="supply-order-modal" id="supply-order-modal" hidden role="dialog" aria-label="قائمة طلب المستلزمات">
+    <div class="supply-order-card">
+      <div class="supply-order-head">
+        <h3>قائمة طلب المستلزمات</h3>
+        <button type="button" class="supply-order-close" id="supply-order-close">✕</button>
+      </div>
+      <p class="supply-order-hint">أدخل الكمية الإجمالية المطلوبة لكل مستلزم. سيتم توزيعها عشوائيًا على المرضى في التشارت.</p>
+      <div class="supply-order-list" id="supply-order-list"></div>
+      <button type="button" class="supply-order-submit" id="supply-order-submit">توزيع واطبع التشارت</button>
+    </div>
+  </div>
+
+  <!-- ===== Med Summary Modal (shown after chart generation) ===== -->
+  <!-- Lists every prescribed medication + supplies with form category
+       and total daily count. Appears automatically after the chart is
+       generated so the pharmacist can see the totals at a glance. -->
+  <div class="med-summary-overlay" id="med-summary-overlay" hidden></div>
+  <div class="med-summary-modal" id="med-summary-modal" hidden role="dialog" aria-label="إحصاء الأدوية">
+    <div class="med-summary-card">
+      <div class="med-summary-head">
+        <h3>إحصاء الأدوية والمستلزمات</h3>
+        <button type="button" class="med-summary-close" id="med-summary-close">✕</button>
+      </div>
+      <div class="med-summary-body" id="med-summary-body">
+        <!-- The list is built dynamically by showMedSummaryList() in
+             app.js, grouped by form category (Vial / Tablet / Ampule
+             / Supplies / …). -->
+      </div>
+      <div class="med-summary-footer" id="med-summary-footer"></div>
+    </div>
+  </div>
+
+  <!-- ===== Discharge Final Diagnosis Modal ===== -->
+  <!-- Shown when the user clicks the discharge button. The user MUST
+       enter a final diagnosis before the patient can be discharged.
+       The diagnosis is stored in the discharged record so it can be
+       retrieved if the patient is readmitted later. -->
+  <div class="discharge-overlay" id="discharge-overlay" hidden></div>
+  <div class="discharge-modal" id="discharge-modal" hidden role="dialog" aria-label="تسجيل خروج المريض">
+    <div class="discharge-card">
+      <div class="discharge-head">
+        <h3>تسجيل خروج المريض</h3>
+        <button type="button" class="discharge-close" id="discharge-close" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="discharge-body">
+        <p class="discharge-patient-name" id="discharge-patient-name"></p>
+        <p class="discharge-hint">
+          أدخل التشخيص النهائي للمريض. هذا الحقل إجباري وسيُحفظ في سجل الخروج
+          لمرجعية المستقبل عند عودة المريض للمستشفى.
+        </p>
+        <textarea
+          id="discharge-final-diagnosis"
+          class="discharge-diagnosis-input"
+          placeholder="التشخيص النهائي (مثلاً: pneumonia resolved, sepsis resolved, ...)"
+          rows="3"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        ></textarea>
+        <!-- If the patient had a diagnosis recorded during admission,
+             show it as a reference so the user can compare. -->
+        <div class="discharge-previous-diagnosis" id="discharge-previous-diagnosis" hidden>
+          <span class="discharge-previous-label">التشخيص عند الدخول:</span>
+          <span class="discharge-previous-value" id="discharge-previous-value"></span>
+        </div>
+        <p class="discharge-error" id="discharge-error" hidden>الرجاء إدخال التشخيص النهائي قبل الخروج</p>
+      </div>
+      <div class="discharge-footer">
+        <button type="button" class="discharge-cancel" id="discharge-cancel">إلغاء</button>
+        <button type="button" class="discharge-confirm" id="discharge-confirm">تأكيد الخروج</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Med Request Modal (doctor → admin) ===== -->
+  <!-- Doctor fills in the details of a new medication that's not yet
+       in the catalog. The request is stored locally + a notification
+       is sent to the admin. The admin reviews it in their admin view
+       and can approve (adds the med to the catalog) or reject it. -->
+  <div class="discharge-overlay" id="med-request-overlay" hidden></div>
+  <div class="discharge-modal" id="med-request-modal" hidden role="dialog" aria-label="طلب دواء جديد">
+    <div class="discharge-card">
+      <div class="discharge-head">
+        <h3>طلب إضافة دواء جديد</h3>
+        <button type="button" class="discharge-close" id="med-request-close" aria-label="إغلاق">✕</button>
+      </div>
+      <div class="discharge-body">
+        <p class="discharge-hint">
+          اسم الدواء وشكله الدوائي وجرعته — يُرسل الطلب إلى المسؤول للموافقة.
+        </p>
+        <input type="text" id="med-req-name-trade" class="discharge-diagnosis-input"
+               placeholder="اسم الدواء (مثلاً: Vancomycin)" autocomplete="off" dir="auto" />
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <input type="text" id="med-req-dose" class="discharge-diagnosis-input"
+                 placeholder="الجرعة (مثلاً: 500 mg)" autocomplete="off"
+                 style="flex:1;" />
+          <select id="med-req-form" class="discharge-diagnosis-input" style="flex:1;min-width:120px;">
+            <option value="">الشكل الدوائي</option>
+            <option value="vial">Vial</option>
+            <option value="ampule">Ampule</option>
+            <option value="prefilled-syringe">Prefilled Syringe</option>
+            <option value="tablet">Tablet</option>
+            <option value="syrup-and-oral-drop">Syrup / Drops</option>
+            <option value="effervescent">Effervescent (فوار)</option>
+            <option value="suppository">Suppository</option>
+            <option value="solution">Solution</option>
+          </select>
+        </div>
+        <p class="discharge-error" id="med-req-error" hidden>أدخل اسم الدواء والشكل الدوائي والجرعة</p>
+      </div>
+      <div class="discharge-footer">
+        <button type="button" class="discharge-cancel" id="med-request-cancel">إلغاء</button>
+        <button type="button" class="discharge-confirm" id="med-request-submit">إرسال الطلب</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Previous Final Diagnosis Hint (in patient view) ===== -->
+  <!-- When a new patient is added with a name that matches a previously
+       discharged patient, this small inline banner shows their last
+       recorded final diagnosis so the doctor can see it at a glance. -->
+  <!-- This banner is moved into the patient-header DOM dynamically by
+       app.js when a matching discharged record is found. Kept here as
+       a hidden template that app.js clones + fills in. -->
+  <template id="previous-admission-template">
+    <div class="previous-admission-banner">
+      <span class="previous-admission-label">📌 آخر تشخيص نهائي مسجل عند خروج سابق:</span>
+      <span class="previous-admission-value"></span>
+      <span class="previous-admission-date"></span>
+    </div>
+  </template>
+
+  <!-- ===== Display Mode (TV / large screen, view-only) ===== -->
+  <div class="display-mode" id="display-mode" hidden>
+    <div class="display-mode-head">
+      <div class="occasion-deco" id="display-deco" aria-hidden="true" hidden></div>
+      <div class="display-mode-title">
+        <img src="img/login-icon.png?v=20261008b" alt="" class="display-mode-icon" />
+        <div>
+          <h2>الطابق السادس</h2>
+          <p id="display-mode-time">—</p>
+          <span class="occasion-chip occasion-chip--tv" id="display-occasion" hidden></span>
+        </div>
+      </div>
+      <!-- a short saying a day (daily-quotes.js) -->
+      <p class="display-mode-quote" id="display-mode-quote"></p>
+      <button type="button" class="display-mode-exit" id="display-mode-exit">✕ خروج</button>
+    </div>
+    <div class="display-mode-rooms" id="display-mode-rooms"></div>
+  </div>
+
+  <!-- ===== Scripts (modular) ===== -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- App scripts. Freshness comes from the service worker (network-first,
+       revalidating); the cache is the offline fallback. Bump ?v= on deploy. -->
+  <script src="js/medications.js?v=304"></script>
+  <script src="js/ward.js?v=304"></script>
+  <script src="js/patient-merge.js?v=304"></script>
+  <script src="js/specialists.js?v=304"></script>
+  <script src="js/specialists-admin.js?v=304"></script>
+  <script src="js/storage.js?v=304"></script>
+  <script src="js/supabase-config.js?v=304"></script>
+  <script src="js/supabase-client.js?v=304"></script>
+  <script src="js/supabase-sync.js?v=304"></script>
+  <script src="js/auth.js?v=304"></script>
+  <script src="js/clinical.js?v=304"></script>
+  <script src="js/ddinter.js?v=304"></script>
+  <script src="js/ddinter-data.js?v=304"></script>
+  <script src="js/boarders.js?v=304"></script>
+  <script src="js/ui.js?v=304"></script>
+  <script src="js/chart-image.js?v=304"></script>
+  <script src="js/chart-bridge.js?v=304"></script>
+  <script src="js/pills-form.js?v=304"></script>
+  <script src="js/print-sheets.js?v=304"></script>
+  <script src="js/patient-search.js?v=304"></script>
+  <script src="js/patient-history.js?v=304"></script>
+  <script src="js/monthly-report.js?v=304"></script>
+  <script src="js/bed-drag.js?v=304"></script>
+  <script src="js/archive-sync.js?v=304"></script>
+  <script src="js/med-availability.js?v=304"></script>
+  <script src="js/chart-merge.js?v=304"></script>
+  <script src="js/chart-sync.js?v=304"></script>
+  <script src="js/palettes.js?v=304"></script>
+  <script src="js/ornaments.js?v=304"></script>
+  <script src="js/neon.js?v=304"></script>
+  <script src="js/greetings.js?v=304"></script>
+  <script src="js/presence.js?v=304"></script>
+  <script src="js/occasions.js?v=304"></script>
+  <script src="js/handover.js?v=304"></script>
+  <script src="js/duty-roster.js?v=304"></script>
+  <script src="js/chart-names.js?v=304"></script>
+  <script src="js/chart-send-log.js?v=304"></script>
+  <script src="js/tarbeet.js?v=304"></script>
+  <script src="js/pills-page.js?v=304"></script>
+  <script src="js/tv-alerts.js?v=304"></script>
+  <script src="js/daily-quotes.js?v=304"></script>
+  <script src="js/app.js?v=304"></script>
+
+  <!-- ===== PWA: register service worker for offline support ===== -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker
+          .register('sw.js?v=304', { scope: './' })
+          .then(function (reg) { console.log('[SW] registered', reg.scope); })
+          .catch(function (err) { console.warn('[SW] registration failed', err); });
+      });
+    }
+  </script>
+</body>
+</html>

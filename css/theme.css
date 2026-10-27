@@ -1,0 +1,2437 @@
+/* ============================================================
+   theme.css — "Emerald & Gold" visual theme
+   ------------------------------------------------------------
+   Loaded AFTER styles.css. Pure presentation layer: it re-tunes
+   the design tokens and restyles the main surfaces (login, header,
+   rooms, beds, nav, sheets). Remove the <link> to revert.
+
+   Palette: deep emerald from the unit logo, gold from the logo's
+   wings, warm ivory paper. Ornament: a faint 8-point star lattice
+   (Islamic geometric) on the dark surfaces only.
+   ============================================================ */
+
+:root {
+  --bg:            #F5F2EA;
+  --surface:       #FFFFFF;
+  --primary:       #17433D;
+  --primary-dark:  #0F302B;
+  --primary-soft:  #E5EEEA;
+  --success:       #2E8B76;
+  --success-soft:  #E6F2EE;
+  --warning:       #D2772A;
+  --warning-soft:  #FBF0E4;
+  --empty:         #A9A396;
+  --empty-soft:    #F3EFE6;
+  --danger:        #C2412D;
+  --danger-soft:   #FBEDEA;
+
+  --gold:          #C09A4E;
+  --gold-bright:   #E2C27E;
+  --gold-soft:     #F5EDDB;
+
+  --text:          #14211F;
+  --text-muted:    #5B6966;
+  --text-faint:    #98A29F;
+  --border:        #E6E0D3;
+  --border-strong: #D3CBBB;
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  --shadow-sm: 0 1px 2px rgba(23, 67, 61, 0.06);
+  --shadow-md: 0 8px 24px -12px rgba(23, 67, 61, 0.28);
+  --shadow-lg: 0 18px 40px -18px rgba(23, 67, 61, 0.40);
+  --shadow-xl: 0 -10px 34px rgba(23, 67, 61, 0.16);
+
+  --nav-h: 66px;
+
+  --font: "Noto Kufi Arabic", "Tajawal", system-ui, sans-serif;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* 8-point star lattice, drawn in white; used at low opacity */
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1'%3E%3Cpath d='M28 6l6.5 15.5L50 28l-15.5 6.5L28 50l-6.5-15.5L6 28l15.5-6.5z'/%3E%3Cpath d='M12.4 12.4h31.2v31.2H12.4z'/%3E%3Ccircle cx='28' cy='28' r='5'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+html[data-theme="dark"] {
+  --bg:            #0A1412;
+  --surface:       #111F1C;
+  --primary:       #63C7AC;
+  --primary-dark:  #43A68B;
+  --primary-soft:  #15302A;
+  --success:       #4FB89C;
+  --success-soft:  #12302A;
+  --warning:       #E8A15A;
+  --warning-soft:  #33230F;
+  --empty:         #4E5D59;
+  --empty-soft:    #14221F;
+  --danger:        #F08872;
+  --danger-soft:   #3A1712;
+
+  --gold:          #D8B46A;
+  --gold-bright:   #EBCD8C;
+  --gold-soft:     #2E2615;
+
+  --text:          #E9F0ED;
+  --text-muted:    #9DAEA9;
+  --text-faint:    #64756F;
+  --border:        #223631;
+  --border-strong: #2F4842;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -12px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 18px 40px -18px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 -10px 34px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Base ---------- */
+body {
+  background: var(--bg);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+/* Kufi is taller and wider than the old fonts: a touch more line
+   height keeps Arabic marks clear, and long names on beds stay in
+   two lines. */
+body { line-height: 1.6; }
+.display-mode { font-family: var(--font); }
+.bed-btn .bed-name { font-size: 13px; line-height: 1.35; max-height: 2.7em; }
+.bed-btn .bed-doctor { font-size: 10px; }
+button, input, select, textarea { font-family: inherit; }
+::selection { background: var(--gold-soft); color: var(--primary); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ============================================================
+   Login
+   ============================================================ */
+.login-screen,
+html[data-theme="dark"] .login-screen {
+  background:
+    radial-gradient(120% 70% at 85% -10%, rgba(226, 194, 126, 0.28) 0%, transparent 55%),
+    radial-gradient(90% 60% at 0% 110%, rgba(99, 199, 172, 0.22) 0%, transparent 60%),
+    linear-gradient(165deg, #1D5048 0%, #12352F 45%, #0A211D 100%);
+}
+.login-screen::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: var(--pattern);
+  background-size: 56px 56px;
+  opacity: 0.06;
+  pointer-events: none;
+}
+.login-card,
+html[data-theme="dark"] .login-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.96);
+  color: #14211F;
+  border-radius: var(--r-xl);
+  padding: 30px 24px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 30px 70px -20px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(192, 154, 78, 0.18);
+  overflow: hidden;
+}
+/* gold hairline across the top of the card */
+.login-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 18%; right: 18%;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), var(--gold), var(--gold-bright), transparent);
+}
+.login-brand-icon {
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 4px #fff,
+    0 0 0 5px rgba(192, 154, 78, 0.55),
+    0 14px 30px -10px rgba(23, 67, 61, 0.55);
+}
+.login-brand h1 {
+  margin-top: 6px;
+  font-size: 21px;
+  font-weight: 700;
+  color: #17433D;
+  letter-spacing: 0;
+}
+.login-brand p {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9A7A3A;
+  font-weight: 600;
+}
+.login-brand p::before,
+.login-brand p::after {
+  content: "";
+  width: 18px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.6;
+}
+.login-field label { color: #5B6966; font-weight: 600; }
+.login-field input,
+.login-field select {
+  width: 100%;
+  background: #FBF9F4;
+  border: 1.5px solid #E6E0D3;
+  border-radius: var(--r-md);
+  padding: 13px 14px;
+  font-size: 16px;
+  color: #14211F;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+.login-field input:focus,
+.login-field select:focus {
+  background: #fff;
+  border-color: #17433D;
+  box-shadow: 0 0 0 4px rgba(23, 67, 61, 0.12);
+}
+.login-submit {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1F5A51 0%, #17433D 55%, #0F302B 100%);
+  color: #fff;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  padding: 15px;
+  box-shadow: 0 12px 24px -12px rgba(23, 67, 61, 0.8);
+}
+.login-submit::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgba(226, 194, 126, 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 700ms var(--ease-out);
+}
+.login-submit:hover::after { transform: translateX(120%); }
+.login-submit:disabled { opacity: 0.7; }
+.login-quick-btn.install:not([hidden]) {
+  border-color: rgba(192, 154, 78, 0.5);
+  background: #FBF7EE;
+}
+.login-quick-btn.install .login-quick-icon { color: #9A7A3A; border-color: #C09A4E; }
+
+/* ============================================================
+   Header
+   ============================================================ */
+.app-header,
+html[data-theme="dark"] .app-header {
+  position: sticky;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(80% 140% at 100% 0%, rgba(226, 194, 126, 0.22) 0%, transparent 55%),
+    linear-gradient(160deg, #1D5048 0%, #17433D 50%, #10322D 100%);
+  border-bottom: 0;
+  border-radius: 0 0 26px 26px;
+  box-shadow: 0 14px 30px -18px rgba(15, 48, 43, 0.75);
+  padding-bottom: 16px;
+}
+html[data-theme="dark"] .app-header {
+  background:
+    radial-gradient(80% 140% at 100% 0%, rgba(216, 180, 106, 0.16) 0%, transparent 55%),
+    linear-gradient(160deg, #143832 0%, #0F2925 55%, #0B1D1A 100%);
+}
+.app-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--pattern);
+  background-size: 56px 56px;
+  opacity: 0.07;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 95%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 95%);
+}
+/* gold hairline along the bottom curve */
+.app-header::after {
+  content: "";
+  position: absolute;
+  left: 24px; right: 24px; bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(226, 194, 126, 0.75), transparent);
+}
+.brand { margin-bottom: 12px; }
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  box-shadow: 0 0 0 2px rgba(226, 194, 126, 0.6), 0 6px 14px -6px rgba(0, 0, 0, 0.5);
+}
+.brand-text h1 {
+  color: #FFFFFF;
+  font-size: 17px;
+  font-weight: 700;
+}
+.brand-text p {
+  color: var(--gold-bright);
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* Header action buttons — frosted glass tiles, colored icon = identity.
+   !important beats the inline background colors in index.html. */
+.brand-actions > button {
+  border-radius: 13px !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #FFFFFF !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 180ms ease, transform 140ms var(--ease-out), border-color 180ms ease;
+}
+.brand-actions > button:hover {
+  background: rgba(255, 255, 255, 0.17) !important;
+  border-color: rgba(226, 194, 126, 0.55) !important;
+}
+.brand-actions > button:active { transform: scale(0.92); }
+#print-chart-btn        { color: #F1D28F !important; }
+#print-all-sheets-btn   { color: #A9D2FF !important; }
+#notifications-btn      { color: #FFC98A !important; }
+#distribute-send-btn    { color: #86E3C6 !important; }
+#print-pills-form-btn   { color: #D2EC9A !important; }
+#logout-btn             { color: #FFA899 !important; }
+#darkmode-toggle        { color: #F1D28F !important; }
+.notif-badge {
+  background: #E5533D !important;
+  box-shadow: 0 0 0 2px #17433D;
+}
+
+/* Phones: the actions become a full-width toolbar strip under the
+   title, buttons share the width evenly. */
+@media (max-width: 480px) {
+  .brand { gap: 10px; }
+  .brand-icon { width: 38px; height: 38px; border-radius: 12px; }
+  .brand-text h1 { font-size: 15.5px; }
+  .brand-text p { font-size: 11px; }
+  .brand-actions {
+    width: 100%;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding: 5px;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .brand-actions > button {
+    width: auto !important;
+    height: 36px !important;
+    border-radius: 11px !important;
+  }
+  .brand-actions > button svg { width: 18px; height: 18px; }
+}
+
+/* ============================================================
+   Main / section titles
+   ============================================================ */
+.app-main {
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom) + 34px);
+}
+.section-title { margin: 10px 0 16px; }
+.section-title h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.section-title h2::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
+}
+.section-title p { color: var(--text-muted); margin-inline-start: 18px; }
+
+/* ============================================================
+   Rooms
+   ============================================================ */
+.rooms-grid { gap: 16px; }
+.room-card,
+html[data-theme="dark"] .room-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px 14px 14px;
+  box-shadow: var(--shadow-sm), var(--shadow-md);
+  animation: roomIn 420ms var(--ease-out) both;
+}
+.room-card:nth-child(2) { animation-delay: 40ms; }
+.room-card:nth-child(3) { animation-delay: 80ms; }
+.room-card:nth-child(4) { animation-delay: 120ms; }
+.room-card:nth-child(n+5) { animation-delay: 160ms; }
+#rooms-grid.rooms-redraw .room-card { animation: none; }
+@keyframes roomIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+.room-head { margin-bottom: 12px; }
+.room-title .room-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.room-title .room-beds-count { color: var(--text-faint); font-weight: 500; }
+.room-occ {
+  background: var(--gold-soft);
+  color: #8A6A2C;
+  font-weight: 700;
+  border: 1px solid rgba(192, 154, 78, 0.28);
+}
+html[data-theme="dark"] .room-occ { color: var(--gold-bright); }
+.beds-row, .room-beds.grid-2x3, .room-beds.grid-2x2 { gap: 8px; }
+
+/* ---- Beds ---- */
+.bed-btn,
+html[data-theme="dark"] .bed-btn {
+  border-radius: 16px;
+  border-width: 1.5px;
+  min-height: 84px;
+  transition: transform 140ms var(--ease-out), box-shadow 180ms ease, background 180ms ease;
+}
+.bed-btn:hover { box-shadow: var(--shadow-md); }
+.bed-btn:active { transform: scale(0.95); }
+.bed-btn .bed-name { font-weight: 700; font-size: 13.5px; }
+.bed-btn .bed-doctor { color: var(--text-muted); font-weight: 500; }
+
+/* empty — quiet, dashed, invites "add" */
+.bed-btn.state-empty,
+html[data-theme="dark"] .bed-btn.state-empty {
+  background: transparent;
+  border: 1.5px dashed var(--border-strong);
+  color: var(--text-faint);
+}
+.bed-btn.state-empty .bed-num { color: var(--text-muted); font-weight: 600; }
+.bed-btn.state-empty .bed-icon::before { content: "+"; }
+.bed-btn.state-empty .bed-icon {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--empty-soft);
+  color: var(--text-faint);
+  font-size: 17px;
+  font-weight: 500;
+}
+.bed-btn.state-empty:hover { border-color: var(--gold); background: var(--gold-soft); }
+
+/* occupied, no meds yet — amber accent bar on the start edge */
+.bed-btn.state-occupied {
+  background: var(--warning-soft);
+  border: 1.5px solid rgba(210, 119, 42, 0.35);
+  box-shadow: inset -4px 0 0 var(--warning);
+  color: #8A4512;
+}
+.bed-btn.state-occupied .bed-icon::before { content: ""; }
+.bed-btn.state-occupied .bed-icon {
+  width: 10px; height: 10px;
+  margin: 6px 0 4px;
+  border-radius: 50%;
+  background: var(--warning);
+  animation: bedPulse 2.2s ease-out infinite;
+}
+@keyframes bedPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(210, 119, 42, 0.45); }
+  70%  { box-shadow: 0 0 0 8px rgba(210, 119, 42, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(210, 119, 42, 0); }
+}
+
+/* has meds — emerald card, gold ℞ medallion */
+.bed-btn.state-meds {
+  background: linear-gradient(160deg, #F2F8F6 0%, #E4F1EC 100%);
+  border: 1.5px solid rgba(46, 139, 118, 0.35);
+  box-shadow: inset -4px 0 0 var(--success);
+  color: var(--primary);
+}
+html[data-theme="dark"] .bed-btn.state-meds {
+  background: linear-gradient(160deg, #143029 0%, #102620 100%);
+}
+html[data-theme="dark"] .bed-btn.state-occupied { color: var(--warning); }
+.bed-btn.state-meds .bed-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  color: #8A6A2C;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(192, 154, 78, 0.45);
+}
+html[data-theme="dark"] .bed-btn.state-meds .bed-icon { color: var(--gold-bright); }
+@media (prefers-reduced-motion: reduce) {
+  .room-card, .bed-btn.state-occupied .bed-icon { animation: none; }
+}
+
+/* ============================================================
+   Patient view
+   ============================================================ */
+.view-patient .back-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.patient-header,
+html[data-theme="dark"] .patient-header {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  padding: 18px 16px 16px;
+}
+.patient-header::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--gold), var(--primary));
+}
+.loc-chip {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+.loc-chip + .loc-chip { background: var(--gold-soft); color: #8A6A2C; }
+html[data-theme="dark"] .loc-chip + .loc-chip { color: var(--gold-bright); }
+.patient-name-input,
+html[data-theme="dark"] .patient-name-input {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  font-weight: 700;
+}
+.patient-name-input:focus,
+.patient-plate-input:focus,
+.patient-age-input:focus {
+  background: var(--surface);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(23, 67, 61, 0.10);
+}
+.patient-plate-input,
+.patient-age-input,
+.patient-gender-toggle {
+  background: var(--bg);
+}
+
+.med-card {
+  border-radius: var(--r-md);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 180ms ease, transform 140ms var(--ease-out);
+}
+.med-card:hover { box-shadow: var(--shadow-md); }
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn-primary {
+  background: linear-gradient(135deg, #1F5A51 0%, #17433D 60%, #0F302B 100%);
+  color: #fff;
+  border-radius: var(--r-md);
+  box-shadow: 0 10px 22px -12px rgba(23, 67, 61, 0.75);
+}
+html[data-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, #63C7AC 0%, #43A68B 100%);
+  color: #0A1412;
+}
+.btn-secondary {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  border-radius: var(--r-md);
+}
+
+/* ============================================================
+   Bottom navigation — floating glass dock
+   ============================================================ */
+.bottom-nav,
+html[data-theme="dark"] .bottom-nav {
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--safe-bottom) + 10px);
+  height: var(--nav-h);
+  padding: 6px;
+  max-width: 520px;
+  margin: 0 auto;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid rgba(230, 224, 211, 0.9);
+  box-shadow: 0 18px 40px -16px rgba(23, 67, 61, 0.45);
+}
+html[data-theme="dark"] .bottom-nav {
+  background: rgba(17, 31, 28, 0.86);
+  border-color: var(--border);
+}
+.nav-item {
+  border-radius: 18px;
+  color: var(--text-faint);
+  font-weight: 600;
+  gap: 3px;
+}
+.nav-item.active::before { display: none; }
+.nav-item .nav-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 28px;
+  border-radius: 14px;
+  font-size: 18px;
+  transition: background 220ms var(--ease-out), color 220ms ease;
+}
+.nav-item .nav-icon svg { display: block; }
+.nav-item.active { color: var(--primary); }
+.nav-item.active .nav-icon {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 6px 14px -6px rgba(23, 67, 61, 0.7);
+}
+html[data-theme="dark"] .nav-item.active .nav-icon { color: #0A1412; }
+
+/* ============================================================
+   Boarders (مرضى مستضافون)
+   ============================================================ */
+.patient-origin-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.patient-origin-select {
+  flex: 1.4;
+  min-width: 0;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--r-md);
+  border: 1.5px dashed var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.patient-origin-row { align-items: center; }
+/* Entering boarders is the pharmacists' + admin's job: doctors don't
+   get the origin-floor field (the "طابق N" bed badge stays visible). */
+html.role-doctor #view-patient .patient-origin-row { display: none !important; }
+.patient-origin-label {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Plate number (رقم الطبلة) is mandatory: solid field, red when missing */
+.patient-plate-input { border-style: solid !important; }
+.patient-plate-input.is-required-missing {
+  border-color: var(--danger) !important;
+  background: var(--danger-soft) !important;
+  box-shadow: 0 0 0 4px rgba(194, 65, 45, 0.12) !important;
+}
+
+/* Pharmacist account: only patient name, plate number, specialist and
+   origin floor in the patient header (the meds section stays). */
+html.role-pharmacist #view-patient .patient-demographics-row,
+html.role-pharmacist #view-patient .patient-body-row,
+html.role-pharmacist #view-patient .patient-allergy-row,
+html.role-pharmacist #view-patient .patient-diagnosis-row,
+html.role-pharmacist #view-patient #patient-labs-history,
+html.role-pharmacist #view-patient #gfr-card,
+html.role-pharmacist #view-patient .previous-admission-banner {
+  display: none !important;
+}
+
+.bed-btn .bed-boarder-badge {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: #3B5BA9;
+  color: #fff;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.bed-btn.is-no-order .bed-boarder-badge { background: #7D3C98; }
+.bed-btn.is-boarder { margin-bottom: 6px; }
+.add-med-fab[hidden] { display: none !important; }
+/* 7th-floor patients: no meds are ordered → no meds section at all */
+#view-patient.is-no-order .meds-section { display: none !important; }
+
+/* ---- Drag a bed to move the patient (bed-drag.js) ---- */
+#rooms-grid .bed-btn {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.bed-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.95;
+  box-shadow: 0 24px 40px -12px rgba(15, 48, 43, 0.55) !important;
+  transition: none !important;
+  animation: none !important;
+}
+.bed-btn.is-drag-source { opacity: 0.35; }
+body.bed-dragging { cursor: grabbing; }
+body.bed-dragging #rooms-grid .bed-btn.state-empty {
+  border-color: var(--gold) !important;
+  background: var(--gold-soft) !important;
+}
+#rooms-grid .bed-btn.is-drop-target {
+  border: 2px solid var(--primary) !important;
+  background: var(--primary-soft) !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px rgba(23, 67, 61, 0.15);
+}
+#rooms-grid .bed-btn.is-drop-invalid { outline: 2px dashed var(--danger); outline-offset: 2px; }
+
+/* Pharmacist viewing a 7th-floor (hematology) patient: only the name,
+   the attending doctor, the origin and the bed actions stay visible.
+   (#patient-labs-row gets an inline display from JS, hence !important.) */
+#view-patient.is-restricted .patient-demographics-row,
+#view-patient.is-restricted .patient-plate-row,
+#view-patient.is-restricted .patient-body-row,
+#view-patient.is-restricted .patient-allergy-row,
+#view-patient.is-restricted .patient-diagnosis-row,
+#view-patient.is-restricted #patient-labs-row,
+#view-patient.is-restricted #patient-labs-history,
+#view-patient.is-restricted #gfr-card,
+#view-patient.is-restricted .previous-admission-banner,
+#view-patient.is-restricted #clinical-alerts,
+#view-patient.is-restricted #meds-list,
+#view-patient.is-restricted #empty-meds,
+#view-patient.is-restricted .patient-history {
+  display: none !important;
+}
+
+.patient-action-btn.transfer-btn { background: var(--gold-soft); color: #8A6A2C; border-color: rgba(192, 154, 78, 0.45); }
+.patient-action-btn.move-bed-btn { background: var(--surface); color: var(--primary); border-color: var(--border-strong); }
+html[data-theme="dark"] .patient-action-btn.transfer-btn { color: var(--gold-bright); }
+.discharged-tabs { flex-wrap: wrap; }
+
+.discharged-row-pending {
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--warning);
+}
+
+/* ============================================================
+   Weight / height + CrCl
+   ============================================================ */
+.patient-body-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.patient-body-row .patient-body-input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+.gfr-crcl {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed currentColor;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.gfr-crcl.is-hint { font-weight: 500; opacity: 0.75; }
+.gfr-crcl-value { font-size: 15px; text-align: right; }
+.gfr-crcl-basis { font-size: 12px; font-weight: 500; opacity: 0.8; }
+
+/* ============================================================
+   Allergies
+   ============================================================ */
+.patient-allergy-row { margin-top: 8px; }
+
+/* The button: label + current allergies (or "لا يوجد") + chevron */
+.allergy-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: var(--r-md);
+  border: 1.5px dashed var(--border);
+  background: var(--bg);
+  color: var(--text-muted);
+  text-align: start;
+  font-size: 14px;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.allergy-toggle-label { flex-shrink: 0; font-weight: 600; }
+.allergy-toggle-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-faint);
+}
+.allergy-toggle-chevron {
+  flex-shrink: 0;
+  font-size: 20px;
+  line-height: 1;
+  transition: transform 200ms var(--ease-out);
+}
+.allergy-toggle[aria-expanded="true"] .allergy-toggle-chevron { transform: rotate(-90deg); }
+.allergy-toggle[aria-expanded="true"] { border-style: solid; border-color: var(--border-strong); }
+.allergy-toggle.has-value {
+  border: 1.5px solid rgba(194, 65, 45, 0.55);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.allergy-toggle.has-value .allergy-toggle-value { color: var(--danger); font-weight: 700; }
+
+/* The list that opens under the button */
+.allergy-panel {
+  margin-top: 6px;
+  padding: 8px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+.allergy-panel[hidden] { display: none; }
+.allergy-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.allergy-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: start;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.allergy-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1.5px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 800;
+}
+.allergy-chip.is-on {
+  background: var(--danger-soft);
+  border-color: rgba(194, 65, 45, 0.45);
+  color: var(--danger);
+}
+.allergy-chip.is-on .allergy-check {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+.allergy-panel .patient-allergies-input { margin: 0; }
+
+/* ============================================================
+   Clinical alerts
+   ============================================================ */
+.clinical-alerts {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--warning-soft);
+  border: 1px solid rgba(210, 119, 42, 0.35);
+}
+.clinical-alerts[hidden] { display: none; }
+.clinical-alerts-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: #8A4512;
+}
+html[data-theme="dark"] .clinical-alerts-head { color: var(--warning); }
+.clinical-alerts-count {
+  margin-inline-start: auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.clinical-alert {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding-inline-start: 10px;
+  border-inline-start: 3px solid var(--warning);
+}
+.clinical-alert.level-danger { border-color: var(--danger); color: var(--danger); }
+
+.med-card.has-alert-warning { border-color: rgba(210, 119, 42, 0.5); box-shadow: inset -4px 0 0 var(--warning), var(--shadow-sm); }
+.med-card.has-alert-danger  { border-color: rgba(194, 65, 45, 0.55); box-shadow: inset -4px 0 0 var(--danger), var(--shadow-sm); }
+.med-alerts {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 8px;
+}
+.med-alert {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  padding: 5px 10px;
+  border-radius: 10px;
+}
+.med-alert.level-warning { background: var(--warning-soft); color: #8A4512; }
+.med-alert.level-danger  { background: var(--danger-soft);  color: var(--danger); }
+html[data-theme="dark"] .med-alert.level-warning { color: var(--warning); }
+.med-alert::before { content: "⚠ "; }
+
+.abx-day-chip {
+  display: inline-block;
+  vertical-align: middle;
+  margin-inline-start: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  direction: ltr;
+  background: var(--gold-soft);
+  color: #8A6A2C;
+  border: 1px solid rgba(192, 154, 78, 0.45);
+}
+html[data-theme="dark"] .abx-day-chip { color: var(--gold-bright); }
+.abx-day-chip.is-review { background: var(--warning-soft); color: #8A4512; border-color: rgba(210, 119, 42, 0.5); }
+.abx-day-chip.is-long   { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+.bed-btn .bed-alert-dot {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* ============================================================
+   Ward search
+   ============================================================ */
+.ward-search {
+  position: relative;
+  margin: 0 0 16px;
+}
+.ward-search-icon {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.ward-search-input {
+  width: 100%;
+  padding: 13px 44px 13px 14px;
+  font-size: 15px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.ward-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(23, 67, 61, 0.10);
+}
+.ward-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+.ward-search-results[hidden] { display: none; }
+.ward-search-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: start;
+  background: transparent;
+}
+.ward-search-item:hover, .ward-search-item:focus-visible { background: var(--primary-soft); }
+.ward-search-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ward-search-name { font-weight: 700; color: var(--text); }
+.ward-search-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ward-search-loc {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: #8A6A2C;
+}
+html[data-theme="dark"] .ward-search-loc { color: var(--gold-bright); }
+.ward-search-empty { padding: 12px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* ============================================================
+   Patient change history
+   ============================================================ */
+.patient-history {
+  margin-top: 14px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.patient-history-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 14px;
+  font-weight: 700;
+  color: var(--primary);
+  background: transparent;
+}
+.patient-history-chevron {
+  margin-inline-start: auto;
+  font-size: 20px;
+  transition: transform 200ms var(--ease-out);
+}
+.patient-history-toggle[aria-expanded="true"] .patient-history-chevron { transform: rotate(-90deg); }
+.patient-history-list { padding: 4px 14px 12px; border-top: 1px solid var(--border); }
+.patient-history-list[hidden] { display: none; }
+.patient-history-row {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.patient-history-row:last-child { border-bottom: 0; }
+.patient-history-icon { width: 22px; text-align: center; flex-shrink: 0; }
+.patient-history-body { min-width: 0; }
+.patient-history-line { font-size: 13.5px; color: var(--text); }
+.patient-history-detail { font-size: 12.5px; color: var(--text-muted); direction: ltr; text-align: right; }
+.patient-history-detail.is-text { direction: rtl; }
+.patient-history-meta { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+.patient-history-empty { padding: 12px 0; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* ============================================================
+   Monthly report
+   ============================================================ */
+.report-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.report-month {
+  flex: 1;
+  padding: 11px 12px;
+  font-size: 15px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.report-export { padding: 0 16px; }
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.report-stat {
+  padding: 14px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.report-stat-num {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.report-stat-label { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.report-h {
+  margin: 22px 0 10px;
+  font-size: 16px;
+  color: var(--primary);
+}
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  font-size: 13.5px;
+}
+.report-table th, .report-table td {
+  padding: 9px 10px;
+  text-align: start;
+  border-bottom: 1px solid var(--border);
+}
+.report-table th { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+.report-table td:not(:first-child) { font-variant-numeric: tabular-nums; }
+.report-empty, .report-note { color: var(--text-muted); font-size: 13px; }
+.report-note { margin-top: 18px; line-height: 1.7; }
+
+/* ============================================================
+   Bottom sheet
+   ============================================================ */
+.med-sheet,
+html[data-theme="dark"] .med-sheet {
+  background: var(--surface);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  box-shadow: var(--shadow-xl);
+}
+.sheet-handle { background: var(--border-strong); width: 44px; }
+.sheet-overlay { background: rgba(10, 33, 29, 0.45); backdrop-filter: blur(2px); }
+.sheet-search input {
+  background: var(--bg);
+  border-color: var(--border);
+  border-radius: var(--r-md);
+}
+.sheet-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(23, 67, 61, 0.10);
+}
+.sheet-tab,
+html[data-theme="dark"] .sheet-tab {
+  border-radius: var(--r-full);
+}
+
+.delete-patient[hidden], .patient-action-btn[hidden] { display: none !important; }
+
+/* ============================================================
+   Dark mode: fields and green-filled controls
+   ------------------------------------------------------------
+   In dark mode --primary is a light mint (readable as TEXT on the
+   dark background), so controls that use it as a FILL with white text
+   lose contrast. Those get the deep emerald of the header instead.
+   Form fields that hard-code a white background get the dark surface.
+   ============================================================ */
+html[data-theme="dark"] {
+  --fill: #1F5A51;
+  --fill-strong: #17433D;
+  /* styles.css uses var(--bg-card) for dark cards / fields but never defined
+     it, so they were TRANSPARENT in dark mode (the medicines summary showed the
+     page through it) — it is the dark surface */
+  --bg-card: var(--surface);
+}
+html[data-theme="dark"] .med-summary-card { background: var(--surface); color: var(--text); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+html[data-theme="dark"] .med-summary-group-count { background: rgba(0, 0, 0, 0.28); color: var(--text-muted); }
+html[data-theme="dark"] .med-summary-overlay { background: rgba(0, 0, 0, 0.7); }
+html[data-theme="dark"] .med-field input,
+html[data-theme="dark"] .med-field select,
+html[data-theme="dark"] .admin-field input,
+html[data-theme="dark"] .admin-field select,
+html[data-theme="dark"] .admin-field textarea {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+html[data-theme="dark"] .add-med-fab,
+html[data-theme="dark"] .btn-add-small,
+html[data-theme="dark"] .btn-create-user,
+html[data-theme="dark"] .btn-discharged,
+html[data-theme="dark"] .btn-save-sb,
+html[data-theme="dark"] .discharge-confirm,
+html[data-theme="dark"] .discharged-tab.active,
+html[data-theme="dark"] .lab-add-btn,
+html[data-theme="dark"] .med-summary-footer .med-summary-send-btn,
+html[data-theme="dark"] .patient-gender-btn.is-active,
+html[data-theme="dark"] .supply-order-submit,
+html[data-theme="dark"] .loc-chip:first-child,
+html[data-theme="dark"] .abx-row-header,
+html[data-theme="dark"] .abx-row-header:nth-child(odd),
+html[data-theme="dark"] .discharge-head,
+html[data-theme="dark"] .med-summary-head,
+html[data-theme="dark"] .supply-order-head,
+html[data-theme="dark"] .senior-card-head {
+  background: linear-gradient(135deg, var(--fill) 0%, var(--fill-strong) 100%) !important;
+  color: #fff !important;
+  border-color: var(--fill) !important;
+}
+/* Selected-medication cards in the add-medication sheet */
+html[data-theme="dark"] .sel-item,
+html[data-theme="dark"] .freq-stepper,
+html[data-theme="dark"] .freq-step-btn {
+  background: var(--surface);
+}
+html[data-theme="dark"] .sheet-actions { background: var(--surface); }
+html[data-theme="dark"] .sheet-selected-head h4,
+html[data-theme="dark"] .sel-item-name,
+html[data-theme="dark"] .sel-item-dose,
+html[data-theme="dark"] .freq-step-number:not(.is-custom) { color: var(--text); }
+html[data-theme="dark"] .freq-step-btn:hover { background: var(--primary-soft); }
+html[data-theme="dark"] .freq-step-btn.minus:hover { background: var(--danger-soft); }
+html[data-theme="dark"] .freq-step-btn.plus:hover { background: var(--success-soft); }
+html[data-theme="dark"] .freq-step-btn.plus { color: var(--success); }
+html[data-theme="dark"] .sel-item-freq { color: var(--primary); }
+/* Admin boxes / buttons that hard-code light backgrounds */
+html[data-theme="dark"] .admin-supabase-card { background: var(--primary-soft); border-color: var(--border); }
+html[data-theme="dark"] .admin-supabase-card code { background: var(--bg); color: var(--gold-bright); }
+html[data-theme="dark"] .admin-danger-zone { background: var(--danger-soft); border-color: rgba(240, 136, 114, 0.35); }
+html[data-theme="dark"] .admin-warn { color: var(--warning); }
+html[data-theme="dark"] .btn-audit-refresh,
+html[data-theme="dark"] .btn-refresh-users,
+html[data-theme="dark"] .btn-test,
+html[data-theme="dark"] .btn-clear-sb,
+html[data-theme="dark"] .btn-wipe,
+html[data-theme="dark"] .btn-export,
+html[data-theme="dark"] .btn-import,
+html[data-theme="dark"] .btn-reset,
+html[data-theme="dark"] .btn-push-now,
+html[data-theme="dark"] .btn-pull-now {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+html[data-theme="dark"] .btn-pull-now { color: var(--success); }
+html[data-theme="dark"] .btn-push-now { color: var(--primary); }
+html[data-theme="dark"] .settings-row-danger,
+html[data-theme="dark"] .settings-row-danger .settings-row-icon,
+html[data-theme="dark"] .settings-row-danger .settings-row-label { color: var(--danger); }
+html[data-theme="dark"] .allergy-chip.is-on .allergy-check { color: #2A0F0A; }
+/* Old navy field backgrounds from styles.css → the theme's dark surface */
+html[data-theme="dark"] .patient-plate-input,
+html[data-theme="dark"] .patient-name-input,
+html[data-theme="dark"] .supply-order-row input,
+html[data-theme="dark"] .admin-user-form-row input,
+html[data-theme="dark"] .admin-user-form-row select {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* ============================================================
+   Medication availability (med-availability.js)
+   ============================================================ */
+.avail-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.avail-stat {
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.avail-stat-num { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.avail-stat-label { font-size: 12.5px; color: var(--text-muted); }
+.avail-stat.is-on .avail-stat-num { color: var(--success); }
+.avail-stat.is-off .avail-stat-num { color: var(--danger); }
+.avail-toolbar { display: grid; gap: 8px; margin-bottom: 12px; }
+.avail-search { padding-right: 14px; }
+.avail-filters { display: flex; gap: 6px; }
+.avail-filter {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 13px;
+}
+.avail-filter.is-active { background: var(--primary); border-color: var(--primary); color: #fff; }
+html[data-theme="dark"] .avail-filter.is-active { background: var(--fill); border-color: var(--fill); }
+.avail-list { display: grid; gap: 6px; }
+.avail-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-align: start;
+  color: var(--text);
+}
+.avail-names { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.avail-name { font-weight: 700; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avail-name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.avail-form {
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  direction: ltr;
+  background: var(--primary-soft, rgba(23, 67, 61, 0.1));
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+.avail-name-en { font-size: 12px; color: var(--text-muted); direction: ltr; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.avail-state { flex-shrink: 0; font-size: 12px; font-weight: 700; color: var(--success); }
+.avail-row.is-off { background: var(--danger-soft); border-color: rgba(194, 65, 45, 0.3); }
+.avail-row.is-off .avail-state { color: var(--danger); }
+/* switch */
+.avail-switch {
+  flex-shrink: 0;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--success);
+  transition: background 180ms ease;
+}
+.avail-switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 180ms var(--ease-out);
+}
+.avail-row.is-off .avail-switch { background: var(--border-strong); }
+.avail-row.is-off .avail-switch::after { transform: translateX(-18px); }
+.avail-empty { padding: 16px; text-align: center; color: var(--text-muted); }
+
+/* Picker: unavailable drugs are tagged (still selectable) */
+.med-option.is-unavailable { opacity: 0.75; }
+.med-unavailable-tag {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: middle;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(194, 65, 45, 0.35);
+}
+
+/* Picker: green / red availability dot before each drug name */
+.med-avail-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-inline-end: 7px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.med-avail-dot.is-on { background: #1E9E5A; box-shadow: 0 0 0 2px rgba(30, 158, 90, 0.22); }
+.med-avail-dot.is-off { background: #D93A2B; box-shadow: 0 0 0 2px rgba(217, 58, 43, 0.22); }
+.med-avail-legend {
+  display: flex;
+  gap: 14px;
+  justify-content: flex-start;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.med-avail-legend > span { display: inline-flex; align-items: center; }
+
+/* Doctor account: own settings subtitle, no monthly report, no
+   notification-sound toggle (doctors get no sounds — app.js). */
+.only-doctor { display: none; }
+html.role-doctor .only-doctor { display: inline; }
+html.role-doctor .only-not-doctor,
+html.role-doctor #settings-report-btn,
+html.role-doctor #abx-report-btn { display: none !important; }
+
+/* ============================================================
+   Duotone icon set (emerald + gold) — header buttons and settings
+   rows. Each SVG part takes a role class; the palette is set per
+   context with --ic-* variables (light tiles, dark tiles, header).
+   ============================================================ */
+.ico {
+  --ic-em: #1D9E75; --ic-em2: #9FE1CB; --ic-em3: #0F6E56;
+  --ic-au: #EF9F27; --ic-au2: #FAC775; --ic-au3: #BA7517;
+  --ic-bg: #E1F5EE; --ic-aubg: #FAEEDA; --ic-white: #FFFFFF;
+  --ic-red: #D93A2B; --ic-hole: #F3FAF7;
+  display: block;
+  flex-shrink: 0;
+}
+.ico .f-em { fill: var(--ic-em); }   .ico .s-em { stroke: var(--ic-em); }
+.ico .f-em2 { fill: var(--ic-em2); } .ico .s-em2 { stroke: var(--ic-em2); }
+.ico .f-em3 { fill: var(--ic-em3); } .ico .s-em3 { stroke: var(--ic-em3); }
+.ico .f-au { fill: var(--ic-au); }   .ico .s-au { stroke: var(--ic-au); }
+.ico .f-au2 { fill: var(--ic-au2); } .ico .s-au2 { stroke: var(--ic-au2); }
+.ico .f-au3 { fill: var(--ic-au3); } .ico .s-au3 { stroke: var(--ic-au3); }
+.ico .f-bg { fill: var(--ic-bg); }   .ico .s-bg { stroke: var(--ic-bg); }
+.ico .f-aubg { fill: var(--ic-aubg); }
+.ico .f-white { fill: var(--ic-white); } .ico .s-white { stroke: var(--ic-white); }
+.ico .s-red { stroke: var(--ic-red); }
+.ico .f-hole { fill: var(--ic-hole); }
+
+/* Settings rows: the icon sits in a soft mint tile */
+.settings-row-icon.ico-tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #F3FAF7;
+  border: 1px solid #CFE9DE;
+  font-size: 0;
+}
+.settings-row-danger .settings-row-icon.ico-tile { background: #FDF3F1; border-color: #F3D3CC; }
+html[data-theme="dark"] .settings-row-icon.ico-tile {
+  background: #12302A;
+  border-color: #24564B;
+}
+html[data-theme="dark"] .settings-row-danger .settings-row-icon.ico-tile { background: #2E1714; border-color: #5A2B24; }
+html[data-theme="dark"] .settings-row-icon .ico,
+.brand-actions .ico {
+  --ic-em: #5DCAA5; --ic-em2: #2F8F72; --ic-em3: #9FE1CB;
+  --ic-bg: #1A4A40; --ic-aubg: #3A2A12; --ic-white: #EAF7F2;
+  --ic-red: #FF8A78; --ic-hole: #124C42;
+}
+html[data-theme="dark"] .settings-row-icon .ico { --ic-white: #DDF1EA; --ic-hole: #12302A; }
+
+/* Header: the duotone colours replace the per-button tints */
+.brand-actions > button { color: inherit !important; }
+.brand-actions > button .ico { width: 22px; height: 22px; }
+@media (max-width: 480px) {
+  .brand-actions > button .ico { width: 20px; height: 20px; }
+}
+
+/* Header title: no logo / subtitle — the ward name alone, centred
+   above the action buttons. */
+.brand-text { flex: 1 1 100%; text-align: center; }
+.brand-text h1 { margin: 0; text-align: center; }
+.brand { flex-wrap: wrap; justify-content: center; row-gap: 8px; margin-bottom: 0 !important; }
+
+/* Picker: available alternatives under an unavailable drug */
+.med-alt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 10px 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--primary-soft, rgba(29, 158, 117, 0.08));
+  border: 1px dashed var(--border);
+}
+.med-alt-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.med-alt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #9FE1CB;
+  background: var(--surface, #fff);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.med-alt-chip .med-avail-dot { width: 8px; height: 8px; margin-inline-end: 2px; }
+.med-alt-chip.is-selected { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+.med-alt-note { font-size: 10.5px; font-weight: 600; color: var(--text-muted); direction: ltr; }
+.med-alt-chip.is-selected .med-alt-note { color: rgba(255, 255, 255, 0.85); }
+html[data-theme="dark"] .med-alt-chip { background: #12302A; border-color: #2F8F72; color: #E6F4EF; }
+html[data-theme="dark"] .med-alt-chip.is-selected { background: var(--fill, #1F5A51); }
+
+/* ============================================================
+   Shared list styles (.tasks-empty, .tasks-section …) — used by other screens
+   ============================================================ */
+.tasks-badge {
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #D93A2B;
+  color: #fff !important;
+  font-weight: 800 !important;
+  text-align: center;
+}
+.tasks-badge:empty { display: none; }
+.tasks-badge.is-zero { background: #1D9E75; }
+.avail-stat.is-open .avail-stat-num { color: #C2412D; }
+.avail-stat.is-done .avail-stat-num { color: #1D9E75; }
+.tasks-list { display: flex; flex-direction: column; gap: 14px; padding-bottom: 20px; }
+.tasks-empty { padding: 28px 16px; text-align: center; color: var(--text-muted); font-weight: 700; }
+.tasks-section {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 12px 12px 6px;
+}
+.tasks-head { display: flex; align-items: center; gap: 8px; }
+.tasks-title { flex: 1; font-size: 15px; font-weight: 800; color: var(--text); }
+.tasks-count {
+  min-width: 24px; padding: 1px 8px; border-radius: 999px; text-align: center;
+  font-size: 12px; font-weight: 800; background: var(--danger-soft, #FCEBEB); color: var(--danger, #C2412D);
+}
+.tasks-new .tasks-count, .tasks-abx .tasks-count { background: #FAEEDA; color: #854F0B; }
+.tasks-hint { font-size: 12px; color: var(--text-muted); margin: 2px 0 8px; }
+.task-row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+.task-tick {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  margin-top: 2px;
+  border-radius: 9px;
+  border: 2px solid #9FE1CB;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.task-row.is-done .task-tick { background: #1D9E75; border-color: #1D9E75; }
+.task-row.is-done .task-tick::after {
+  content: ""; position: absolute; left: 8px; top: 3px; width: 7px; height: 13px;
+  border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg);
+}
+.task-body {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+  background: none; border: 0; padding: 0; text-align: right; font: inherit; color: inherit; cursor: pointer;
+}
+.task-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.task-patient { font-size: 14.5px; color: var(--text); }
+.task-bed { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.task-text { font-size: 13.5px; font-weight: 700; color: var(--text); direction: ltr; text-align: right; }
+.task-detail { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+.task-row.level-danger .task-detail { color: var(--danger, #C2412D); font-weight: 600; }
+.task-row.is-done .task-body { opacity: 0.45; text-decoration: line-through; }
+html[data-theme="dark"] .tasks-section { background: #10241F; }
+html[data-theme="dark"] .task-row.level-danger .task-detail { color: #FF8A78; }
+html[data-theme="dark"] .tasks-new .tasks-count,
+html[data-theme="dark"] .tasks-abx .tasks-count { background: #3A2A12; color: #FAC775; }
+html[data-theme="dark"] .tasks-count { background: #2E1714; color: #FF8A78; }
+
+/* ============================================================
+   Chart send log (chart-send-log.js)
+   ============================================================ */
+html.role-doctor #settings-sendlog-btn { display: none !important; }
+.sendlog-list { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
+.sendlog-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 12px 14px;
+}
+.sendlog-card.is-latest { border-color: #9FE1CB; }
+.sendlog-head { display: flex; align-items: center; gap: 8px; }
+.sendlog-when { flex: 1; font-size: 15px; color: var(--text); }
+.sendlog-tag { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #E1F5EE; color: #0F6E56; }
+.sendlog-meta { font-size: 12.5px; color: var(--text-muted); margin: 4px 0 10px; }
+.sendlog-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sendlog-btn {
+  flex: 1;
+  min-width: 90px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sendlog-resend { background: #1D9E75; border-color: #1D9E75; color: #fff; }
+.sendlog-table-wrap { margin-top: 10px; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
+.sendlog-table { border-collapse: collapse; font-size: 12px; min-width: 100%; direction: rtl; }
+.sendlog-table th, .sendlog-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; text-align: center; }
+.sendlog-table th { background: var(--primary-soft, #E1F5EE); font-weight: 800; direction: ltr; }
+.sendlog-table td:first-child, .sendlog-table th:first-child { text-align: right; position: sticky; right: 0; background: var(--surface, #fff); }
+html[data-theme="dark"] .sendlog-card { background: #10241F; }
+html[data-theme="dark"] .sendlog-card.is-latest { border-color: #2F8F72; }
+html[data-theme="dark"] .sendlog-tag { background: #12302A; color: #9FE1CB; }
+html[data-theme="dark"] .sendlog-resend { background: var(--fill, #1F5A51); border-color: var(--fill, #1F5A51); }
+html[data-theme="dark"] .sendlog-table th { background: #12302A; color: #E6F4EF; }
+html[data-theme="dark"] .sendlog-table td:first-child, html[data-theme="dark"] .sendlog-table th:first-child { background: #10241F; }
+
+/* Send log: chart account card + outcome of each send */
+.sendlog-account {
+  background: var(--surface, #fff);
+  border: 1px solid #9FE1CB;
+  border-radius: 18px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.sendlog-acc-text { font-weight: 800; margin-bottom: 8px; color: var(--text); }
+.sendlog-status { font-size: 13px; font-weight: 700; margin: -4px 0 10px; }
+.sendlog-status.is-ok { color: #1D9E75; }
+.sendlog-status.is-bad { color: var(--danger, #C2412D); }
+.sendlog-status.is-pending { color: var(--text-muted); }
+.sendlog-skipped { margin: -4px 0 10px; padding-inline-start: 18px; font-size: 12.5px; color: #854F0B; }
+.chart-acc-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(8, 24, 20, 0.55);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.chart-acc-box {
+  width: 100%; max-width: 420px;
+  background: var(--surface, #fff);
+  border-radius: 20px;
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+.chart-acc-title { margin: 0; font-size: 17px; color: var(--text); }
+.chart-acc-hint { margin: 0; font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+.chart-acc-input {
+  padding: 11px 12px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--bg, #fff); color: var(--text); font: inherit; font-size: 15px;
+}
+.chart-acc-msg { min-height: 18px; font-size: 13px; font-weight: 700; color: #1D9E75; }
+.chart-acc-msg.is-bad { color: var(--danger, #C2412D); }
+.chart-acc-actions { display: flex; gap: 8px; }
+html[data-theme="dark"] .sendlog-account,
+html[data-theme="dark"] .chart-acc-box { background: #10241F; border-color: #2F8F72; }
+html[data-theme="dark"] .chart-acc-input { background: #0B1A16; color: #E6F4EF; }
+html[data-theme="dark"] .sendlog-status.is-ok,
+html[data-theme="dark"] .chart-acc-msg { color: #5DCAA5; }
+html[data-theme="dark"] .sendlog-skipped { color: #FAC775; }
+.sendlog-status.is-partial { color: #854F0B; }
+html[data-theme="dark"] .sendlog-status.is-partial { color: #FAC775; }
+
+html.role-doctor #print-patient-pills-btn { display: none !important; }
+
+.patient-action-btn[hidden] { display: none !important; }
+
+/* Pills forms preview (pills-form.js previewPillsForms) */
+.pills-preview-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(8, 24, 20, 0.6);
+  display: flex; align-items: center; justify-content: center; padding: 12px;
+}
+.pills-preview-box {
+  width: 100%; max-width: 640px; max-height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--surface, #fff); border-radius: 20px; overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+.pills-preview-head { display: flex; align-items: center; gap: 8px; padding: 14px 16px 4px; }
+.pills-preview-head h3 { flex: 1; margin: 0; font-size: 16px; color: var(--text); }
+.pills-preview-x { border: 0; background: none; font-size: 18px; cursor: pointer; color: var(--text-muted); }
+.pills-preview-hint { margin: 0 16px 8px; font-size: 12.5px; color: var(--text-muted); }
+.pills-preview-pages { overflow-y: auto; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 14px; background: var(--bg, #F4F2EC); }
+.pills-preview-page { margin: 0; }
+.pills-preview-page img { width: 100%; display: block; border-radius: 8px; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12); }
+.pills-preview-page figcaption { text-align: center; font-size: 12.5px; font-weight: 700; color: var(--text-muted); margin-top: 6px; }
+.pills-preview-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); }
+.pills-preview-save, .pills-preview-cancel { flex: 1; padding: 12px; border-radius: 14px; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.pills-preview-save { border: 0; background: #1D9E75; color: #fff; }
+.pills-preview-cancel { border: 1px solid var(--border); background: transparent; color: var(--text); }
+html[data-theme="dark"] .pills-preview-box { background: #10241F; }
+html[data-theme="dark"] .pills-preview-pages { background: #0B1A16; }
+html[data-theme="dark"] .pills-preview-save { background: var(--fill, #1F5A51); }
+
+/* Patient sheets preview (print-sheets.js preview) — reuses the pills preview dialog */
+.sheets-preview-box { max-width: 720px; }
+.sheets-preview-frame { position: relative; overflow: hidden; width: 100%; }
+.sheets-preview-frame iframe { border: 0; display: block; transform-origin: top right; position: absolute; top: 0; right: 0; background: #E9E6DE; }
+
+/* Notifications split for pharmacists + admin: doctors' (important) / pharmacy */
+.notif-group-head {
+  margin: 14px 4px 8px; padding: 6px 12px; border-radius: 12px;
+  font-size: 14px; font-weight: 800;
+}
+.notif-group-head:first-child { margin-top: 4px; }
+.notif-group-head.is-doctors { background: #FCEBEB; color: #A32D2D; }
+.notif-group-head.is-pharmacy { background: #E1F5EE; color: #0F6E56; }
+.notif-group-empty { padding: 8px 14px; font-size: 13px; color: var(--text-muted); }
+.notif-row.notif-important { border-inline-start: 4px solid #D93A2B; }
+html[data-theme="dark"] .notif-group-head.is-doctors { background: #2E1714; color: #FF8A78; }
+html[data-theme="dark"] .notif-group-head.is-pharmacy { background: #12302A; color: #9FE1CB; }
+
+/* ============================================================
+   التربيت (tarbeet.js)
+   ============================================================ */
+.tarbeet-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 12px 0; padding: 10px 12px; border-radius: 16px;
+  background: var(--surface, #fff); border: 1px dashed #9FE1CB;
+}
+.tarbeet-bar[hidden] { display: none !important; }
+.tarbeet-bar.is-done { border-style: solid; background: #E9F7F1; border-color: #5DCAA5; }
+.tarbeet-btn {
+  padding: 10px 18px; border: 0; border-radius: 12px; cursor: pointer;
+  background: #1D9E75; color: #fff; font: inherit; font-size: 15px; font-weight: 800;
+}
+.tarbeet-btn.small { padding: 7px 12px; font-size: 13px; }
+.tarbeet-btn:disabled { opacity: .6; }
+.tarbeet-undo {
+  padding: 6px 12px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 700;
+  background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+}
+.tarbeet-text { flex: 1; font-weight: 800; color: #0F6E56; font-size: 14px; }
+.tarbeet-owner { font-size: 12.5px; color: var(--text-muted); }
+.tarbeet-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
+.tarbeet-progress { background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; }
+.tarbeet-progress-text { font-weight: 800; margin-bottom: 8px; color: var(--text); }
+.tarbeet-progress-bar { height: 10px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.tarbeet-progress-fill { height: 100%; background: #1D9E75; border-radius: 999px; transition: width .3s ease; }
+.tarbeet-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 14px; padding: 8px 10px;
+}
+.tarbeet-row.is-done { opacity: .75; }
+.tarbeet-row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; background: none; border: 0; padding: 0; text-align: right; font: inherit; color: inherit; cursor: pointer; }
+.tarbeet-row-bed { font-size: 12px; color: var(--text-muted); }
+.tarbeet-row-state { font-size: 12.5px; font-weight: 700; color: #BA7517; }
+.tarbeet-row.is-done .tarbeet-row-state, .tarbeet-row-state.is-complete { color: #1D9E75; }
+.tarbeet-admin-title { margin: 14px 4px 6px; font-size: 15px; color: var(--text); }
+.tarbeet-admin-progress { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.tarbeet-admin-card { display: flex; flex-direction: column; gap: 2px; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; }
+.tarbeet-assign-row { display: flex; align-items: center; gap: 10px; background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 14px; padding: 8px 12px; }
+.tarbeet-assign-room { width: 70px; font-weight: 800; color: var(--text); }
+.tarbeet-assign-select { flex: 1; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg, #fff); color: var(--text); font: inherit; }
+.bed-btn .bed-tarbeet-mark {
+  position: absolute; bottom: 4px; left: 4px; width: 18px; height: 18px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 11px; font-weight: 900;
+  background: #1D9E75; color: #fff;
+}
+html[data-theme="dark"] .tarbeet-bar, html[data-theme="dark"] .tarbeet-progress, html[data-theme="dark"] .tarbeet-row,
+html[data-theme="dark"] .tarbeet-admin-card, html[data-theme="dark"] .tarbeet-assign-row { background: #10241F; }
+html[data-theme="dark"] .tarbeet-bar.is-done { background: #12302A; border-color: #2F8F72; }
+html[data-theme="dark"] .tarbeet-text { color: #9FE1CB; }
+html[data-theme="dark"] .tarbeet-btn { background: var(--fill, #1F5A51); }
+html[data-theme="dark"] .tarbeet-assign-select { background: #0B1A16; color: #E6F4EF; }
+
+/* التربيت: beds inside rooms */
+.tarbeet-room { display: flex; flex-direction: column; gap: 6px; }
+.tarbeet-beds-toggle {
+  flex-shrink: 0; padding: 7px 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 700;
+}
+.tarbeet-beds-toggle.has-overrides { border-color: #EF9F27; color: #854F0B; }
+.tarbeet-beds { display: flex; flex-direction: column; gap: 6px; margin: 0 18px 6px 0; }
+.tarbeet-bed-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: var(--bg, #F4F2EC); }
+.tarbeet-bed-num { width: 52px; font-weight: 800; font-size: 13px; color: var(--text); }
+.tarbeet-bed-patient { width: 90px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tarbeet-progress-where { font-size: 12.5px; color: var(--text-muted); margin: -4px 0 8px; }
+.tarbeet-admin-free { grid-column: 1 / -1; font-size: 12.5px; font-weight: 700; color: #BA7517; }
+html[data-theme="dark"] .tarbeet-bed-row { background: #0B1A16; }
+html[data-theme="dark"] .tarbeet-beds-toggle.has-overrides { color: #FAC775; border-color: #BA7517; }
+
+/* Bed tile: name → specialist → plate number */
+.bed-btn .bed-plate { font-size: 10.5px; font-weight: 600; color: var(--text-muted); line-height: 1.2; }
+
+/* Sheets preview zoom (print-sheets.js preview) */
+/* margin auto (not align-items: center) — a centred item wider than the box
+   could not be scrolled to its right edge */
+.sheets-preview-pages { overflow: auto; align-items: stretch; }
+.sheets-preview-pages .sheets-preview-frame { flex: 0 0 auto; max-width: none; margin-inline: auto; }
+.sheets-zoom { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 16px 10px; }
+.sheets-zoom-btn, .sheets-zoom-fit {
+  min-width: 38px; height: 34px; padding: 0 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface, #fff); color: var(--text);
+  font: inherit; font-size: 18px; font-weight: 800; line-height: 1;
+}
+.sheets-zoom-fit { font-size: 13px; }
+.sheets-zoom-btn:disabled { opacity: .4; cursor: default; }
+.sheets-zoom-label { min-width: 48px; text-align: center; font-weight: 800; font-size: 13.5px; color: var(--text-muted); direction: ltr; }
+
+/* "تربيتي" tab (tarbeet.js renderMine): beds room by room, ✓ / ✗ */
+.tarbeet-progress-text { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.tarbeet-count { font-weight: 800; font-size: 14px; }
+.tarbeet-count.ok { color: #1D9E75; }
+.tarbeet-count.no { color: #C2412D; }
+.tarbeet-count.left { color: #BA7517; }
+.tarbeet-count.total { color: var(--text-muted); font-weight: 700; }
+.tarbeet-progress-where { font-size: 12.5px; color: var(--text-muted); margin-bottom: 8px; }
+.tarbeet-room-card { background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
+.tarbeet-room-title { font-weight: 800; font-size: 15px; color: var(--text); margin-bottom: 10px; }
+.tarbeet-bed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.tarbeet-bed { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--bg, #F7F6F2); }
+.tarbeet-bed.is-done { border-color: #5DCAA5; background: #E9F7F1; }
+.tarbeet-bed.is-not { border-color: #E59A8C; background: #FDF0ED; }
+.tarbeet-bed-body { display: flex; flex-direction: column; gap: 2px; background: none; border: 0; padding: 0; text-align: right; font: inherit; color: inherit; cursor: pointer; min-width: 0; }
+.tarbeet-bed-no { font-size: 12px; color: var(--text-muted); font-weight: 700; }
+.tarbeet-bed-name { font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tarbeet-bed-plate { font-size: 12px; color: var(--text-muted); }
+.tarbeet-bed-state { font-size: 12px; font-weight: 700; color: #BA7517; }
+.tarbeet-bed.is-done .tarbeet-bed-state { color: #1D9E75; }
+.tarbeet-bed.is-not .tarbeet-bed-state { color: #C2412D; }
+.tarbeet-bed-acts { display: flex; gap: 8px; }
+.tarbeet-mark { flex: 1; height: 40px; border-radius: 12px; cursor: pointer; font: inherit; font-size: 20px; font-weight: 900; line-height: 1; background: var(--surface, #fff); border: 1.5px solid var(--border); }
+.tarbeet-mark.ok { color: #1D9E75; border-color: #9FE1CB; }
+.tarbeet-mark.no { color: #C2412D; border-color: #F0B8AD; }
+.tarbeet-mark.ok.on { background: #1D9E75; color: #fff; border-color: #1D9E75; }
+.tarbeet-mark.no.on { background: #C2412D; color: #fff; border-color: #C2412D; }
+.tarbeet-mark:disabled { opacity: .55; }
+.bed-btn .bed-tarbeet-mark.is-not { background: #C2412D; }
+html[data-theme="dark"] .tarbeet-room-card { background: #10241F; }
+html[data-theme="dark"] .tarbeet-bed { background: #0B1A16; }
+html[data-theme="dark"] .tarbeet-bed.is-done { background: #12302A; border-color: #2F8F72; }
+html[data-theme="dark"] .tarbeet-bed.is-not { background: #331712; border-color: #9A3B2C; }
+html[data-theme="dark"] .tarbeet-mark { background: #10241F; }
+html[data-theme="dark"] .tarbeet-mark.ok { color: #6FD8B0; border-color: #2F8F72; }
+html[data-theme="dark"] .tarbeet-mark.no { color: #F2998A; border-color: #9A3B2C; }
+html[data-theme="dark"] .tarbeet-mark.ok.on { background: #1D9E75; color: #fff; }
+html[data-theme="dark"] .tarbeet-mark.no.on { background: #C2412D; color: #fff; }
+html[data-theme="dark"] .tarbeet-count.ok { color: #6FD8B0; }
+html[data-theme="dark"] .tarbeet-count.no { color: #F2998A; }
+html[data-theme="dark"] .tarbeet-count.left, html[data-theme="dark"] .tarbeet-bed-state { color: #F0C27A; }
+html[data-theme="dark"] .tarbeet-bed.is-done .tarbeet-bed-state { color: #6FD8B0; }
+html[data-theme="dark"] .tarbeet-bed.is-not .tarbeet-bed-state { color: #F2998A; }
+
+/* crossed-out file icon (tarbeet "الملف غير موجود") */
+.ico-wrap { display: inline-flex; align-items: center; vertical-align: -0.15em; }
+.ico-file-off { display: block; }
+.tarbeet-mark.no .ico-file-off { width: 22px; height: 22px; }
+.tarbeet-count.no { display: inline-flex; align-items: center; gap: 2px; }
+.bed-btn .bed-tarbeet-mark.is-not .ico-file-off { width: 12px; height: 12px; }
+
+/* «الحبوب» tab (pills-page.js) */
+.pills-list { display: flex; flex-direction: column; gap: 14px; padding-bottom: 24px; }
+.pills-section { display: flex; flex-direction: column; gap: 10px; }
+.pills-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 14px; }
+.pills-section-head h3 { margin: 0; font-size: 16px; font-weight: 800; }
+.pills-section.is-men .pills-section-head { background: #E6F1FB; color: #0C447C; }
+.pills-section.is-women .pills-section-head { background: #FBEAF0; color: #72243E; }
+.pills-section.is-icu .pills-section-head { background: #FAEEDA; color: #633806; }
+.pills-patient { background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.pills-patient-head { display: flex; align-items: center; gap: 10px; }
+.pills-patient-who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; background: none; border: 0; padding: 0; text-align: right; font: inherit; color: inherit; cursor: pointer; }
+.pills-patient-bed { font-size: 12.5px; color: var(--text-muted); }
+.pills-form-btn { padding: 7px 12px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 800; background: transparent; border: 1px solid var(--border); color: var(--text); white-space: nowrap; }
+.pills-med { border-top: 1px dashed var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.pills-med-name { font-size: 14px; direction: ltr; text-align: right; }
+.pills-med-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; }
+@media (min-width: 620px) { .pills-med-fields { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.pills-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pills-field-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); }
+.pills-input { width: 100%; box-sizing: border-box; padding: 8px 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg, #fff); color: var(--text); font: inherit; font-size: 13.5px; }
+.pills-med-preview { font-size: 12px; color: var(--text-muted); }
+html[data-theme="dark"] .pills-patient { background: #10241F; }
+html[data-theme="dark"] .pills-input { background: #0B1A16; color: #E6F4EF; }
+html[data-theme="dark"] .pills-section.is-men .pills-section-head { background: #0C447C; color: #E6F1FB; }
+html[data-theme="dark"] .pills-section.is-women .pills-section-head { background: #72243E; color: #FBEAF0; }
+html[data-theme="dark"] .pills-section.is-icu .pills-section-head { background: #633806; color: #FAEEDA; }
+
+/* TV account (role tv): only the ward display */
+html.role-tv #app { visibility: hidden; }
+html.role-tv .display-mode-exit { opacity: .35; }
+html.role-tv .display-mode-exit:hover, html.role-tv .display-mode-exit:focus { opacity: 1; }
+
+/* Ward display: lit beds (tv-alerts.js) — orange medicine change, pink
+   discharge / return to floor, black death; an hour each */
+.dm-bed.dm-alert { position: relative; animation: dmAlertPulse 1s ease-in-out infinite;   /* one pulse a second, for the hour */ }
+.dm-bed.dm-alert-med { background: #F08A24 !important; border-color: #FFB25E !important; color: #2A1300 !important; --dm-glow: rgba(240, 138, 36, .75); }
+.dm-bed.dm-alert-out { background: #EC6FA8 !important; border-color: #F7A8CB !important; color: #3A0A20 !important; --dm-glow: rgba(236, 111, 168, .75); }
+.dm-bed.dm-alert-dead { background: #000 !important; border-color: #5B6472 !important; color: #fff !important; --dm-glow: rgba(255, 255, 255, .35); }
+.dm-bed.dm-alert .dm-bed-num, .dm-bed.dm-alert .dm-bed-name { color: inherit !important; }
+.dm-alert-text { font-size: 12px; font-weight: 800; margin-top: 4px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes dmAlertPulse {
+  0%, 100% { box-shadow: 0 0 0 0 var(--dm-glow); }
+  50% { box-shadow: 0 0 22px 6px var(--dm-glow); filter: brightness(1.12); }
+}
+
+/* Ward display: every bed the same size, lit or not — the columns can't be
+   widened by a long name / alert line (minmax 0), and the height leaves room
+   for the alert line so a lit bed doesn't grow */
+.dm-beds { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.dm-bed { min-width: 0; min-height: 136px; box-sizing: border-box; overflow: hidden; }
+.dm-bed > * { max-width: 100%; }
+.dm-alert-text { max-width: 100%; }
+/* the albumin / meronem dot sits in the corner — it doesn't add a line */
+.dm-bed { position: relative; }
+.dm-bed-flag { position: absolute; top: 8px; inset-inline-start: 10px; font-size: 16px; line-height: 1; }
+/* new patient admitted → green (tv-alerts.js) */
+.dm-bed.dm-alert-new { background: #22C55E !important; border-color: #86EFAC !important; color: #052E16 !important; --dm-glow: rgba(34, 197, 94, .8); }
+
+/* Ward display: today's saying between the title and the exit button */
+.display-mode-quote {
+  flex: 1; min-width: 0; margin: 0 24px; text-align: center;
+  font-family: "Amiri", "Noto Naskh Arabic", "Traditional Arabic", serif;
+  font-size: 26px; line-height: 1.6; font-weight: 700; color: #E9D8A6;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 4px 18px;
+}
+.display-mode-quote .dmq-sep { font-size: 16px; color: #B89A4E; }
+@media (max-width: 900px) { .display-mode-quote { font-size: 18px; margin: 0 8px; } }
+
+/* Admin: display sayings (daily-quotes.js renderAdmin) */
+.dq-list { display: flex; flex-direction: column; gap: 6px; }
+.dq-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface, #fff); cursor: pointer; }
+.dq-row input { flex: none; width: 18px; height: 18px; accent-color: var(--neon, #1D9E75); }
+.dq-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-family: "Amiri", serif; font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.6; }
+.dq-sub { font-family: inherit; font-size: 13px; font-weight: 400; color: var(--text-muted); }
+.dq-del { flex: none; width: 32px; height: 32px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--danger); cursor: pointer; font: inherit; font-weight: 800; }
+.dq-add { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.dq-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg, #fff); color: var(--text); font-family: "Amiri", serif; font-size: 16px; resize: vertical; }
+html[data-theme="dark"] .dq-row { background: #10241F; }
+html[data-theme="dark"] .dq-input { background: #0B1A16; color: #E6F4EF; }
+
+/* ============================================================
+   Ward display (TV): all 10 rooms on one screen, no scrolling —
+   5 × 2 rooms sized from the screen height (vh), beds in the
+   ward-wide order. Overrides the older sizes above.
+   ============================================================ */
+.display-mode-head { padding: 1vh 1.5vw; gap: 1vw; }
+.display-mode-icon { width: 5vh; height: 5vh; }
+.display-mode-title h2 { font-size: clamp(14px, 2.4vh, 30px); }
+.display-mode-title p { font-size: clamp(11px, 1.5vh, 18px); }
+.display-mode-quote { font-size: clamp(14px, 2.6vh, 32px); line-height: 1.4; }
+.display-mode-exit { padding: .6vh 1vw; font-size: clamp(11px, 1.5vh, 16px); }
+.display-mode-rooms {
+  flex: 1; min-height: 0; overflow: hidden;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 1.4vh 1vw; padding: 1.4vh 1.2vw; align-content: stretch;
+}
+.dm-room { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 1.2vh .8vw; border-radius: 1.6vh; }
+.dm-room-head { margin-bottom: .8vh; }
+.dm-room-num { font-size: clamp(14px, 2.6vh, 34px); }
+.dm-room-occ { font-size: clamp(10px, 1.5vh, 18px); }
+.dm-beds { flex: 1; min-height: 0; gap: .8vh .5vw; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); }
+.dm-room-4 .dm-beds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.dm-bed { min-height: 0; height: 100%; padding: .6vh .4vw; gap: .2vh; border-radius: 1.2vh; }
+.dm-bed-num { font-size: clamp(10px, 1.5vh, 18px); }
+.dm-bed-name { font-size: clamp(12px, 2.1vh, 26px); }
+.dm-alert-text { font-size: clamp(9px, 1.3vh, 16px); margin-top: .2vh; }
+.dm-bed-flag { font-size: clamp(9px, 1.4vh, 16px); top: .5vh; inset-inline-start: .4vw; }
+@media (max-aspect-ratio: 1/1) {
+  /* a portrait screen: 2 rooms a row and scrolling */
+  .display-mode-rooms { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 28vh; overflow-y: auto; }
+}
+
+/* Pills form preview zoom (pills-form.js previewPillsForms) */
+.pills-preview-pages.pills-zoomable { overflow: auto; align-items: stretch; }
+.pills-zoomable .pills-preview-page { flex: 0 0 auto; max-width: none; margin-inline: auto; }
+
+/* «الحبوب»: one section at a time (pills-page.js) */
+.pills-tabs { display: flex; gap: 8px; }
+.pills-tab {
+  flex: 1; padding: 10px 8px; border-radius: 12px; cursor: pointer; font: inherit; font-size: 14.5px; font-weight: 800;
+  border: 1.5px solid var(--border); background: var(--surface, #fff); color: var(--text-muted);
+}
+.pills-tab.is-men.is-active { background: #E6F1FB; border-color: #378ADD; color: #0C447C; }
+.pills-tab.is-women.is-active { background: #FBEAF0; border-color: #D4537E; color: #72243E; }
+.pills-tab.is-icu.is-active { background: #FAEEDA; border-color: #BA7517; color: #633806; }
+html[data-theme="dark"] .pills-tab { background: #10241F; }
+html[data-theme="dark"] .pills-tab.is-men.is-active { background: #0C447C; color: #E6F1FB; }
+html[data-theme="dark"] .pills-tab.is-women.is-active { background: #72243E; color: #FBEAF0; }
+html[data-theme="dark"] .pills-tab.is-icu.is-active { background: #633806; color: #FAEEDA; }
+
+/* «حكمة اليوم» popup (daily-quotes.js showPopup) */
+#quote-btn { background: var(--hdr2); }
+.quote-popup-overlay { position: fixed; inset: 0; z-index: 9000; background: rgba(8, 20, 17, .55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.quote-popup-card { width: min(560px, 100%); background: linear-gradient(180deg, var(--hdr1), var(--hdr3)); color: #F4E7C1; border-radius: 22px; padding: 22px 20px 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); text-align: center; border: 1px solid rgba(233, 216, 166, .35); }
+.quote-popup-title { font-weight: 800; font-size: 15px; color: #E9D8A6; letter-spacing: .5px; margin-bottom: 14px; }
+.quote-popup-text { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 6px 16px; font-family: "Amiri", "Noto Naskh Arabic", serif; font-size: 24px; line-height: 1.8; font-weight: 700; }
+.quote-popup-sep { color: #B89A4E; font-size: 15px; }
+.quote-popup-close { margin-top: 18px; padding: 10px 26px; border-radius: 12px; border: 1px solid rgba(233, 216, 166, .5); background: transparent; color: #E9D8A6; font: inherit; font-weight: 800; cursor: pointer; }
+/* popup: the two halves on two lines; smaller title + close button */
+.quote-popup-text { display: block; }
+.quote-popup-part { display: block; }
+.quote-popup-title { font-size: 12.5px; margin-bottom: 10px; }
+.quote-popup-close { margin-top: 14px; padding: 6px 16px; font-size: 13px; border-radius: 10px; }
+
+/* Sayings: a verse is always two lines (one per half), never more —
+   a half that doesn't fit gets a smaller font (daily-quotes.js fit) */
+.quote-line { display: block; white-space: nowrap; overflow: hidden; }
+.display-mode-quote { display: block; text-align: center; line-height: 1.35; }
+.quote-popup-text { display: block; }
+
+/* Chart send review: the chart's day */
+.med-summary-date { display: flex; align-items: center; gap: 8px; width: 100%; font-weight: 800; font-size: 13.5px; color: var(--text); }
+.med-summary-date input { flex: 1; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg, #fff); color: var(--text); font: inherit; }
+html[data-theme="dark"] .med-summary-date input { background: #0B1A16; color: #E6F4EF; color-scheme: dark; }
+
+/* Ward display: beds as in the ward — 2 columns (right / left), 3 rows in the
+   6-bed rooms, 2 in the 4-bed ones */
+.dm-beds, .dm-room-4 .dm-beds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.avail-dose { direction: ltr; unicode-bidi: isolate; font-size: 12.5px; font-weight: 800; color: var(--text-muted); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); }
+/* TV: the saying on ONE line — both halves side by side (the font shrinks to fit) */
+.display-mode-quote { display: flex; flex-wrap: nowrap; justify-content: center; align-items: baseline; gap: 0 1.6em; overflow: hidden; white-space: nowrap; }
+.display-mode-quote .quote-line { display: inline-block; flex: 0 0 auto; overflow: visible; }
+
+/* Dark mode: the medicines admin list (form badges + section headers) and the
+   gender toggle kept their light backgrounds — pale text on near-white. */
+html[data-theme="dark"] .admin-form-badge,
+html[data-theme="dark"] .admin-med-section-header {
+  background: #1C3A33 !important; color: #D6EDE5 !important; border-color: #2F5A50 !important;
+}
+html[data-theme="dark"] .admin-med-section-count { opacity: .85; }
+html[data-theme="dark"] .patient-gender-toggle:has(.patient-gender-btn.is-active) { background: var(--bg-card); }
+html[data-theme="dark"] .patient-gender-btn { color: #C5D6D0; }
+html[data-theme="dark"] .patient-gender-btn.is-active { background: var(--fill, #1F5A51); color: #fff; }
+/* the antibiotic day badge is editable: a small pencil says so */
+.abx-day-chip { cursor: pointer; }
+.abx-day-edit { margin-inline-start: 4px; font-size: .85em; opacity: .75; }
+
+/* Pharmacists: the patient header in this order — name, specialist, plate number,
+   from another floor (the other rows are hidden for them) */
+html.role-pharmacist #view-patient .patient-header { display: flex; flex-direction: column; }
+html.role-pharmacist #view-patient .patient-header > * { order: 10; }
+html.role-pharmacist #view-patient .patient-loc { order: 0; }
+html.role-pharmacist #view-patient .patient-name-row { order: 1; }
+html.role-pharmacist #view-patient .patient-doctor-row:not(.patient-diagnosis-row) { order: 2; }
+html.role-pharmacist #view-patient .patient-plate-row { order: 3; }
+html.role-pharmacist #view-patient .patient-origin-row { order: 4; }
+
+/* Dark mode on phones: search fields (type=search) get the system's own white
+   background on iOS / some Android browsers — light text on white. Tell the
+   browser the page is dark and force the fields' colours. */
+html[data-theme="dark"] { color-scheme: dark; }
+html[data-theme="dark"] input[type="search"],
+html[data-theme="dark"] #med-search,
+html[data-theme="dark"] .ward-search-input {
+  -webkit-appearance: none; appearance: none;
+  background-color: #0A1412 !important;
+  color: #E9F0ED !important; -webkit-text-fill-color: #E9F0ED;
+  caret-color: #E9F0ED;
+}
+html[data-theme="dark"] input::placeholder, html[data-theme="dark"] textarea::placeholder { color: #8FA39C; -webkit-text-fill-color: #8FA39C; opacity: 1; }
+
+/* ============================================================
+   Doctors: the patient card in three sections —
+   معلومات المريض (name, specialist, plate, age + sex, weight + height,
+   diagnosis, allergy) · التحاليل (labs + record / new) · العلاج
+   ============================================================ */
+.doc-section-title, .doc-labs-toolbar { display: none; }
+html.role-doctor #view-patient .patient-header { display: flex; flex-direction: column; }
+html.role-doctor #view-patient .patient-header > * { order: 50; }
+html.role-doctor #view-patient .patient-loc { order: 0; }
+html.role-doctor #view-patient .doc-info-title { order: 1; display: block; }
+html.role-doctor #view-patient .patient-name-row { order: 2; }
+html.role-doctor #view-patient .patient-doctor-row:not(.patient-diagnosis-row) { order: 3; }
+html.role-doctor #view-patient .patient-plate-row { order: 4; }
+html.role-doctor #view-patient .patient-demographics-row { order: 5; }
+html.role-doctor #view-patient .patient-body-row { order: 6; }
+html.role-doctor #view-patient .patient-diagnosis-row { order: 7; }
+html.role-doctor #view-patient .patient-allergy-row { order: 8; }
+html.role-doctor #view-patient .doc-labs-toolbar { order: 9; display: flex; }
+html.role-doctor #view-patient #patient-labs-row { order: 10; }
+html.role-doctor #view-patient #gfr-card { order: 11; }
+html.role-doctor #view-patient #patient-labs-history { order: 12; }
+.doc-section-title { font-weight: 800; font-size: 15px; color: var(--text); margin: 2px 2px 8px; }
+html.role-doctor .doc-labs-toolbar {
+  align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin: 18px -16px 4px; padding: 14px 16px 0; border-top: 6px solid var(--bg, #F4F2EC);
+}
+html.role-doctor .doc-labs-toolbar .doc-section-title { margin: 0; }
+.doc-labs-actions { display: flex; gap: 8px; }
+.doc-labs-btn {
+  padding: 8px 12px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 800;
+  border: 1px solid var(--border); background: var(--surface, #fff); color: var(--text);
+}
+.doc-labs-btn.is-new { background: var(--primary); color: #fff; border-color: var(--primary); }
+html[data-theme="dark"] .doc-labs-btn { background: #10241F; color: #E6F4EF; }
+html[data-theme="dark"] .doc-labs-btn.is-new { background: var(--fill, #1F5A51); border-color: var(--fill, #1F5A51); }
+html[data-theme="dark"].role-doctor .doc-labs-toolbar { border-top-color: #0B1A16; }
+html.role-doctor .doc-labs-toolbar .doc-section-title { display: block; }
+
+/* Lab cell: name · recorded result (+ date) · field for a new one + ✓ */
+#patient-labs-row { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; }
+.lab-cell { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface, #fff); }
+.lab-cell-name { font-size: 12.5px; font-weight: 800; color: var(--text-muted); direction: ltr; text-align: right; }
+.lab-cell-value { display: flex; align-items: baseline; gap: 6px; min-height: 22px; direction: ltr; justify-content: flex-end; }
+.lab-cell-value strong { font-size: 17px; font-weight: 800; color: var(--text); }
+.lab-cell-value.is-empty { color: var(--text-muted); }
+.lab-cell-date { font-size: 11px; color: var(--text-muted); }
+.lab-cell-entry { display: flex; gap: 6px; align-items: center; }
+.lab-cell-entry .lab-input { flex: 1; min-width: 0; }
+.lab-cell .lab-add-btn { flex: none; width: 34px; height: 34px; border-radius: 10px; font-size: 17px; font-weight: 900; }
+html[data-theme="dark"] .lab-cell { background: #10241F; }
+#patient-labs-row { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)) !important; }
+.lab-cell { padding: 7px; }
+.lab-cell .lab-input { padding-inline: 6px; }
+#patient-labs-row { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; }
+
+/* Doctors: labs folded until «عرض التحاليل» (patient-header.labs-open) */
+html.role-doctor #view-patient .patient-header:not(.labs-open) #patient-labs-row,
+html.role-doctor #view-patient .patient-header:not(.labs-open) #patient-labs-history { display: none !important; }
+
+/* Catalogue-only admin view (an allowed pharmacist): only the medicines list + form */
+#view-admin.catalog-only > *:not(.back-btn):not(.section-title):not(.admin-layout) { display: none !important; }
+#view-admin.catalog-only .section-title p { display: none; }
+/* Sayings-only admin view (an allowed pharmacist) */
+/* The admin's ⚙ is the settings page: «طباعة أوراق المرضى» is his only; the monthly report stays in his own
+   settings; the sections the settings page already has are hidden from the admin page */
+html.role-admin #settings-report-btn { display: none !important; }
+/* the ward display and «طلب إضافة دواء جديد» are the admin's (his settings page); the request row stays for the doctors */
+#settings-tv-btn { display: none !important; }
+html:not(.role-doctor) #settings-med-request-btn { display: none !important; }
+.admin-discharged-section[hidden] { display: none !important; }
+
+/* جدول الخفارات (duty-roster.js): not for doctors */
+html.role-doctor #settings-roster-btn { display: none !important; }
+.rs-nav { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin: 10px 0; color: var(--text); }
+.rs-nav strong { flex: 1; text-align: center; min-width: 120px; font-size: 16px; }
+.rs-btn { padding: 7px 12px; border-radius: 10px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.rs-print { background: var(--primary); color: #fff; border-color: var(--primary); }
+html[data-theme="dark"] .rs-print { background: var(--fill, #1F5A51); border-color: var(--fill, #1F5A51); }
+.rs-print[hidden] { display: none; }
+.rs-next { display: flex; align-items: center; gap: 14px; background: var(--primary-soft); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; margin: 10px 0; color: var(--text); }
+.rs-next[hidden] { display: none; }
+.rs-big { min-width: 2.6em; text-align: center; font-size: 30px; font-weight: 800; line-height: 1; color: var(--primary); }
+.rs-big small { display: block; margin-top: 3px; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.rs-next-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rs-next-txt strong { font-size: 15px; }
+.rs-next-txt span { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+.rs-myname { margin-top: 6px; max-width: 16em; padding: 5px 9px; border-radius: 8px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; font-size: 12px; }
+.rs-myname[hidden] { display: none; }
+.rs-in.rs-mine { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); font-weight: 800; }
+.rs-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.rs-table { width: 100%; border-collapse: collapse; min-width: 560px; color: var(--text); }
+.rs-table th, .rs-table td { padding: 8px 8px; border-bottom: 1px solid var(--border); text-align: center; font-size: 13px; vertical-align: middle; }
+.rs-table thead th { background: var(--primary-soft); font-weight: 800; position: sticky; top: 0; }
+.rs-table thead small { font-weight: 600; color: var(--text-muted); }
+.rs-table tbody th { text-align: right; white-space: nowrap; font-weight: 700; width: 24%; }
+.rs-w { font-size: 14px; font-weight: 800; }
+.rs-d { color: var(--text-muted); font-weight: 600; font-size: 12.5px; }
+.rs-h { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); margin-top: 2px; }
+.rs-tag { margin-inline-start: 6px; padding: 0 8px; border-radius: 999px; background: var(--warning-soft); color: var(--warning); font-size: 11px; font-weight: 800; }
+tr.is-hol th, tr.is-hol td { background: var(--warning-soft); }
+tr.is-today th { box-shadow: inset -3px 0 0 var(--primary); }
+.rs-in { width: 100%; min-width: 7em; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; font-size: 13px; text-align: center; }
+.rs-in:disabled { opacity: .45; }
+.rs-table td .rs-in + .rs-in { margin-top: 4px; }
+.rs-me { display: inline-block; background: var(--primary-soft); font-weight: 800; color: var(--primary); padding: 0 10px; border-radius: 999px; }
+.rs-none { color: var(--text-muted); }
+.rs-empty { padding: 22px; color: var(--text-muted); }
+
+/* تسليم واستلام (handover.js): not for doctors */
+html.role-doctor #settings-handover-btn { display: none !important; }
+.hv-status { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; font-size: 12px; max-width: 46vw; }
+.hv-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding: 9px 12px; margin: 6px 0; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; color: var(--text); }
+.hv-row strong { flex: 1 1 130px; min-width: 0; }
+.hv-time { width: 9em; max-width: 100%; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; font-size: 12px; }
+.hv-extra { margin-top: 8px; }
+.hv-extra[hidden] { display: none; }
+.hv-lab { display: block; margin-top: 8px; font-size: 12px; font-weight: 800; color: var(--text-muted); }
+.hv-lab .hv-time { display: block; margin-top: 4px; }
+.hv-lab .hv-prep { display: block; }
+.hv-row span { color: var(--text-muted); font-weight: 700; }
+.hv-row .hv-qty { color: var(--primary); font-weight: 800; text-align: center; background: var(--primary-soft); border-radius: 999px; padding: 1px 8px; }
+.hv-item { margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1.5px solid var(--border); }
+.hv-item.is-on { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+.hv-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 13px; color: var(--text); cursor: pointer; }
+.hv-pick input { width: 18px; height: 18px; }
+.hv-pick span { color: var(--text-muted); font-weight: 700; }
+.hv-meta { font-size: 12px; color: var(--text-muted); margin: 4px 0 0; text-align: left; }
+.hv-prep { width: 100%; margin-top: 4px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; font-size: 13px; resize: vertical; }
+.hv-prep[hidden] { display: none; }
+.hv-print { margin: 16px auto 24px; display: block; }
+.ix-section h3 small { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+
+/* The monthly report is the admin's: no button anywhere for pharmacists (open() is guarded too) */
+html.role-pharmacist #settings-report-btn,
+html.role-pharmacist #abx-report-btn,
+html.role-pharmacist #admin-report-btn { display: none !important; }
+
+/* Drug interactions page */
+.ix-card, .ix-patient { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; margin: 10px 0; }
+.ix-label { display: block; font-size: 12px; font-weight: 800; color: var(--text-muted); margin: 8px 0 4px; }
+.ix-select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; }
+.ix-result { margin-top: 10px; }
+.ix-section h3 { font-size: 15px; font-weight: 800; margin: 18px 0 6px; color: var(--text); }
+.ix-row { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; margin: 6px 0; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text); }
+.ix-row.is-danger { background: var(--danger-soft); }
+.ix-row.is-warning { background: var(--warning-soft); }
+.ix-ok, .ix-hint { padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 700; background: var(--primary-soft); color: var(--text); }
+.ix-hint { color: var(--text-muted); font-weight: 600; }
+.ix-patient-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font-size: 13px; color: var(--text); }
+.ix-patient-head span { color: var(--text-muted); font-weight: 600; }
+.ix-dd { flex-wrap: wrap; align-items: center; background: var(--surface); border: 1px solid var(--border); }
+.ix-badge { padding: 1px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; color: #fff; }
+.ix-badge.lv3 { background: #a8456b; } .ix-badge.lv2 { background: #b8932a; } .ix-badge.lv1 { background: #5f8a6c; } .ix-badge.lv0 { background: #7b8582; }
+.ix-pair { font-weight: 700; }
+.ix-mech { flex-basis: 100%; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.ix-note a { color: var(--primary); }
+.ix-note { font-size: 12px; color: var(--text-muted); margin: 14px 2px; }
+/* Albumin note: room below it so it can scroll above the phone keyboard */
+#view-abx.note-editing { padding-bottom: 60vh; }
+#view-abx .crit-note { scroll-margin-top: 72px; }
+#view-admin.quotes-only > *:not(.back-btn):not(#admin-quotes-section) { display: none !important; }
+.btn-user-catalog { padding: 6px 10px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 800; border: 1px solid var(--border); background: var(--surface, #fff); color: var(--text-muted); }
+.btn-user-catalog.is-on { background: #E9F7F1; border-color: #5DCAA5; color: #0F6E56; }
+html[data-theme="dark"] .btn-user-catalog { background: #10241F; color: #C5D6D0; }
+html[data-theme="dark"] .btn-user-catalog.is-on { background: #12302A; border-color: #2F8F72; color: #9FE1CB; }
+#view-admin.catalog-only .admin-ico-btn.del { display: none !important; }   /* add + edit, no delete */
+
+/* Effervescent (فوار) form */
+.sheet-tab[data-tab="effervescent"].active { background: #E0F2FE; border-color: #0284C7; color: #075985; }
+.admin-form-badge.is-effervescent { background: #E0F2FE; color: #075985; border: 1px solid #BAE6FD; }
+
+/* User management on phones: the name on top, the buttons wrap under it
+   (the buttons used to take the whole row and hide the name) */
+.admin-user-row { flex-wrap: wrap; }
+.admin-user-info { flex: 1 1 180px; }
+.admin-user-actions { flex: 1 1 auto; flex-shrink: 1; min-width: 0; }
+@media (max-width: 640px) {
+  .admin-user-info { flex-basis: 100%; }
+  .admin-user-actions { flex-basis: 100%; justify-content: flex-start; }
+}
+
+/* «مراقبة الأدوية الحرجة»: meronem / albumin counters are buttons → patient table */
+.abx-stat-btn { font: inherit; cursor: pointer; color: inherit; transition: border-color .15s, box-shadow .15s; }
+.abx-stat-btn::after { content: "اضغط لعرض الجدول"; display: block; font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.abx-stat-btn.is-open { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+.abx-stat-btn.is-open::after { content: "اضغط للإخفاء"; }
+.crit-table { border: 1.5px solid var(--border); border-radius: var(--r-md); overflow: hidden; }
+.crit-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr .6fr; gap: 6px; padding: 10px; width: 100%;
+  border: 0; border-bottom: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font: inherit; font-size: 13px; font-weight: 700; text-align: right; align-items: center; cursor: pointer; }
+.crit-row-header { background: var(--primary); color: #fff; font-size: 12px; font-weight: 800; cursor: default; }
+html[data-theme="dark"] .crit-row-header { background: var(--fill, var(--primary)); }
+.crit-row.is-open { background: var(--primary-soft); }
+.crit-name { font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crit-plate { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.crit-dose { text-align: right; }
+.crit-day { color: #DC2626; font-weight: 800; text-align: right; }
+html[data-theme="dark"] .crit-day { color: #F87171; }
+.crit-detail { padding: 12px; border-bottom: 1px solid var(--border); background: var(--surface-2, var(--surface)); }
+.crit-labs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.crit-lab { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+.crit-lab-name { font-size: 11px; font-weight: 700; color: var(--text-muted); direction: ltr; text-align: right; }
+.crit-lab-val { font-size: 18px; font-weight: 800; color: var(--text); direction: ltr; text-align: right; }
+.crit-lab-date { font-size: 11px; color: var(--text-muted); direction: ltr; text-align: right; }
+.crit-note-label { display: block; font-size: 12px; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+.crit-note { width: 100%; min-height: 140px; box-sizing: border-box; padding: 10px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: 14px; line-height: 1.6; resize: vertical; }
+.crit-note:focus { outline: none; border-color: var(--primary); }
+
+/* «تحاليل الورقة» (doctor + admin): which labs the patient sheet prints */
+html.role-admin #view-patient .doc-labs-toolbar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
+html.role-admin #labs-toggle-btn { display: none; }
+html.role-pharmacist #labs-print-btn { display: none; }
+.labs-print-panel { flex-basis: 100%; margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface, #fff); }
+.labs-print-hint { font-size: 12.5px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; }
+.labs-print-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.labs-print-item { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px;
+  font-size: 13px; font-weight: 700; cursor: pointer; direction: ltr; color: var(--text); background: var(--surface, #fff); }
+.labs-print-item.is-all { direction: rtl; }
+.labs-print-item input { margin: 0; accent-color: var(--primary); }
+html[data-theme="dark"] .labs-print-item input { accent-color: var(--fill, #1F5A51); }
+
+/* Undo toast (delete / discharge / death) — app.js deferExit */
+.undo-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 3000;
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px 14px; border-radius: 14px; overflow: hidden;
+  width: min(92vw, 460px); box-sizing: border-box; background: #1F2933; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.3);
+  font-size: 14px; font-weight: 700; }
+.undo-toast-msg { flex: 1; line-height: 1.5; }
+.undo-toast-btn { flex: none; padding: 8px 16px; border-radius: 10px; border: 0; background: #FBBF24; color: #1F2933;
+  font: inherit; font-weight: 800; cursor: pointer; }
+.undo-toast-bar { position: absolute; bottom: 0; right: 0; height: 4px; width: 100%; background: #FBBF24; transform-origin: right;
+  animation: undo-shrink linear forwards; }
+@keyframes undo-shrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* Archived record: medicines + labs */
+.arch-details { margin-top: 8px; font-size: 12.5px; }
+.arch-details summary { cursor: pointer; font-weight: 800; color: var(--primary); }
+html[data-theme="dark"] .arch-details summary { color: var(--primary); }
+.arch-sub { margin: 8px 0 4px; font-weight: 800; color: var(--text-muted); font-size: 12px; }
+.arch-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 3px; color: var(--text); }
+.arch-list li[dir="ltr"] { text-align: right; }
+.arch-med-extra { color: var(--text-muted); font-weight: 600; }
+
+/* Colour themes picker (settings): a row of round swatches under the dark-mode row */
+.palette-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); }
+.palette-row-label { font-weight: 800; font-size: 14px; color: var(--text); white-space: nowrap; }
+.palette-swatches { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.palette-swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border-strong); cursor: pointer; padding: 0; transition: transform 120ms ease; }
+.palette-swatch:active { transform: scale(0.9); }
+.palette-swatch.is-on { box-shadow: 0 0 0 3px var(--primary); }
+
+/* «الطلبية»: the icon stays white in light and dark mode */
+#order-list-btn { color: #fff !important; }
+
+/* Header ornament chips (settings) */
+.ornament-row { flex-direction: column; align-items: stretch; }
+.orn-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.orn-chip { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.orn-chip.is-on { background: var(--primary); color: var(--surface); border-color: var(--primary); }
+html[data-theme="dark"] .orn-chip.is-on { background: var(--fill, var(--primary)); color: #fff; border-color: var(--primary); }
+.orn-preview { position: relative; height: 120px; margin-top: 12px; border-radius: 14px; overflow: hidden; isolation: isolate; background: linear-gradient(160deg, #1D5048 0%, #17433D 50%, #10322D 100%); }
+.orn-preview::before { content: ""; position: absolute; inset: 0; z-index: -1; }
+.orn-preview[hidden], .orn-pos[hidden] { display: none; }
+.orn-pos { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.orn-slider { display: grid; grid-template-columns: 9em 1fr 3.6em; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; color: var(--text); }
+.orn-slider input { width: 100%; }
+.orn-slider b { text-align: end; color: var(--text-muted); font-weight: 700; direction: ltr; }
+
+/* Neon press effect (neon.js): a glow in the theme colour on the pressed button / option */
+:root { --neon: var(--pal-accent, #1D9E75); }
+html[data-theme="dark"] { --neon: var(--pal-accent, #5DCAA5); }
+@keyframes neonPress {
+  0%   { box-shadow: 0 0 0 1px var(--neon), 0 0 8px 1px var(--neon), 0 0 22px 4px color-mix(in srgb, var(--neon) 55%, transparent); }
+  60%  { box-shadow: 0 0 0 1px var(--neon), 0 0 12px 2px var(--neon), 0 0 30px 8px color-mix(in srgb, var(--neon) 40%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+.neon-hit { animation: neonPress 1500ms ease-in-out; }
+
+/* header colours (shared by the header, the sayings popup and its button; palettes.css overrides them) */
+:root { --hdr1: #1D5048; --hdr2: #17433D; --hdr3: #10322D; }
+html[data-theme="dark"] { --hdr1: #143832; --hdr2: #0F2925; --hdr3: #0B1D1A; }
+/* fire: the log-out buttons */
+@keyframes fxFire {
+  0%   { box-shadow: 0 0 0 1px #ffb347, 0 -6px 14px 2px #ff7a00, 0 -14px 28px 6px rgba(255, 60, 0, .55); }
+  50%  { box-shadow: 0 0 0 1px #ffd27a, 0 -9px 18px 4px #ff5a00, 0 -20px 34px 8px rgba(255, 40, 0, .45); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.fx-fire { animation: fxFire 900ms ease-out; }
+/* light sweep: a medicine ticked in the add-medicine sheet */
+@keyframes fxShine { 0% { background-position: 130% 0; } 100% { background-position: -130% 0; } }
+/* drawn as a moving background layer, so the row's size never changes while it runs */
+.fx-shine, .med-option.fx-shine, .med-option:has(input:checked).fx-shine { background-image: linear-gradient(105deg, transparent 38%, color-mix(in srgb, var(--neon) 60%, #fff) 50%, transparent 62%) !important; background-size: 260% 100% !important; background-repeat: no-repeat !important; animation: fxShine 800ms ease-out; }
+/* spinning border: a bed that just got a medicine */
+@property --fxa { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes fxSpin { to { --fxa: 360deg; } }
+.fx-laser-ring { position: absolute; inset: 0; border-radius: inherit; padding: 3px; pointer-events: none; z-index: 3; background: conic-gradient(from var(--fxa), #f43f5e, #f59e0b, #84cc16, #06b6d4, #8b5cf6, #f43f5e); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; filter: drop-shadow(0 0 5px rgba(139, 92, 246, .65)); animation: fxSpin 1250ms linear 4; }
+/* Saved effects, not used anywhere yet — PharmacyFx.play(element, name) with name = plasma | ice | rainbow | gold | scan | double */
+@keyframes fxPlasma { 0% { box-shadow: 0 0 0 1px #f0abfc, 0 0 12px 2px #c026d3, 0 0 28px 6px rgba(124, 58, 237, .6); } 50% { box-shadow: 0 0 0 1px #a5b4fc, 0 0 16px 4px #7c3aed, 0 0 36px 10px rgba(192, 38, 211, .5); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.fx-plasma { animation: fxPlasma 1100ms ease-in-out; }
+@keyframes fxIce { 0% { box-shadow: 0 0 0 1px #e0f2fe, 0 0 10px 2px #7dd3fc, 0 0 24px 5px rgba(186, 230, 253, .7); filter: brightness(1.1) saturate(.8); } 100% { box-shadow: 0 0 0 0 transparent; filter: none; } }
+.fx-ice { animation: fxIce 1000ms ease-out; }
+@property --fxb { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes fxRainbowSpin { to { --fxb: 360deg; } }
+.fx-rainbow { position: relative; }
+.fx-rainbow::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; padding: 2.5px; pointer-events: none; background: conic-gradient(from var(--fxb), #f43f5e, #f59e0b, #84cc16, #06b6d4, #8b5cf6, #f43f5e); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: fxRainbowSpin 1000ms linear; filter: drop-shadow(0 0 4px rgba(139, 92, 246, .6)); }
+@keyframes fxGold { 0% { box-shadow: 0 0 0 1px #fde68a, 0 0 12px 2px #f59e0b, 0 0 28px 6px rgba(245, 158, 11, .5); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.fx-gold { animation: fxGold 1100ms ease-out; }
+@keyframes fxScan { 0% { top: -4px; opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.fx-scan { position: relative; overflow: hidden; }
+.fx-scan::after { content: ""; position: absolute; left: 0; right: 0; height: 3px; pointer-events: none; background: linear-gradient(90deg, transparent, #22d3ee, transparent); box-shadow: 0 0 10px #22d3ee; animation: fxScan 600ms ease-in; }
+@keyframes fxDouble { 0% { opacity: .9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7, 2.1); } }
+.fx-double { position: relative; }
+.fx-double::before, .fx-double::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; border: 2px solid var(--neon); box-shadow: 0 0 10px var(--neon); animation: fxDouble 700ms ease-out; }
+.fx-double::after { animation-delay: 180ms; opacity: 0; animation-fill-mode: backwards; }
+@media (prefers-reduced-motion: reduce) { .neon-hit, .fx-fire, .fx-shine, .fx-laser-ring, .fx-plasma, .fx-ice, .fx-rainbow::before, .fx-gold, .fx-scan::after, .fx-double::before, .fx-double::after { animation: none; } }
+
+/* a bed someone else has open (presence.js): a scanning line sweeps it until they leave */
+@keyframes fxScanLive { 0% { top: -6px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: calc(100% - 2px); opacity: 0; } }
+.fx-scan-box { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2; background: color-mix(in srgb, var(--neon) 7%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--neon) 55%, transparent); }
+.fx-scan-line { position: absolute; left: 0; right: 0; top: -6px; height: 3px; background: linear-gradient(90deg, transparent, var(--neon), transparent); box-shadow: 0 0 10px 2px var(--neon); animation: fxScanLive 1700ms linear infinite; }
+@media (prefers-reduced-motion: reduce) { .fx-scan-line { animation: none; top: 50%; } }
+
+/* a deleted patient's bed (neon.js glitchBed): cyan / pink glitch until the undo window ends */
+@keyframes fxHoloLive { 0%, 100% { text-shadow: none; filter: none; } 15% { text-shadow: 2px 0 #0ff, -2px 0 #f0f; filter: hue-rotate(40deg) brightness(1.2); } 30% { text-shadow: -2px 0 #0ff, 2px 0 #f0f; } 50% { text-shadow: 1px 0 #0ff, -1px 0 #f0f; filter: hue-rotate(-40deg) brightness(1.15); } 75% { text-shadow: none; } }
+@keyframes fxHoloBox { 0%, 100% { opacity: .9; } 40% { opacity: .35; } 70% { opacity: 1; } }
+.fx-holo-live { animation: fxHoloLive 900ms steps(1, end) infinite; }
+.fx-holo-box { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; background: repeating-linear-gradient(0deg, rgba(0, 255, 255, .22) 0 2px, transparent 2px 5px), linear-gradient(90deg, rgba(255, 0, 255, .12), rgba(0, 255, 255, .12)); animation: fxHoloBox 700ms steps(3, end) infinite; }
+@media (prefers-reduced-motion: reduce) { .fx-holo-live, .fx-holo-box { animation: none; } }
+.fx-holo-live { pointer-events: none; }
+
+/* Add-medicine sheet: the list always keeps room, and with the keyboard up the sheet is compact —
+   the search field, the list and the selected medicines all stay in view */
+.med-sheet .med-options { min-height: 110px; }
+.med-sheet .sheet-selected { max-height: min(22dvh, 190px); }
+.med-sheet.kb-open .sheet-handle { margin: 4px auto 0; }
+.med-sheet.kb-open .sheet-header { padding: 2px 16px 4px; }
+.med-sheet.kb-open .sheet-header h3 { font-size: 15px; }
+.med-sheet.kb-open .med-avail-legend { display: none; }
+.med-sheet.kb-open .sheet-search { padding-bottom: 6px; }
+.med-sheet.kb-open .sheet-tabs { display: flex; overflow-x: auto; padding-bottom: 6px; gap: 6px; }
+.med-sheet.kb-open .sheet-tab { flex: 0 0 auto; padding: 6px 10px; white-space: nowrap; }
+.med-sheet.kb-open .med-options { min-height: 64px; }
+.med-sheet.kb-open .sheet-selected { max-height: calc(var(--sheet-vh, 100dvh) * .17); padding: 4px 12px; }
+.med-sheet.kb-open .sheet-actions { padding: 6px 16px; }
+
+
+/* Admin: the specialists list (specialists-admin.js) */
+.spec-list { display: flex; flex-direction: column; gap: 6px; }
+.spec-row, .spec-add { display: flex; align-items: center; gap: 8px; }
+.spec-add { margin-top: 8px; }
+.spec-input { flex: 1; min-width: 0; box-sizing: border-box; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
+.spec-del { flex: none; padding: 7px 12px; border-radius: 10px; border: 1px solid var(--danger); background: transparent; color: var(--danger); font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.spec-clear { margin-top: 10px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--danger); background: transparent; color: var(--danger); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.spec-clear:disabled { opacity: .45; cursor: default; }
+.spec-empty { font-size: 13px; color: var(--text-muted); padding: 6px 2px; }
+.hv-item > .hv-timelab { margin-top: 8px; }
+
+/* «الحبوب»: which forms to print (pills-page.js) */
+.pills-pick { flex: none; width: 22px; height: 22px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.pills-pick-count { font-size: 12.5px; font-weight: 800; color: var(--text-muted); }
+.pills-section-head { flex-wrap: wrap; }
+.pills-print-sel { background: var(--primary); color: #fff; border-color: var(--primary); }
+html[data-theme="dark"] .pills-print-sel { background: var(--fill, var(--primary)); border-color: var(--fill, var(--primary)); }
+
+/* Personal greeting card (greetings.js) */
+@keyframes greetIn { from { opacity: 0; transform: translateY(18px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes greetFall { 0% { transform: translateY(-12vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(105vh) rotate(540deg); opacity: .9; } }
+.greet-overlay { position: fixed; inset: 0; z-index: 9500; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(8, 20, 17, .58); overflow: hidden; }
+.greet-rain { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.greet-conf { position: absolute; top: 0; width: 9px; height: 14px; border-radius: 2px; animation: greetFall 4s linear infinite; }
+.greet-card { position: relative; width: min(420px, 100%); text-align: center; padding: 26px 22px 20px; border-radius: 24px; color: #F4E7C1; background: linear-gradient(170deg, var(--hdr1), var(--hdr3)); border: 1px solid rgba(233, 216, 166, .4); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); animation: greetIn 420ms cubic-bezier(.22, 1, .36, 1) both; }
+.greet-mark { display: grid; place-items: center; margin-bottom: 8px; }
+.greet-title { margin: 0 0 10px; font-size: 22px; font-weight: 800; color: #FDE9A9; line-height: 1.5; }
+.greet-text { margin: 0 0 18px; font-size: 15.5px; line-height: 1.9; font-weight: 600; color: #F4E7C1; }
+.greet-close { padding: 10px 28px; border-radius: 14px; border: 1px solid rgba(233, 216, 166, .55); background: transparent; color: #FDE9A9; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .greet-conf, .greet-card { animation: none; } }
+
+/* admin: greetings list + form (greetings.js); a message keeps its line breaks */
+.greet-text { white-space: pre-line; }
+.greet-list { display: flex; flex-direction: column; gap: 6px; }
+.greet-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.greet-info { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.greet-info span { color: var(--text-muted); }
+.greet-act { border-color: var(--border-strong); color: var(--text); }
+.greet-form { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.greet-f { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 800; color: var(--text-muted); }
+.greet-f[hidden] { display: none; }
+.greet-btns { display: flex; gap: 8px; align-items: center; }
+
+/* 6th Floor: unit / kind headings between the room cards */
+.unit-head { grid-column: 1 / -1; font-weight: 800; font-size: 15px; color: var(--primary); padding: 10px 4px 2px; border-bottom: 2px solid var(--border); }
+.unit-head.is-private { opacity: .85; }
+.room-beds.single { display: grid; grid-template-columns: 1fr; gap: 6px; }
+
+/* 6th Floor has no handover / receipt form */
+#settings-handover-btn, #admin-handover-btn, .admin-discharged-section:has(#admin-handover-btn) { display: none !important; }
