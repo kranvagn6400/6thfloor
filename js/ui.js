@@ -1744,7 +1744,7 @@
   }
 
   global.PharmacyUI = {
-    setUnit, setPillsUnit, markNav,
+    setUnit, setPillsUnit, markNav, getUnit: () => currentUnit,
     getScrollY,
     setScrollY,
     h,

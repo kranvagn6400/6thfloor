@@ -28,10 +28,16 @@ const CHART_API = CHART_SITE + "/api";
 // The chart's server rejects saves / sign-out without its own Origin
 // ("طلب غير موثوق") — send what its own page sends.
 const SITE_HEADERS = { Origin: CHART_SITE, Referer: CHART_SITE + "/" };
-const WARD = { floor: 6, ward: "الطابق السادس", slot: "main" };
+// The floor has two wards, each with its own chart (unit "1" = الوحدة الأولى, "3" = الوحدة الثالثة);
+// the app says which one a send is for. ⚠ ward = the name as written in the chart app.
+const WARDS = {
+  "1": { floor: 6, ward: "الوحدة الأولى", slot: "main" },
+  "3": { floor: 6, ward: "الوحدة الثالثة", slot: "main" }
+};
+const WARD = WARDS["1"];
 const SUPABASE_URL = "https://khbvyfchwtvdbrkdhfwz.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtoYnZ5ZmNod3R2ZGJya2RoZnd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDQ5NzMsImV4cCI6MjEwODYyMDk3M30.shQzIsK2UueUCty79bj0fWFtZ6DGGDMlkJ0oKxhPcVk";
-const ORIGINS = ["https://clinical-chart.vercel.app", "https://cheny1000.github.io", "http://localhost:5173"];
+const ORIGINS = ["https://6thfloor.vercel.app", "https://kranvagn6400.github.io", "http://localhost:5174"];
 
 function cors(req, res) {
   const o = req.headers.origin;
@@ -82,23 +88,23 @@ async function chartFetch(path, cookie, init) {
   return { status: r.status, ok: r.ok, body };
 }
 
-const chartQuery = (slot, date) => "?" + new URLSearchParams({ floor: WARD.floor, ward: WARD.ward, slot, date });
+const chartQuery = (slot, date, w = WARD) => "?" + new URLSearchParams({ floor: w.floor, ward: w.ward, slot, date });
 
 // Merge our table into ONE chart of the chart app (slot "main" or "extra") and
 // save it; a 409 (someone changed it meanwhile) → read + merge once more.
 // `got` = the GET of that chart. → { ok, summary, overflow, complete } | { ok: false, message }
-async function saveSlot(slot, got, data, catalogue, cookie, date, mergeOpts) {
+async function saveSlot(slot, got, data, catalogue, cookie, date, mergeOpts, w = WARD) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const chart = got.body.chart;
     const { body, summary, overflow } = Merge.merge(chart, data, catalogue, mergeOpts);
     const put = await chartFetch("/chart", cookie, {
       method: "PUT",
-      body: JSON.stringify(Object.assign({ floor: WARD.floor, ward: WARD.ward, slot, date }, body,
+      body: JSON.stringify(Object.assign({ floor: w.floor, ward: w.ward, slot, date }, body,
         { expectedVersion: chart ? chart.version : 0 }))
     });
     if (put.ok) {
       // Read back: the chart drops what it doesn't accept without an error
-      const back = await chartFetch("/chart" + chartQuery(slot, date), cookie);
+      const back = await chartFetch("/chart" + chartQuery(slot, date, w), cookie);
       const missing = back.ok ? Merge.verify(back.body.chart, body) : null;
       if (missing) {
         missing.meds.forEach(m => summary.skipped.push("لم يحفظه الجارت: الدواء «" + m + "»"));
@@ -128,7 +134,9 @@ module.exports = async function handler(req, res) {
   const role = await appRole(req, user).catch(() => null);
   if (role !== "pharmacist" && role !== "admin") return fail(res, 403, "الإرسال إلى الجارت للصيادلة والمسؤول فقط");
 
-  const { action, date, tsv } = req.body || {};
+  const { action, date, tsv, unit } = req.body || {};
+  const ward = WARDS[String(unit || "1")];
+  if (!ward) return fail(res, 400, "وحدة غير معروفة");
   // A personal account sent by the device wins; else the ward's shared one
   const personal = !!(req.body && req.body.username && req.body.password);
   const username = personal ? req.body.username : process.env.CHART_USERNAME;
@@ -164,7 +172,7 @@ module.exports = async function handler(req, res) {
     return fail(res, 502, "تعذّر الوصول إلى موقع الجارت");
   }
 
-  const q = chartQuery(WARD.slot, date);
+  const q = chartQuery(ward.slot, date, ward);
   try {
     if (action === "nodouble") {
       const medsRes = await chartFetch("/medicines", cookie);
@@ -204,11 +212,11 @@ module.exports = async function handler(req, res) {
     // The chart has 41 rows, the ward 50 beds: patients that do not fit go to the
     // chart app's «الجارت الإضافي» (slot "extra"). It is read first so that a patient
     // already living there is not added to the main chart as well.
-    const gotExtra = await chartFetch("/chart" + chartQuery("extra", date), cookie);
+    const gotExtra = await chartFetch("/chart" + chartQuery("extra", date, ward), cookie);
     const extraChart = gotExtra.ok ? gotExtra.body.chart : null;
     const skipRow = (r) => gotExtra.ok && Merge.hasPatient(extraChart, r);
 
-    const main = await saveSlot(WARD.slot, got, data, catalogue, cookie, date, { collectOverflow: true, skipRow });
+    const main = await saveSlot(ward.slot, got, data, catalogue, cookie, date, { collectOverflow: true, skipRow }, ward);
     if (!main.ok) return fail(res, 502, main.message);
     const summary = main.summary;
     let complete = main.complete;
@@ -223,7 +231,7 @@ module.exports = async function handler(req, res) {
         summary.skipped.push("الجارت الإضافي مفتوح للتعديل عند آخر — أعد الإرسال لهؤلاء: " + names);
         complete = false;
       } else {
-        const ex = await saveSlot("extra", gotExtra, Merge.subset(data, main.overflow), catalogue, cookie, date, {});
+        const ex = await saveSlot("extra", gotExtra, Merge.subset(data, main.overflow), catalogue, cookie, date, {}, ward);
         if (!ex.ok) {
           summary.skipped.push("تعذّر الحفظ في الجارت الإضافي (" + ex.message + ") — لم يُرسل: " + names);
           complete = false;

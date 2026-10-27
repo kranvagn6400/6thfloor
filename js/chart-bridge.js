@@ -135,7 +135,7 @@
      { bedKey: freq }) so the supplies the user just distributed via
      the supply-order modal are injected into each patient's meds
      list — same way the med-summary modal does it. */
-  function collectPatientsFromApp(state, supplyDistribution) {
+  function collectPatientsFromApp(state, supplyDistribution, unit) {
     const Ward = global.PharmacyWard;
     if (!Ward || !Ward.ROOMS || !state || !state.patients) return [];
 
@@ -149,7 +149,7 @@
     });
 
     const out = [];
-    Ward.ROOMS.forEach(room => {
+    Ward.ROOMS.filter(r => !unit || r.unit === unit).forEach(room => {
       room.beds.forEach(bed => {
         const key = Ward.bedKey(room.id, bed.number);
         const p = state.patients[key];
@@ -256,8 +256,8 @@
     return !isNaN(n) && n > 0 ? n : 1;
   }
 
-  function buildChartTSV(state, supplyDistribution) {
-    const patients = collectPatientsFromApp(state, supplyDistribution);
+  function buildChartTSV(state, supplyDistribution, unit) {
+    const patients = collectPatientsFromApp(state, supplyDistribution, unit);
 
     // رؤوس الأعمدة: كل دواء فريد يظهر مرة واحدة فقط
     // مرتّبة: مضادات حيوية ← حبوب وشرابات… ← سرنجات جاهزة ← أمبولات وفيالات ← مستلزمات
@@ -300,21 +300,22 @@
   // chart-sync.js), which fills today's ward chart with the
   // pharmacist's chart account. The result is kept on the log entry.
   // date: the chart's day ("YYYY-MM-DD"); empty = today
-  async function sendTsv(tsv, logId, onProgress, date) {
+  async function sendTsv(tsv, logId, onProgress, date, unit) {
     const Sync = global.PharmacyChartSync;
-    const r = Sync ? await Sync.send(tsv, onProgress, date) : { ok: false, message: "تعذّر تحميل وحدة الإرسال" };
+    const r = Sync ? await Sync.send(tsv, onProgress, date, unit) : { ok: false, message: "تعذّر تحميل وحدة الإرسال" };
     if (logId && global.PharmacyChartLog && !r.cancelled) global.PharmacyChartLog.setResult(logId, r);
     return r;
   }
 
-  async function sendChart(state, supplyDistribution, onProgress, date) {
-    const tsv = buildChartTSV(state, supplyDistribution);
+  async function sendChart(state, supplyDistribution, onProgress, date, unit) {
+    unit = unit === "3" ? "3" : "1";
+    const tsv = buildChartTSV(state, supplyDistribution, unit);
     // Keep the exact table in the send log (chart-send-log.js) first,
     // so it can be re-sent if anything goes wrong on the way.
     const entry = global.PharmacyChartLog
-      ? global.PharmacyChartLog.add(tsv, { withSupplies: !!(supplyDistribution && Object.keys(supplyDistribution).length), date: date || "" })
+      ? global.PharmacyChartLog.add(tsv, { withSupplies: !!(supplyDistribution && Object.keys(supplyDistribution).length), date: date || "", unit })
       : null;
-    return sendTsv(tsv, entry && entry.id, onProgress, date);
+    return sendTsv(tsv, entry && entry.id, onProgress, date, unit);
   }
 
   // Manual fallback: open the chart site (the table is on the clipboard)

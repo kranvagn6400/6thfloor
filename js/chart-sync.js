@@ -84,7 +84,7 @@
       box.setAttribute("aria-modal", "true");
       box.appendChild(el("h3", "chart-acc-title", "ربط حساب الجارت"));
       box.appendChild(el("p", "chart-acc-hint",
-        "حسابك في موقع الجارت — يُحفظ على هذا الجهاز فقط ويُحذف عند تسجيل الخروج من التطبيق. يُستعمل لتعبئة جارت الردهة الخامسة تلقائياً."));
+        "حسابك في موقع الجارت — يُحفظ على هذا الجهاز فقط ويُحذف عند تسجيل الخروج من التطبيق. يُستعمل لتعبئة جارت الوحدتين تلقائياً."));
       const user = el("input", "chart-acc-input");
       user.type = "text"; user.placeholder = "اسم المستخدم في الجارت"; user.autocomplete = "off"; user.dir = "ltr";
       user.value = cur ? cur.username : "";
@@ -127,10 +127,10 @@
   // Send a table (TSV) into today's ward chart. Asks for the account the
   // first time (or after a wrong password). → { ok, summary | message }
   // date: the chart's day ("YYYY-MM-DD"), today when empty
-  async function send(tsv, onProgress, date) {
+  async function send(tsv, onProgress, date, unit) {
     let acc = getAccount();                         // personal override, if any
     const day = /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : todayISO();
-    const payload = (a) => Object.assign({ action: "send", date: day, tsv }, a ? { username: a.username, password: a.password } : {});
+    const payload = (a) => Object.assign({ action: "send", date: day, tsv, unit: unit || "1" }, a ? { username: a.username, password: a.password } : {});
     if (onProgress) onProgress("جارٍ الإرسال إلى الجارت… قد يستغرق دقيقة إذا كان موقع الجارت نائماً");
     let r = await call(payload(acc));
     // No shared account on the server, or a wrong personal one → ask once

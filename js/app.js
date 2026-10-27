@@ -177,6 +177,40 @@
     });
   }
 
+  // In-app choice box: options = [[value, label], …] → the chosen value, or null when dismissed
+  function askChoice(message, options) {
+    return new Promise(resolve => {
+      const ov = document.createElement("div");
+      ov.style.cssText = "position:fixed;inset:0;z-index:100000;background:rgba(15,40,70,.45);display:flex;align-items:center;justify-content:center;padding:20px";
+      const box = document.createElement("div");
+      box.setAttribute("role", "dialog");
+      box.dir = "rtl";
+      box.style.cssText = "background:var(--surface,#fff);color:var(--text,#12304a);border-radius:18px;padding:22px 20px 16px;max-width:340px;width:100%;box-shadow:0 20px 50px -12px rgba(0,0,0,.4);font:inherit";
+      const p = document.createElement("p");
+      p.style.cssText = "margin:0 0 14px;font-weight:700;line-height:1.7";
+      p.textContent = message;
+      box.appendChild(p);
+      const done = v => { ov.remove(); resolve(v); };
+      options.forEach(([v, label]) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = label;
+        b.style.cssText = "display:block;width:100%;margin:0 0 8px;padding:12px 8px;border-radius:12px;font:inherit;font-weight:800;cursor:pointer;border:1px solid var(--border,#cbd5e1);background:var(--primary,#1f6fa8);color:#fff";
+        b.addEventListener("click", () => done(v));
+        box.appendChild(b);
+      });
+      const c = document.createElement("button");
+      c.type = "button";
+      c.textContent = "إلغاء";
+      c.style.cssText = "display:block;width:100%;padding:11px 8px;border-radius:12px;font:inherit;font-weight:800;cursor:pointer;border:1px solid var(--border,#cbd5e1);background:var(--surface,#fff);color:var(--text,#12304a)";
+      c.addEventListener("click", () => done(null));
+      box.appendChild(c);
+      ov.addEventListener("click", e => { if (e.target === ov) done(null); });
+      ov.appendChild(box);
+      document.body.appendChild(ov);
+    });
+  }
+
   async function userLogout() {
     if (!(await askConfirm("هل تريد تسجيل الخروج؟", "تسجيل الخروج", "إلغاء"))) return;
     flushPendingPatientChanges();
@@ -3788,6 +3822,21 @@
           dateWrap.appendChild(dateLbl);
           dateWrap.appendChild(dateInput);
           footer.appendChild(dateWrap);
+          // which ward's chart receives it (each unit has its own)
+          const unitWrap = document.createElement("label");
+          unitWrap.className = "med-summary-date";
+          const unitLbl = document.createElement("span");
+          unitLbl.textContent = "الردهة الهدف";
+          const unitSel = document.createElement("select");
+          [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]].forEach(([v, t]) => {
+            const o = document.createElement("option");
+            o.value = v; o.textContent = t;
+            unitSel.appendChild(o);
+          });
+          unitSel.value = UI.getUnit();
+          unitWrap.appendChild(unitLbl);
+          unitWrap.appendChild(unitSel);
+          footer.appendChild(unitWrap);
           const sendBtn = document.createElement("button");
           sendBtn.type = "button";
           sendBtn.className = "med-summary-send-btn";
@@ -3801,7 +3850,7 @@
             try {
               const day = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) ? dateInput.value : global.PharmacyChartSync.todayISO();
               if (day !== global.PharmacyChartSync.todayISO() && !confirm("الإرسال إلى جارت يوم " + day + " (ليس اليوم)؟")) return;
-              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day);
+              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, unitSel.value);
               if (r.cancelled) return;
               flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
               if (r.ok) { saveSentSupplies(supplyDistribution, day); closeMedSummary(); }
@@ -4005,11 +4054,13 @@
         flashHint("تعذّر تحميل وحدة جسر الجارت");
         return;
       }
+      const unit = await askChoice("إرسال بيانات أي وحدة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]]);
+      if (!unit) return;
       UI.showView("home");
       flashHint("يتم إرسال بيانات المرضى إلى الجارت...");
       setTimeout(async () => {
         try {
-          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint);
+          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit);
           if (!r.cancelled) flashHint(global.PharmacyChartSync.describe(r));
         } catch (err) {
           flashHint("تعذّر الإرسال: " + (err.message || err));
