@@ -2471,3 +2471,6 @@ html.limited-admin #settings-catalog-btn, html.limited-admin .admin-layout { dis
 html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-requests-section { display: none !important; }
 .avail-list { grid-template-columns: minmax(0, 1fr); }
 .avail-row { min-width: 0; }
+
+/* bottom nav: one line per label, equal heights */
+.bottom-nav .nav-label { white-space: nowrap; font-size: 10.5px; }
