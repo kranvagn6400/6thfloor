@@ -767,7 +767,7 @@
 
     // Bottom tabs (الوحدتان، حبوب الوحدتين، المرضى): pharmacists + admin
     const pharmacyTabs = isAdmin || (Auth && Auth.isPharmacist && Auth.isPharmacist());
-    ["unit3", "pills1", "pills3", "private"].forEach(nav => {
+    ["unit3", "pills1", "pills3"].forEach(nav => {
       const tab = document.querySelector('.nav-item[data-nav="' + nav + '"]');
       if (tab) tab.style.display = pharmacyTabs ? "" : "none";
     });
@@ -1534,23 +1534,24 @@
   }
   // «الطلبية» and the chart send work on ONE unit: the unit page the user is on. On any other page
   // (pills, patients…) they ask to choose a unit first.
-  let _flowUnit = null;
+  let _flowUnit = null, _flowKind = "general";
   function pickFlowUnit() {
     if (!(UI.currentView && UI.currentView() === "home")) { flashHint("اختر الوحدة أولاً"); return false; }
     _flowUnit = UI.getUnit();
+    _flowKind = UI.getKind();
     return true;
   }
   function flowUnitName() {
     const u = global.PharmacyWard.UNITS.find(x => x.id === _flowUnit);
-    return _flowUnit === "p" ? "ردهة الخاص (الوحدتان)" : (u ? u.name : "");
+    return u ? u.name + (_flowKind === "private" ? " — الخاص" : " — العام") : "";
   }
-  // the sent supplies are kept per page ("1", "3", "p")
-  function flowKey() { return _flowUnit; }
+  // storage key part: the sent supplies are kept per unit and kind
+  function flowKey() { return _flowUnit + (_flowKind === "private" ? "p" : ""); }
   function flowPatientsMap() {
     const all = orderedPatientsMap();
     if (!_flowUnit) return all;
     const out = {};
-    global.PharmacyWard.ROOMS.filter(r => _flowUnit === "p" ? r.kind === "private" : (r.unit === _flowUnit && r.kind === "general")).forEach(room => room.beds.forEach(b => {
+    global.PharmacyWard.ROOMS.filter(r => r.unit === _flowUnit && r.kind === _flowKind).forEach(room => room.beds.forEach(b => {
       const k = global.PharmacyWard.bedKey(room.id, b.number);
       if (all[k]) out[k] = all[k];
     }));
@@ -3125,14 +3126,22 @@
       flashHint("تم حذف جميع الإشعارات");
     });
 
+    // ----- عام / خاص switch on the unit page -----
+    $("rooms-grid").addEventListener("click", (e) => {
+      const b = e.target.closest(".kind-btn");
+      if (!b) return;
+      UI.setKind(b.dataset.kind);
+      UI.renderRooms(state.patients);
+    });
+
     // ----- Bottom navigation -----
     $("bottom-nav").addEventListener("click", (e) => {
       const item = e.target.closest(".nav-item");
       if (!item) return;
       const nav = item.dataset.nav;
-      if (nav === "home" || nav === "unit3" || nav === "private") {
+      if (nav === "home" || nav === "unit3") {
         state.currentBed = null;
-        UI.setUnit(nav === "unit3" ? "3" : nav === "private" ? "p" : "1");
+        UI.setUnit(nav === "unit3" ? "3" : "1");
         UI.renderRooms(state.patients);
         UI.showView("home");
         UI.markNav();
@@ -3860,7 +3869,7 @@
             try {
               const day = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) ? dateInput.value : global.PharmacyChartSync.todayISO();
               if (day !== global.PharmacyChartSync.todayISO() && !confirm("الإرسال إلى جارت يوم " + day + " (ليس اليوم)؟")) return;
-              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit);
+              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit, _flowKind);
               if (r.cancelled) return;
               flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
               if (r.ok) { saveSentSupplies(supplyDistribution, day, flowKey()); closeMedSummary(); }
@@ -4066,13 +4075,13 @@
         flashHint("تعذّر تحميل وحدة جسر الجارت");
         return;
       }
-      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]]);
+      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]]);
       if (!unit) return;
       UI.showView("home");
       flashHint("يتم إرسال بيانات المرضى إلى الجارت...");
       setTimeout(async () => {
         try {
-          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit, false);
+          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit);
           if (!r.cancelled) flashHint(global.PharmacyChartSync.describe(r));
         } catch (err) {
           flashHint("تعذّر الإرسال: " + (err.message || err));

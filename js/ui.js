@@ -145,12 +145,13 @@
   // no connector dots — just clean room cards).
   // The unit whose rooms the home view shows ("1" = الوحدة الأولى, "3" = الثالثة) and the
   // unit whose pills page is open; the bottom nav lights the matching tab.
-  let currentUnit = "1", pillsUnit = "1";   // currentUnit "p" = the «الخاص» page (private rooms of both units)
-  function setUnit(u) { currentUnit = u === "3" || u === "p" ? u : "1"; }
+  let currentUnit = "1", pillsUnit = "1", currentKind = "general";
+  function setKind(k) { currentKind = k === "private" ? "private" : "general"; }
+  function setUnit(u) { currentUnit = u === "3" ? "3" : "1"; }
   function setPillsUnit(u) { pillsUnit = u === "3" ? "3" : "1"; markNav(); }
   function navKey(name) {
     const v = name || showView._lastView;
-    if (v === "home") return currentUnit === "3" ? "unit3" : currentUnit === "p" ? "private" : "home";
+    if (v === "home") return currentUnit === "3" ? "unit3" : "home";
     if (v === "pills") return pillsUnit === "3" ? "pills3" : "pills1";
     return v;
   }
@@ -168,16 +169,15 @@
     // Built off-screen and swapped in at once (the grid never collapses)
     const out = document.createDocumentFragment();
 
-    // A unit page shows that unit's general rooms; the «الخاص» page the private rooms of BOTH units
-    // (its own chart, its own order), each unit under its heading
-    const privatePage = currentUnit === "p";
-    let lastHead = "";
-    global.PharmacyWard.ROOMS.filter(r => privatePage ? r.kind === "private" : (r.unit === currentUnit && r.kind === "general")).forEach(room => {
-      if (room.unit !== lastHead) {
-        lastHead = room.unit;
-        const unit = global.PharmacyWard.UNITS.find(u => u.id === room.unit);
-        out.appendChild(h("div", { class: "unit-head" }, unit.name + " (" + unit.label + ")" + (privatePage ? " — الخاص" : "")));
-      }
+    // The unit's heading with the عام / خاص switch: one kind of rooms at a time
+    {
+      const unit = global.PharmacyWard.UNITS.find(u => u.id === currentUnit);
+      const sw = h("span", { class: "kind-toggle", role: "group", "aria-label": "عام / خاص" },
+        [["general", "عام"], ["private", "خاص"]].map(([k, t]) =>
+          h("button", { type: "button", class: "kind-btn" + (currentKind === k ? " is-on" : ""), dataset: { kind: k } }, t)));
+      out.appendChild(h("div", { class: "unit-head" }, [h("span", {}, unit.name + " (" + unit.label + ")"), sw]));
+    }
+    global.PharmacyWard.ROOMS.filter(r => r.unit === currentUnit && r.kind === currentKind).forEach(room => {
       const occupied = room.beds.filter(b => {
         const p = patientsMap[global.PharmacyWard.bedKey(room.id, b.number)];
         return p && p.name && p.name.trim();
@@ -1745,7 +1745,7 @@
   }
 
   global.PharmacyUI = {
-    setUnit, setPillsUnit, markNav, getUnit: () => currentUnit, currentView: () => showView._lastView,
+    setUnit, setKind, getKind: () => currentKind, setPillsUnit, markNav, getUnit: () => currentUnit, currentView: () => showView._lastView,
     getScrollY,
     setScrollY,
     h,

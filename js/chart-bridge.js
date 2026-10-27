@@ -317,12 +317,13 @@
     return r;
   }
 
-  // One send for a page: unit "1" / "3" = that unit's general rooms → its chart; "p" = the private rooms
-  // of both units → «ردهة الخاص». With `both` (the settings button) a unit also sends its own private rooms.
-  async function sendChart(state, supplyDistribution, onProgress, date, unit, both) {
-    unit = unit === "3" || unit === "p" ? unit : "1";
-    const targets = unit === "p" ? [{ rooms: "p", server: "p" }] : [{ rooms: unit, server: unit }];
-    if (both && unit !== "p") targets.push({ rooms: "p" + unit, server: "p" });
+  // One send for a unit page: its general-room patients go to that unit's chart, its private-room patients
+  // to «ردهة الخاص» (where the other unit's private patients already are or will be)
+  // kind "general" / "private" = only that kind; empty = both (the settings button)
+  async function sendChart(state, supplyDistribution, onProgress, date, unit, kind) {
+    unit = unit === "3" ? "3" : "1";
+    const targets = [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }]
+      .filter((t, i) => !kind || (kind === "private") === (i === 1));
     let first = null, any = false;
     for (const t of targets) {
       if (!collectPatientsFromApp(state, supplyDistribution, t.rooms).length) continue;
