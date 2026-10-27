@@ -13,7 +13,7 @@
   "use strict";
 
   const KEY = "pharma.chart-account.v1";
-  const PROD = "https://clinical-chart.vercel.app";
+  const PROD = "https://6thfloor.vercel.app";
 
   function endpoint() {
     return (location.origin === PROD ? "" : PROD) + "/api/chart-sync";
