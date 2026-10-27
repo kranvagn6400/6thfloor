@@ -2451,3 +2451,6 @@ html.limited-admin #settings-catalog-btn, html.limited-admin .admin-layout { dis
 .kind-btn.is-on { background: var(--primary); color: #fff; }
 
 .admin-user-locked { font-weight: 800; color: var(--text-muted, #567); padding: 6px 10px; }
+
+/* the install button sits apart from the login button */
+.login-quick { margin-top: 18px; }
