@@ -319,9 +319,11 @@
 
   // One send for a unit page: its general-room patients go to that unit's chart, its private-room patients
   // to «ردهة الخاص» (where the other unit's private patients already are or will be)
-  async function sendChart(state, supplyDistribution, onProgress, date, unit) {
+  // kind "general" / "private" = only that kind; empty = both (the settings button)
+  async function sendChart(state, supplyDistribution, onProgress, date, unit, kind) {
     unit = unit === "3" ? "3" : "1";
-    const targets = [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }];
+    const targets = [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }]
+      .filter((t, i) => !kind || (kind === "private") === (i === 1));
     let first = null, any = false;
     for (const t of targets) {
       if (!collectPatientsFromApp(state, supplyDistribution, t.rooms).length) continue;

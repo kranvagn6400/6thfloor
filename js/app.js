@@ -1534,21 +1534,24 @@
   }
   // «الطلبية» and the chart send work on ONE unit: the unit page the user is on. On any other page
   // (pills, patients…) they ask to choose a unit first.
-  let _flowUnit = null;
+  let _flowUnit = null, _flowKind = "general";
   function pickFlowUnit() {
     if (!(UI.currentView && UI.currentView() === "home")) { flashHint("اختر الوحدة أولاً"); return false; }
     _flowUnit = UI.getUnit();
+    _flowKind = UI.getKind();
     return true;
   }
   function flowUnitName() {
     const u = global.PharmacyWard.UNITS.find(x => x.id === _flowUnit);
-    return u ? u.name : "";
+    return u ? u.name + (_flowKind === "private" ? " — الخاص" : " — العام") : "";
   }
+  // storage key part: the sent supplies are kept per unit and kind
+  function flowKey() { return _flowUnit + (_flowKind === "private" ? "p" : ""); }
   function flowPatientsMap() {
     const all = orderedPatientsMap();
     if (!_flowUnit) return all;
     const out = {};
-    global.PharmacyWard.ROOMS.filter(r => r.unit === _flowUnit).forEach(room => room.beds.forEach(b => {
+    global.PharmacyWard.ROOMS.filter(r => r.unit === _flowUnit && r.kind === _flowKind).forEach(room => room.beds.forEach(b => {
       const k = global.PharmacyWard.bedKey(room.id, b.number);
       if (all[k]) out[k] = all[k];
     }));
@@ -3123,6 +3126,14 @@
       flashHint("تم حذف جميع الإشعارات");
     });
 
+    // ----- عام / خاص switch on the unit page -----
+    $("rooms-grid").addEventListener("click", (e) => {
+      const b = e.target.closest(".kind-btn");
+      if (!b) return;
+      UI.setKind(b.dataset.kind);
+      UI.renderRooms(state.patients);
+    });
+
     // ----- Bottom navigation -----
     $("bottom-nav").addEventListener("click", (e) => {
       const item = e.target.closest(".nav-item");
@@ -3858,10 +3869,10 @@
             try {
               const day = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) ? dateInput.value : global.PharmacyChartSync.todayISO();
               if (day !== global.PharmacyChartSync.todayISO() && !confirm("الإرسال إلى جارت يوم " + day + " (ليس اليوم)؟")) return;
-              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit);
+              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit, _flowKind);
               if (r.cancelled) return;
               flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
-              if (r.ok) { saveSentSupplies(supplyDistribution, day, _flowUnit); closeMedSummary(); }
+              if (r.ok) { saveSentSupplies(supplyDistribution, day, flowKey()); closeMedSummary(); }
             } catch (err) {
               flashHint("تعذّر الإرسال: " + (err.message || err));
             } finally {
@@ -3956,7 +3967,7 @@
       if (!pickFlowUnit()) return;
       if (!state.medications || state.medications.length === 0) { flashHint("لا توجد أدوية في الكتالوج"); return; }
       if (occupiedCount(flowPatientsMap()) === 0) { flashHint("لا يوجد مرضى مشغولون"); return; }
-      const sent = loadSentSupplies(_flowUnit);
+      const sent = loadSentSupplies(flowKey());
       // Thursday: the chart app doubles every medicine except the ones flagged
       // «لا يُضاعف يوم الخميس» there — read those so the order matches the chart
       let noDouble = null, noDoubleError = false;

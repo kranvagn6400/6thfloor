@@ -2443,3 +2443,9 @@ html.limited-admin #admin-med-request-btn, html.limited-admin #settings-med-requ
 html.limited-admin #admin-occasion-section, html.limited-admin #admin-greetings-section,
 html.limited-admin #admin-ornament-section, html.limited-admin #med-requests-clear-btn,
 html.limited-admin #settings-catalog-btn, html.limited-admin .admin-layout { display: none !important; }
+
+/* عام / خاص switch in the unit heading */
+.unit-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.kind-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--surface); }
+.kind-btn { border: 0; background: transparent; color: var(--text-muted, #567); padding: 6px 18px; font: inherit; font-weight: 800; cursor: pointer; }
+.kind-btn.is-on { background: var(--primary); color: #fff; }
