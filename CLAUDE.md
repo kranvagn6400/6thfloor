@@ -1,5 +1,34 @@
-# Clinical Chart — Internal Medicine Ward 5 (PWA)
+# 6th Floor — Internal Medicine, Baghdad Teaching Hospital (PWA)
 
+THIS IS NOT THE WARD 5 APP. It started as a copy of it but is a separate product: its own repo
+(github.com/kranvagn6400/6thfloor — GitHub account kranvagn6400, never cheny1000), its own Vercel
+project (6thfloor.vercel.app), its own Supabase project (khbvyfchwtvdbrkdhfwz) and its own chart
+accounts. Never touch, push to or mention the Ward 5 app / accounts here. Talk to the user in Arabic.
+
+## 6th Floor specifics (these win over anything below inherited from Ward 5)
+- Two units, both internal medicine (js/ward.js): الوحدة الأولى = women (room ids 1-12), الوحدة الثالثة = men
+  (13-24). Each: 8 general rooms (1-5 six beds, 6-8 four beds) + 4 private rooms (one bed) = 46 beds, 92 in all.
+  Bed keys stay room-N-bed-M with the floor-unique room id; room.title / PharmacyWard.roomTitle(id) is what
+  users see ("غرفة 3 · الوحدة الأولى", "خاص 2 · …"); bedLabel numbers 1..46 inside each unit. Gender comes
+  from the unit (roomGender). No ICU room.
+- Bottom nav (right → left): الوحدة الأولى · حبوب الأولى · المرضى · حبوب الثالثة · الوحدة الثالثة. Units are
+  shown one at a time (ui.js setUnit / renderRooms filter); pills page per unit (PharmacyPillsPage.open("1"|"3")).
+  No تربيتي / الأخصائيون tabs, no handover (hidden by CSS).
+- Accounts: only the admin Mustafa Hussein (username mustafa — supervises the app, not a pharmacist here), the floor
+  manager Aya Thaer (username aya, role admin + profiles.limited_admin, features.sql §23: no medicine catalogue,
+  print-all, occasions, greetings, new-medicine request/clear, TV mode, header ornament — hidden by html.limited-admin
+  in theme.css) and the TV account. No pharmacists or doctors yet. Accounts are created in the Supabase dashboard
+  (email <user>@ward5.local — the domain is only a mapping suffix in auth.js, kept so existing accounts still work)
+  then a profiles row by SQL; there is no bootstrap screen.
+- Name: app/icon = "6th Floor"; inside the app "الطابق السادس"; sheets / forms carry the patient's unit name.
+- Default colours: white + sky blue (palette sky6, scripts/gen-palettes.js, also the login screen).
+- Chart app: three targets (api/chart-sync.js WARDS): "1" الوحدة الأولى, "3" الوحدة الثالثة, "p" ردهة الخاص (the private
+  rooms of both units together), floor 6, shared account CHART_USERNAME / CHART_PASSWORD in Vercel env vars (never in
+  code). The send dialog has «الردهة الهدف»; the log keeps the unit. Past 41 patients a chart overflows into its own
+  extra chart (existing logic). js/chart-sync.js PROD must stay https://6thfloor.vercel.app.
+- Local preview: node .claude/serve.js (port 5174). Old tests (scripts/test-*.js) still assume the Ward 5 layout.
+
+## Inherited from the Ward 5 code (modules still apply; layout / roles above override)
 Arabic RTL PWA for the ward's clinical pharmacy: 10 rooms / 50 beds, patient meds,
 labs + eGFR, printed A4 sheets, chart export, Supabase sync. Plain JS (no build step);
 every file attaches a `window.Pharmacy*` global. Talk to the user in Arabic.

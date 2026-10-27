@@ -133,7 +133,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== "POST") return fail(res, 405, "POST only");
 
   const user = await appUser(req).catch(() => null);
-  if (!user) return fail(res, 401, "سجّل الدخول إلى تطبيق الردهة من جديد");
+  if (!user) return fail(res, 401, "سجّل الدخول إلى تطبيق الطابق السادس من جديد");
   const role = await appRole(req, user).catch(() => null);
   if (role !== "pharmacist" && role !== "admin") return fail(res, 403, "الإرسال إلى الجارت للصيادلة والمسؤول فقط");
 
@@ -212,7 +212,7 @@ module.exports = async function handler(req, res) {
       ? medsRes.body.medicines.map(m => m.name) : null;
     if (!catalogue) return fail(res, 502, "تعذّر قراءة قائمة أدوية الجارت");
 
-    // The chart has 41 rows, the ward 50 beds: patients that do not fit go to the
+    // The chart has 41 rows, a ward can have more patients: patients that do not fit go to the
     // chart app's «الجارت الإضافي» (slot "extra"). It is read first so that a patient
     // already living there is not added to the main chart as well.
     const gotExtra = await chartFetch("/chart" + chartQuery("extra", date, ward), cookie);

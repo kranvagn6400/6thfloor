@@ -254,8 +254,8 @@
       // H_LINES[0] → H_LINES[1]) is a wide empty box at the top-right
       // of the chart. The user wants three lines written horizontally
       // in this cell:
-      //   "الطابق الثامن"
-      //   "الوحدة الخامسة"
+      //   "الطابق السادس"
+      //   "الباطنية"
       //   "التاريخ" — current date (e.g. "2026/10/2"), no "التاريخ" label
       // The three lines are stacked vertically, centered horizontally
       // within the cell.
@@ -439,8 +439,8 @@
   // Draw the info box content in the patient-name col header cell.
   // The cell is at the top-right of the chart (V_LINES[50..51] ×
   // H_LINES[0..1]). We write three lines of horizontal Arabic text:
-  //   "الطابق الثامن"
-  //   "الوحدة الخامسة"
+  //   "الطابق السادس"
+  //   "الباطنية"
   //   "2026/10/2"  (today's date — no "التاريخ" label)
   // The lines are stacked vertically and centered horizontally inside
   // the cell. Vertical centering: the middle line's visual center

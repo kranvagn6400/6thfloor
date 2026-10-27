@@ -134,7 +134,7 @@
     if (onProgress) onProgress("جارٍ الإرسال إلى الجارت… قد يستغرق دقيقة إذا كان موقع الجارت نائماً");
     let r = await call(payload(acc));
     // No shared account on the server, or a wrong personal one → ask once
-    if (!r.ok && (r.status === 412 || (r.status === 401 && acc && !r.shared && !/تطبيق الردهة/.test(r.message)))) {
+    if (!r.ok && (r.status === 412 || (r.status === 401 && acc && !r.shared && !/تطبيق الطابق السادس/.test(r.message)))) {
       acc = await askAccount();
       if (!acc) return { ok: false, cancelled: true, message: "أُلغي الإرسال" };
       if (onProgress) onProgress("جارٍ الإرسال إلى الجارت…");
@@ -157,7 +157,7 @@
     const payload = (a) => Object.assign({ action: "nodouble", date: day, names }, a ? { username: a.username, password: a.password } : {});
     if (onProgress) onProgress("جارٍ قراءة الأدوية المستثناة من المضاعفة في الجارت…");
     let r = await call(payload(acc));
-    if (!r.ok && (r.status === 412 || (r.status === 401 && acc && !r.shared && !/تطبيق الردهة/.test(r.message)))) {
+    if (!r.ok && (r.status === 412 || (r.status === 401 && acc && !r.shared && !/تطبيق الطابق السادس/.test(r.message)))) {
       acc = await askAccount();
       if (!acc) return { ok: false, cancelled: true, message: "أُلغيت القراءة" };
       r = await call(payload(acc));

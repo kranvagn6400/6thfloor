@@ -3,8 +3,8 @@
    ============================================================
    A patient's `originWard` ('' = our own ward patient) says which
    ward they belong to — chosen by floor (ط10 / ط9 / ط7 / ط6). Rules for
-   this ward (Baghdad Teaching Hospital, 8th floor, internal medicine
-   ward 5):
+   this floor (Baghdad Teaching Hospital, 6th floor, internal medicine,
+   units 1 and 3):
      - Boarders come only from other medical wards or oncology.
      - Our doctors don't print their treatment sheets → boarders are
        left out of "print all sheets".

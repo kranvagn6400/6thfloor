@@ -3,7 +3,7 @@
    ============================================================
    The ward's paper form «استمارة تسليم واستلام الخفر» in the app:
      1. the heading (date, the pharmacist handing over / receiving; the floor is
-        always «الثامن» — written on the form, no field) and a
+        always «السادس» — written on the form, no field) and a
         table of every patient on ALBUMIN — always included — with the amount due
         (what the monitor shows as «العدد المصروف») and a blank «وقت التسليم»;
      2. «متابعة العلاجات الأخرى»: the patients on the other critical medicines
@@ -220,7 +220,7 @@
   function pageHtml(v, alb, oth) {
     let h = '<div class="pg">';
     // title, with the floor after «الطابق:»
-    h += box("s b", 60, 424.5, 17, 22, "استمارة تسليم واستلام الخفر / الطابق السادس", 14);     // our ward is on the 8th floor
+    h += box("s b", 60, 424.5, 17, 22, "استمارة تسليم واستلام الخفر / الطابق السادس", 14);     // our ward is on the 6th floor
     // header block: receiver | giver | date
     h += thick(57.7, 109.1) + vline("d", 177.9, 58.7, 108.1, 0.5) + vline("d", 370.9, 58.7, 108.1, 0.5);
     h += box("s", 371, 537, 64, 36, "الصيدلي المستلم<br>(الخفر):").replace('style="', 'style="line-height:17pt;align-items:flex-start;padding-right:5pt;');
