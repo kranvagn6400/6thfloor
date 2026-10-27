@@ -2474,3 +2474,14 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 
 /* bottom nav: one line per label, equal heights */
 .bottom-nav .nav-label { white-space: nowrap; font-size: 10.5px; }
+
+/* مراقبة الأدوية الحرجة — albumin patient detail */
+.crit-labs { display: grid; gap: 10px; }
+.crit-labblock { border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; background: var(--surface); }
+.crit-lab-new { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.crit-lab-input, .crit-lab-dateinput { flex: 1 1 110px; min-width: 0; box-sizing: border-box; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+.crit-lab-save, .crit-diag-btn { flex: none; padding: 9px 16px; border-radius: 10px; border: 0; background: var(--primary); color: #fff; font: inherit; font-weight: 800; cursor: pointer; }
+.crit-diag-btn { margin: 10px 0 6px; width: 100%; }
+.crit-diag-btn.has-note:not(.is-open) { background: var(--success, #1d8a5a); }
+.crit-lab-hist { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
+.crit-lab-hist small { opacity: .8; }

@@ -3064,8 +3064,25 @@
         renderAbxMonitor();
         return;
       }
+      const diag = e.target.closest('[data-action="crit-diag"]');
+      if (diag) {
+        state.abxDiagKey = state.abxDiagKey === diag.dataset.key ? null : diag.dataset.key;
+        renderAbxMonitor();
+        const ta = $("crit-note");
+        if (ta) ta.focus();
+        return;
+      }
+      const sv = e.target.closest('[data-action="crit-save"]');
+      if (sv) {
+        const wrap = sv.closest(".crit-lab-new");
+        const val = wrap && wrap.querySelector("[data-lab-input]").value;
+        const day = wrap && wrap.querySelector("[data-lab-date]").value;
+        if (saveCritLab(sv.dataset.key, sv.dataset.lab, val, day)) renderAbxMonitor();
+        return;
+      }
       const row = e.target.closest('[data-action="abx-row"]');
       if (row) {
+        state.abxDiagKey = null;
         state.abxOpenKey = state.abxOpenKey === row.dataset.key ? null : row.dataset.key;
         renderAbxMonitor();
         // no auto-focus: on phones the keyboard would pop up at once and cover
@@ -5622,6 +5639,18 @@
       const d = labs._dates && labs._dates[key] ? labs._dates[key] : "";
       return `<div class="crit-lab"><span class="crit-lab-name">${label}</span><span class="crit-lab-val">${escapeHtml(v || "—")}</span>${d ? `<span class="crit-lab-date">${escapeHtml(d)}</span>` : ""}</div>`;
     };
+    // a lab of the open patient: the recorded result with its date, a field + date for a NEW result, and the older ones
+    const labBlock = (p, key, label, bk) => {
+      const hist = (Array.isArray(p.labHistory) ? p.labHistory : []).filter(x => x && x.key === key).slice().reverse();
+      return `<div class="crit-labblock">${labCell(p, key, label)}
+        <div class="crit-lab-new">
+          <input type="text" inputmode="decimal" class="crit-lab-input" data-lab-input="${key}" placeholder="نتيجة جديدة" autocomplete="off">
+          <input type="date" class="crit-lab-dateinput" data-lab-date="${key}" value="${Clinical.todayISO()}">
+          <button type="button" class="crit-lab-save" data-action="crit-save" data-key="${bk}" data-lab="${key}">حفظ</button>
+        </div>
+        ${hist.length ? `<div class="crit-lab-hist">${hist.map(x => `<span>${escapeHtml(x.value)} <small>${escapeHtml(x.date || "")}</small></span>`).join("")}</div>` : ""}
+      </div>`;
+    };
     box.hidden = false;
     box.innerHTML = `<h3>${title}</h3><div class="crit-table">
       <div class="crit-row crit-row-header"><span>اسم المريض</span><span>رقم الطبلة</span><span>${col3}</span><span>اليوم</span></div>` +
@@ -5636,17 +5665,41 @@
             <span class="crit-plate">${escapeHtml(r.e.plate || "—")}</span>
             <span class="crit-dose" dir="ltr">${escapeHtml(third)}</span>
             <span class="crit-day" dir="ltr">${escapeHtml(r.day || "—")}</span>
-          </button>` + (open ? `<div class="crit-detail">
-            <div class="crit-labs">${labCell(p, "creatinine", "S. Creatinine")}${labCell(p, "albumin", "S. Albumin")}</div>
-            <label class="crit-note-label" for="crit-note">تشخيص حالة المريض</label>
-            <textarea id="crit-note" class="crit-note" rows="6" data-key="${escapeHtml(r.e.key)}" placeholder="اكتب حالة المريض…">${escapeHtml((p.labs && p.labs._critNote) || "")}</textarea>
-          </div>` : "");
+          </button>` + (open ? (() => {
+            const bk = escapeHtml(r.e.key);
+            const hasNote = !!(p.labs && String(p.labs._critNote || "").trim());
+            const diagOpen = state.abxDiagKey === r.e.key;
+            return `<div class="crit-detail">
+            <div class="crit-labs">${labBlock(p, "creatinine", "S. Creatinine", bk)}${labBlock(p, "albumin", "S. Albumin", bk)}</div>
+            <button type="button" class="crit-diag-btn${hasNote ? " has-note" : ""}${diagOpen ? " is-open" : ""}" data-action="crit-diag" data-key="${bk}" aria-expanded="${diagOpen}">التشخيص${hasNote ? " ✓" : ""}</button>
+            ${diagOpen ? `<label class="crit-note-label" for="crit-note">تشخيص حالة المريض</label>
+            <textarea id="crit-note" class="crit-note" rows="6" data-key="${bk}" placeholder="اكتب حالة المريض…">${escapeHtml((p.labs && p.labs._critNote) || "")}</textarea>` : ""}
+          </div>`;
+          })() : "");
       }).join("") : `<div class="abx-empty">لا يوجد مرضى حالياً</div>`) + `</div>`;
   }
 
   // The note on the patient's condition — kept in labs._critNote (travels
   // with the labs JSON, no new column)
   let _critNoteTimer = null;
+  function saveCritLab(bedKey, labKey, value, date) {
+    const p = state.patients[bedKey];
+    const v = String(value || "").trim();
+    if (!p || !v) { flashHint("اكتب النتيجة أولاً"); return false; }
+    if (!p.labs || typeof p.labs !== "object") p.labs = {};
+    if (!p.labs._dates || typeof p.labs._dates !== "object") p.labs._dates = {};
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : Clinical.todayISO();
+    const prev = p.labs[labKey] ? String(p.labs[labKey]).trim() : "";
+    if (prev) {
+      if (!Array.isArray(p.labHistory)) p.labHistory = [];
+      p.labHistory.push({ date: p.labs._dates[labKey] || day, key: labKey, label: labKey === "albumin" ? "S. Albumin" : "S. Creatinine", value: prev });
+    }
+    p.labs[labKey] = v;
+    p.labs._dates[labKey] = day;
+    persistPatient(bedKey);
+    flashHint("✓ سُجّلت النتيجة");
+    return true;
+  }
   function saveCritNote(ta) {
     const key = ta && ta.dataset.key;
     if (!key || !state.patients[key]) return;
