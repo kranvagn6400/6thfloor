@@ -9,7 +9,7 @@ accounts. Never touch, push to or mention the Ward 5 app / accounts here. Talk t
 - Two units, both internal medicine (js/ward.js): الوحدة الأولى = women (room ids 1-12), الوحدة الثالثة = men
   (13-24). Each: 8 general rooms (1-5 six beds, 6-8 four beds) + 4 private rooms (one bed) = 46 beds, 92 in all.
   Bed keys stay room-N-bed-M with the floor-unique room id; room.title / PharmacyWard.roomTitle(id) is what
-  users see ("غرفة 3 · الوحدة الأولى", "خاص 2 · …"); bedLabel numbers 1..46 inside each unit. Gender comes
+  users see ("غرفة 3 · الوحدة الأولى", "خاص 2 · …"); bedLabel numbers the general beds 1..42 inside each unit and the private beds 1..4. Gender comes
   from the unit (roomGender). No ICU room.
 - Bottom nav (right → left): الوحدة الأولى · حبوب الأولى · المرضى · حبوب الثالثة · الوحدة الثالثة. A unit page has a عام / خاص
   switch (UI.setKind): general rooms or that unit's private rooms. The header «الطلبية» and chart-send buttons act on the open

@@ -75,20 +75,19 @@
     return u ? u.gender : "";
   }
 
-  // The number shown for a bed: 1..46 inside its unit, room by room; in a
-  // general room the LEFT column bottom → top, then the right column top →
-  // bottom; the private rooms follow. Only what is SHOWN — keys and
-  // bed.number keep the in-room number.
+  // The number shown for a bed: general rooms 1..42 inside their unit, room by room (in a room the LEFT
+  // column bottom → top, then the right column top → bottom); the private beds of each unit are their own
+  // 1..4. Only what is SHOWN — keys and bed.number keep the in-room number.
   const BED_LABEL = {};
   (function () {
     UNITS.forEach(unit => {
-      let n = 0;
+      const count = { general: 0, private: 0 };
       ROOMS.filter(r => r.unit === unit.id).forEach(room => {
         const rows = room.bedCount === 6 ? 3 : room.bedCount === 4 ? 2 : 1;
         const order = [];
         for (let b = rows; b >= 1; b--) order.push(b);
         for (let b = rows + 1; b <= room.bedCount; b++) order.push(b);
-        order.forEach(b => { BED_LABEL[bedKey(room.id, b)] = ++n; });
+        order.forEach(b => { BED_LABEL[bedKey(room.id, b)] = ++count[room.kind]; });
       });
     });
   })();
