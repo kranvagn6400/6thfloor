@@ -48,7 +48,7 @@
       patients: t.rows.length,
       items: Math.max(0, t.header.length - 2),
       withSupplies: !!(meta && meta.withSupplies),
-      unit: (meta && meta.unit) === "3" ? "3" : "1",   // which ward's chart (الوحدة الأولى / الثالثة)
+      unit: (meta && (meta.unit === "3" || meta.unit === "p")) ? meta.unit : "1",   // which ward's chart (الوحدة الأولى / الثالثة)
       date: (meta && meta.date) || "",           // the chart's day ("" = the day it was sent)
       resends: 0,
       tsv: tsv
@@ -226,7 +226,7 @@
       } else if (b.dataset.act === "resend") {
         // a send made for a chosen day goes back to that day's chart
         const day = entry.date || "";
-        if (!confirm("إعادة إرسال بيانات " + fmt(entry.at) + " إلى جارت " + (entry.unit === "3" ? "الوحدة الثالثة " : "الوحدة الأولى ") + (day ? "يوم " + day : "اليوم") + "؟")) return;
+        if (!confirm("إعادة إرسال بيانات " + fmt(entry.at) + " إلى جارت " + (entry.unit === "3" ? "الوحدة الثالثة " : entry.unit === "p" ? "ردهة الخاص " : "الوحدة الأولى ") + (day ? "يوم " + day : "اليوم") + "؟")) return;
         b.disabled = true;
         markResent(entry.id);
         const r = await global.PharmacyChartBridge.sendTsv(entry.tsv, entry.id, flash, day, entry.unit || "1");

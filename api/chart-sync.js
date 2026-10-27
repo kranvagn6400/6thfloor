@@ -28,11 +28,14 @@ const CHART_API = CHART_SITE + "/api";
 // The chart's server rejects saves / sign-out without its own Origin
 // ("طلب غير موثوق") — send what its own page sends.
 const SITE_HEADERS = { Origin: CHART_SITE, Referer: CHART_SITE + "/" };
-// The floor has two wards, each with its own chart (unit "1" = الوحدة الأولى, "3" = الوحدة الثالثة);
+// The floor has three charts (unit "1" = الوحدة الأولى, "3" = الوحدة الثالثة, "p" = ردهة الخاص);
+// each one overflows past 41 patients into its own extra chart (slot "extra");
 // the app says which one a send is for. ⚠ ward = the name as written in the chart app.
 const WARDS = {
   "1": { floor: 6, ward: "الوحدة الأولى", slot: "main" },
-  "3": { floor: 6, ward: "الوحدة الثالثة", slot: "main" }
+  "3": { floor: 6, ward: "الوحدة الثالثة", slot: "main" },
+  // the private rooms of BOTH units share one chart
+  "p": { floor: 6, ward: "ردهة الخاص", slot: "main" }
 };
 const WARD = WARDS["1"];
 const SUPABASE_URL = "https://khbvyfchwtvdbrkdhfwz.supabase.co";

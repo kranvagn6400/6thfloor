@@ -3828,7 +3828,7 @@
           const unitLbl = document.createElement("span");
           unitLbl.textContent = "الردهة الهدف";
           const unitSel = document.createElement("select");
-          [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]].forEach(([v, t]) => {
+          [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]].forEach(([v, t]) => {
             const o = document.createElement("option");
             o.value = v; o.textContent = t;
             unitSel.appendChild(o);
@@ -4054,7 +4054,7 @@
         flashHint("تعذّر تحميل وحدة جسر الجارت");
         return;
       }
-      const unit = await askChoice("إرسال بيانات أي وحدة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]]);
+      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]]);
       if (!unit) return;
       UI.showView("home");
       flashHint("يتم إرسال بيانات المرضى إلى الجارت...");

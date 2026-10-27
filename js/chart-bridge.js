@@ -149,7 +149,8 @@
     });
 
     const out = [];
-    Ward.ROOMS.filter(r => !unit || r.unit === unit).forEach(room => {
+    // unit "1" / "3" = that unit's general rooms; "p" = the private rooms of both units (ردهة الخاص)
+    Ward.ROOMS.filter(r => !unit || (unit === "p" ? r.kind === "private" : (r.unit === unit && r.kind === "general"))).forEach(room => {
       room.beds.forEach(bed => {
         const key = Ward.bedKey(room.id, bed.number);
         const p = state.patients[key];
@@ -308,7 +309,7 @@
   }
 
   async function sendChart(state, supplyDistribution, onProgress, date, unit) {
-    unit = unit === "3" ? "3" : "1";
+    unit = unit === "3" || unit === "p" ? unit : "1";
     const tsv = buildChartTSV(state, supplyDistribution, unit);
     // Keep the exact table in the send log (chart-send-log.js) first,
     // so it can be re-sent if anything goes wrong on the way.
