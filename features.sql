@@ -857,3 +857,7 @@ begin
 end $$;
 revoke all on function public.admin_reset_password(uuid, text) from public, anon;
 grant execute on function public.admin_reset_password(uuid, text) to authenticated;
+
+-- ---------- 26) كتالوج الأدوية للمسؤول الأعلى وحده ----------
+-- تُسحب صلاحية الكتالوج من كل الصيادلة؛ التطبيق لا يمنحها بعد الآن (Auth.canEditCatalog = المسؤول ذو الصلاحية القصوى فقط).
+update public.profiles set can_edit_catalog = false where can_edit_catalog = true;

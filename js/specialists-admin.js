@@ -1,4 +1,4 @@
-/* The ward's specialists list, managed by the ADMIN pharmacist: edit a name, delete one, add one, clear all.
+/* The ward's specialists list, managed by the ADMIN pharmacist: edit a name, delete one, add one.
    The list is saved in app_settings key "specialists" = { list: [...] } (every signed-in user reads it, only the
    admin may write it — the database refuses anyone else) and every device follows it live. Until the admin
    saves, the built-in list of specialists.js is used. The last list read is cached on the device.
@@ -120,10 +120,10 @@
       row.appendChild(del);
       box.appendChild(row);
     });
-    var add = document.getElementById("admin-spec-add"), clear = document.getElementById("admin-spec-clear");
-    if (clear) clear.disabled = !list.length;
+    var sum = document.getElementById("admin-spec-summary");
+    if (sum) sum.textContent = "قائمة الأخصائيين (" + list.length + ") — اضغط للتعديل أو الحذف";
+    var add = document.getElementById("admin-spec-add");
     if (add && !add._bound) { add._bound = true; add.addEventListener("click", onAdd); }
-    if (clear && !clear._bound) { clear._bound = true; clear.addEventListener("click", onClear); }
   }
   async function onAdd() {
     var input = document.getElementById("admin-spec-new");
@@ -135,13 +135,6 @@
     var r = await save(list);
     if (r.ok) { input.value = ""; flash("✓ أُضيف: " + name); } else flash("تعذّر الحفظ: " + r.error);
   }
-  async function onClear() {
-    if (!SP().getKnown().length) return;
-    if (!confirm("مسح كل أسماء الأخصائيين من القائمة؟\n(لا يتغير شيء عند المرضى، ويمكنك إضافتها من جديد)")) return;
-    var r = await save([]);
-    flash(r.ok ? "✓ مُسحت القائمة" : "تعذّر الحفظ: " + r.error);
-  }
-
   // start from the cached list at once (offline starts), refresh from the cloud in start()
   var c0 = cached();
   if (c0 && SP()) SP().setKnown(c0);

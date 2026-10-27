@@ -32,10 +32,10 @@
   <link rel="apple-touch-icon" sizes="192x192" href="img/icon-192.png?v=20261028a" />
   <link rel="apple-touch-icon" sizes="512x512" href="img/icon-512.png?v=20261028a" />
   <link rel="stylesheet" href="css/styles.css?v=20261008o" />
-  <link rel="stylesheet" href="css/theme.css?v=324" />
-  <link rel="stylesheet" href="css/palettes.css?v=324" />
-  <link rel="stylesheet" href="css/ornaments.css?v=324" />
-  <link rel="stylesheet" href="css/occasions.css?v=324" />
+  <link rel="stylesheet" href="css/theme.css?v=326" />
+  <link rel="stylesheet" href="css/palettes.css?v=326" />
+  <link rel="stylesheet" href="css/ornaments.css?v=326" />
+  <link rel="stylesheet" href="css/occasions.css?v=326" />
   <style>
     /* Pre-paint auth gate: hide the wrong screen before JS loads to
        prevent a flash of unauthenticated content (1-2s where the
@@ -884,12 +884,14 @@
         <div class="admin-discharged-section" id="admin-specialists-section">
           <h4>أسماء الأخصائيين</h4>
           <p class="admin-discharged-hint">القائمة التي تُقترح عند كتابة اسم الأخصائي ويُوحَّد إملاؤها. عدّل الاسم في خانته فيتغير عند كل مريض يحمل اسمه القديم، أو احذفه، أو أضف اسمًا، أو امسح القائمة كلها. للمسؤول وحده، ويصل التغيير لكل الأجهزة.</p>
-          <div class="spec-list" id="admin-spec-list"></div>
+          <details class="spec-details" id="admin-spec-details">
+            <summary id="admin-spec-summary">قائمة الأخصائيين</summary>
+            <div class="spec-list" id="admin-spec-list"></div>
+          </details>
           <div class="spec-add">
             <input type="text" id="admin-spec-new" class="spec-input" placeholder="اسم أخصائي جديد" autocomplete="off">
             <button type="button" class="btn-discharged" id="admin-spec-add">إضافة</button>
           </div>
-          <button type="button" class="spec-clear" id="admin-spec-clear">مسح كل الأسماء</button>
         </div>
 
         <div class="admin-discharged-section" id="admin-ornament-section">
@@ -1557,55 +1559,55 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- App scripts. Freshness comes from the service worker (network-first,
        revalidating); the cache is the offline fallback. Bump ?v= on deploy. -->
-  <script src="js/medications.js?v=324"></script>
-  <script src="js/ward.js?v=324"></script>
-  <script src="js/patient-merge.js?v=324"></script>
-  <script src="js/specialists.js?v=324"></script>
-  <script src="js/specialists-admin.js?v=324"></script>
-  <script src="js/storage.js?v=324"></script>
-  <script src="js/supabase-config.js?v=324"></script>
-  <script src="js/supabase-client.js?v=324"></script>
-  <script src="js/supabase-sync.js?v=324"></script>
-  <script src="js/auth.js?v=324"></script>
-  <script src="js/clinical.js?v=324"></script>
-  <script src="js/ddinter.js?v=324"></script>
-  <script src="js/ddinter-data.js?v=324"></script>
-  <script src="js/boarders.js?v=324"></script>
-  <script src="js/ui.js?v=324"></script>
-  <script src="js/chart-image.js?v=324"></script>
-  <script src="js/chart-bridge.js?v=324"></script>
-  <script src="js/pills-form.js?v=324"></script>
-  <script src="js/print-sheets.js?v=324"></script>
-  <script src="js/patient-search.js?v=324"></script>
-  <script src="js/patient-history.js?v=324"></script>
-  <script src="js/monthly-report.js?v=324"></script>
-  <script src="js/bed-drag.js?v=324"></script>
-  <script src="js/archive-sync.js?v=324"></script>
-  <script src="js/med-availability.js?v=324"></script>
-  <script src="js/chart-merge.js?v=324"></script>
-  <script src="js/chart-sync.js?v=324"></script>
-  <script src="js/palettes.js?v=324"></script>
-  <script src="js/ornaments.js?v=324"></script>
-  <script src="js/neon.js?v=324"></script>
-  <script src="js/greetings.js?v=324"></script>
-  <script src="js/presence.js?v=324"></script>
-  <script src="js/occasions.js?v=324"></script>
-  <script src="js/handover.js?v=324"></script>
-  <script src="js/duty-roster.js?v=324"></script>
-  <script src="js/chart-names.js?v=324"></script>
-  <script src="js/chart-send-log.js?v=324"></script>
-  <script src="js/tarbeet.js?v=324"></script>
-  <script src="js/pills-page.js?v=324"></script>
-  <script src="js/tv-alerts.js?v=324"></script>
-  <script src="js/daily-quotes.js?v=324"></script>
-  <script src="js/app.js?v=324"></script>
+  <script src="js/medications.js?v=326"></script>
+  <script src="js/ward.js?v=326"></script>
+  <script src="js/patient-merge.js?v=326"></script>
+  <script src="js/specialists.js?v=326"></script>
+  <script src="js/specialists-admin.js?v=326"></script>
+  <script src="js/storage.js?v=326"></script>
+  <script src="js/supabase-config.js?v=326"></script>
+  <script src="js/supabase-client.js?v=326"></script>
+  <script src="js/supabase-sync.js?v=326"></script>
+  <script src="js/auth.js?v=326"></script>
+  <script src="js/clinical.js?v=326"></script>
+  <script src="js/ddinter.js?v=326"></script>
+  <script src="js/ddinter-data.js?v=326"></script>
+  <script src="js/boarders.js?v=326"></script>
+  <script src="js/ui.js?v=326"></script>
+  <script src="js/chart-image.js?v=326"></script>
+  <script src="js/chart-bridge.js?v=326"></script>
+  <script src="js/pills-form.js?v=326"></script>
+  <script src="js/print-sheets.js?v=326"></script>
+  <script src="js/patient-search.js?v=326"></script>
+  <script src="js/patient-history.js?v=326"></script>
+  <script src="js/monthly-report.js?v=326"></script>
+  <script src="js/bed-drag.js?v=326"></script>
+  <script src="js/archive-sync.js?v=326"></script>
+  <script src="js/med-availability.js?v=326"></script>
+  <script src="js/chart-merge.js?v=326"></script>
+  <script src="js/chart-sync.js?v=326"></script>
+  <script src="js/palettes.js?v=326"></script>
+  <script src="js/ornaments.js?v=326"></script>
+  <script src="js/neon.js?v=326"></script>
+  <script src="js/greetings.js?v=326"></script>
+  <script src="js/presence.js?v=326"></script>
+  <script src="js/occasions.js?v=326"></script>
+  <script src="js/handover.js?v=326"></script>
+  <script src="js/duty-roster.js?v=326"></script>
+  <script src="js/chart-names.js?v=326"></script>
+  <script src="js/chart-send-log.js?v=326"></script>
+  <script src="js/tarbeet.js?v=326"></script>
+  <script src="js/pills-page.js?v=326"></script>
+  <script src="js/tv-alerts.js?v=326"></script>
+  <script src="js/daily-quotes.js?v=326"></script>
+  <script src="js/app.js?v=326"></script>
 
   <!-- ===== PWA: register service worker for offline support ===== -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker
-          .register('sw.js?v=324', { scope: './' })
+          .register('sw.js?v=326', { scope: './' })
           .then(function (reg) { console.log('[SW] registered', reg.scope); })
           .catch(function (err) { console.warn('[SW] registration failed', err); });
       });

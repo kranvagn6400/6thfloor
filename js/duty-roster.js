@@ -6,7 +6,7 @@
        (Friday and Saturday by default; the admin can tick any other day as a holiday)
      · الخفارة الوسطية
      · خفارة المبيت
-   The holiday morning duty has several pharmacists: Friday 2, Saturday 3, and Thursday
+   The holiday morning duty has several pharmacists: Friday 3, Saturday 5, and Thursday
    (when it is a holiday) 4 — so that column shows that many name fields (slots()).
    The ADMIN fills it (every day of the month, a name or names in each cell); the
    pharmacists only SEE it — and only the days that have a duty, their own name
@@ -47,12 +47,12 @@
   // the morning duty keeps a LIST of names (older data may hold one string)
   const namesOf = (v) => (Array.isArray(v) ? v : (v ? [v] : [])).map(x => String(x || "").trim()).filter(Boolean);
   const has = (e) => !!(e && (namesOf(e.m).length || String(e.d || "").trim() || String(e.n || "").trim()));
-  // how many pharmacists the holiday morning duty has: Friday 2, Saturday 3, Thursday 4 (any
+  // how many pharmacists the holiday morning duty has: Friday 3, Saturday 5, Thursday 4 (any
   // other day marked as a holiday: 3); 0 on a day that is not a holiday
   function slots(iso) {
     if (!holiday(iso)) return 0;
     const wd = new Date(iso + "T12:00:00").getDay();
-    return wd === 5 ? 2 : wd === 4 ? 4 : 3;
+    return wd === 5 ? 3 : wd === 6 ? 5 : wd === 4 ? 4 : 3;
   }
 
   // ---- the shared setting ----

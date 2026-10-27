@@ -2454,3 +2454,20 @@ html.limited-admin #settings-catalog-btn, html.limited-admin .admin-layout { dis
 
 /* the install button sits apart from the login button */
 .login-quick { margin-top: 18px; }
+
+/* availability rows: the switch stays on screen on phones (the row was wider than the page) */
+.avail-row { box-sizing: border-box; max-width: 100%; }
+.avail-switch { margin-inline-start: auto; }
+
+/* specialists: a roomy add field, the names folded in a drop-down list */
+.spec-add { flex-wrap: wrap; }
+.spec-add #admin-spec-new { flex: 1 1 100%; min-height: 48px; font-size: 16px; padding: 12px 14px; }
+.spec-add .btn-discharged { flex: 1 1 100%; }
+.spec-details { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 4px 10px; margin-bottom: 8px; }
+.spec-details > summary { cursor: pointer; font-weight: 800; padding: 10px 2px; }
+.spec-details[open] > summary { border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+
+/* medicine management belongs to the supreme admin only */
+html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-requests-section { display: none !important; }
+.avail-list { grid-template-columns: minmax(0, 1fr); }
+.avail-row { min-width: 0; }

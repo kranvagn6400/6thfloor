@@ -4745,7 +4745,6 @@
         </div>
         <div class="admin-user-actions">
           <button class="btn-user-reset" data-uid="${uid}" data-name="${cleanName}" type="button">🔑 كلمة مرور</button>
-          ${u.role === "pharmacist" ? `<button class="btn-user-catalog${u.can_edit_catalog ? " is-on" : ""}" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_catalog ? "1" : ""}" type="button">${u.can_edit_catalog ? "✓ الكتالوج" : "الكتالوج"}</button>` : ""}
           ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الحذف والخروج" : "الحذف والخروج"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button>` : ""}
           <button class="btn-user-toggle" data-uid="${uid}" data-active="${u.active}" type="button">${u.active === false ? "تفعيل" : "تعطيل"}</button>
           <button class="btn-user-delete" data-uid="${uid}" data-username="${uname}" data-name="${cleanName}" type="button">🗑 حذف</button>
