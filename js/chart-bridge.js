@@ -135,6 +135,15 @@
      { bedKey: freq }) so the supplies the user just distributed via
      the supply-order modal are injected into each patient's meds
      list — same way the med-summary modal does it. */
+  // unit "1" / "3" = that unit's general rooms; "p1" / "p3" = that unit's private rooms (they go to ردهة الخاص);
+  // "p" = the private rooms of both units; empty = everything
+  function roomMatches(r, unit) {
+    if (!unit) return true;
+    if (unit === "p") return r.kind === "private";
+    if (unit === "p1" || unit === "p3") return r.kind === "private" && r.unit === unit.slice(1);
+    return r.unit === unit && r.kind === "general";
+  }
+
   function collectPatientsFromApp(state, supplyDistribution, unit) {
     const Ward = global.PharmacyWard;
     if (!Ward || !Ward.ROOMS || !state || !state.patients) return [];
@@ -150,7 +159,7 @@
 
     const out = [];
     // unit "1" / "3" = that unit's general rooms; "p" = the private rooms of both units (ردهة الخاص)
-    Ward.ROOMS.filter(r => !unit || (unit === "p" ? r.kind === "private" : (r.unit === unit && r.kind === "general"))).forEach(room => {
+    Ward.ROOMS.filter(r => roomMatches(r, unit)).forEach(room => {
       room.beds.forEach(bed => {
         const key = Ward.bedKey(room.id, bed.number);
         const p = state.patients[key];
@@ -308,15 +317,26 @@
     return r;
   }
 
+  // One send for a unit page: its general-room patients go to that unit's chart, its private-room patients
+  // to «ردهة الخاص» (where the other unit's private patients already are or will be)
   async function sendChart(state, supplyDistribution, onProgress, date, unit) {
-    unit = unit === "3" || unit === "p" ? unit : "1";
-    const tsv = buildChartTSV(state, supplyDistribution, unit);
-    // Keep the exact table in the send log (chart-send-log.js) first,
-    // so it can be re-sent if anything goes wrong on the way.
-    const entry = global.PharmacyChartLog
-      ? global.PharmacyChartLog.add(tsv, { withSupplies: !!(supplyDistribution && Object.keys(supplyDistribution).length), date: date || "", unit })
-      : null;
-    return sendTsv(tsv, entry && entry.id, onProgress, date, unit);
+    unit = unit === "3" ? "3" : "1";
+    const targets = [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }];
+    let first = null, any = false;
+    for (const t of targets) {
+      if (!collectPatientsFromApp(state, supplyDistribution, t.rooms).length) continue;
+      any = true;
+      const tsv = buildChartTSV(state, supplyDistribution, t.rooms);
+      // Keep the exact table in the send log (chart-send-log.js) first,
+      // so it can be re-sent if anything goes wrong on the way.
+      const entry = global.PharmacyChartLog
+        ? global.PharmacyChartLog.add(tsv, { withSupplies: !!(supplyDistribution && Object.keys(supplyDistribution).length), date: date || "", unit: t.server })
+        : null;
+      const r = await sendTsv(tsv, entry && entry.id, onProgress, date, t.server);
+      if (r.cancelled || !r.ok) return r;
+      if (!first) first = r;
+    }
+    return first || { ok: false, message: "لا يوجد مرضى لإرسالهم" };
   }
 
   // Manual fallback: open the chart site (the table is on the clipboard)

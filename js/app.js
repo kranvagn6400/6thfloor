@@ -461,12 +461,12 @@
   // The supplies of the last SUCCESSFUL send to the chart (kept on this device)
   // — «الطلبية» lists them next to the medicines.
   const SENT_SUPPLIES_KEY = "pharma.lastSentSupplies.v1";
-  function saveSentSupplies(dist, day) {
-    try { localStorage.setItem(SENT_SUPPLIES_KEY, JSON.stringify({ at: Date.now(), day: day || "", dist: dist || {} })); } catch (e) { /* ignore */ }
+  function saveSentSupplies(dist, day, unit) {
+    try { localStorage.setItem(SENT_SUPPLIES_KEY + "." + (unit || "1"), JSON.stringify({ at: Date.now(), day: day || "", dist: dist || {} })); } catch (e) { /* ignore */ }
   }
-  function loadSentSupplies() {
+  function loadSentSupplies(unit) {
     try {
-      const v = JSON.parse(localStorage.getItem(SENT_SUPPLIES_KEY) || "null");
+      const v = JSON.parse(localStorage.getItem(SENT_SUPPLIES_KEY + "." + (unit || "1")) || "null");
       return v && typeof v === "object" && v.dist ? v : null;
     } catch (e) { return null; }
   }
@@ -1531,6 +1531,28 @@
   }
   function orderingState() {
     return Object.assign({}, state, { patients: orderedPatientsMap() });
+  }
+  // «الطلبية» and the chart send work on ONE unit: the unit page the user is on. On any other page
+  // (pills, patients…) they ask to choose a unit first.
+  let _flowUnit = null;
+  function pickFlowUnit() {
+    if (!(UI.currentView && UI.currentView() === "home")) { flashHint("اختر الوحدة أولاً"); return false; }
+    _flowUnit = UI.getUnit();
+    return true;
+  }
+  function flowUnitName() {
+    const u = global.PharmacyWard.UNITS.find(x => x.id === _flowUnit);
+    return u ? u.name : "";
+  }
+  function flowPatientsMap() {
+    const all = orderedPatientsMap();
+    if (!_flowUnit) return all;
+    const out = {};
+    global.PharmacyWard.ROOMS.filter(r => r.unit === _flowUnit).forEach(room => room.beds.forEach(b => {
+      const k = global.PharmacyWard.bedKey(room.id, b.number);
+      if (all[k]) out[k] = all[k];
+    }));
+    return out;
   }
   function occupiedCount(map) {
     return Object.values(map || {}).filter(p => p && p.name && p.name.trim()).length;
@@ -3481,7 +3503,7 @@
 
       // Tally counts across all occupied patients
       const tally = {};
-      const occupiedPatients = Object.values(orderedPatientsMap())
+      const occupiedPatients = Object.values(flowPatientsMap())
         .filter(p => p && p.name && p.name.trim());
 
       occupiedPatients.forEach(p => {
@@ -3698,7 +3720,7 @@
       // Count occupied patients we order for (supplies go to them only)
       const occupiedKeys = [];
       const Ward = global.PharmacyWard;
-      const ordered = orderedPatientsMap();
+      const ordered = flowPatientsMap();
       Ward.ROOMS.forEach(room => {
         room.beds.forEach(bed => {
           const key = Ward.bedKey(room.id, bed.number);
@@ -3804,7 +3826,7 @@
         // final tally (meds + distributed supplies) before sending.
         // The user then clicks "إرسال إلى جارت الجارت" inside that
         // modal to actually send the data.
-        showMedSummaryList(supplyDistribution, true);
+        showMedSummaryList(supplyDistribution, true, { title: "مراجعة الإرسال — " + flowUnitName() });
         // Replace the med-summary footer with a "send to جارت الجارت"
         // button so the user can review the summary, then click to send.
         const footer = $("med-summary-footer");
@@ -3822,21 +3844,7 @@
           dateWrap.appendChild(dateLbl);
           dateWrap.appendChild(dateInput);
           footer.appendChild(dateWrap);
-          // which ward's chart receives it (each unit has its own)
-          const unitWrap = document.createElement("label");
-          unitWrap.className = "med-summary-date";
-          const unitLbl = document.createElement("span");
-          unitLbl.textContent = "الردهة الهدف";
-          const unitSel = document.createElement("select");
-          [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]].forEach(([v, t]) => {
-            const o = document.createElement("option");
-            o.value = v; o.textContent = t;
-            unitSel.appendChild(o);
-          });
-          unitSel.value = UI.getUnit();
-          unitWrap.appendChild(unitLbl);
-          unitWrap.appendChild(unitSel);
-          footer.appendChild(unitWrap);
+          // (the target is the unit page it was opened from: its chart, private rooms to ردهة الخاص)
           const sendBtn = document.createElement("button");
           sendBtn.type = "button";
           sendBtn.className = "med-summary-send-btn";
@@ -3850,10 +3858,10 @@
             try {
               const day = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) ? dateInput.value : global.PharmacyChartSync.todayISO();
               if (day !== global.PharmacyChartSync.todayISO() && !confirm("الإرسال إلى جارت يوم " + day + " (ليس اليوم)؟")) return;
-              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, unitSel.value);
+              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit);
               if (r.cancelled) return;
               flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
-              if (r.ok) { saveSentSupplies(supplyDistribution, day); closeMedSummary(); }
+              if (r.ok) { saveSentSupplies(supplyDistribution, day, _flowUnit); closeMedSummary(); }
             } catch (err) {
               flashHint("تعذّر الإرسال: " + (err.message || err));
             } finally {
@@ -3910,12 +3918,13 @@
     //      which now accepts the supply distribution as a 2nd arg
     //      and injects the supplies into each patient's med list.
     $("distribute-send-btn").addEventListener("click", () => {
+      if (!pickFlowUnit()) return;
       if (!state.medications || state.medications.length === 0) {
         flashHint("لا توجد أدوية في الكتالوج");
         return;
       }
-      // Count occupied patients we order for
-      const occCount = occupiedCount(orderedPatientsMap());
+      // Count occupied patients we order for (this unit)
+      const occCount = occupiedCount(flowPatientsMap());
       if (occCount === 0) {
         flashHint("لا يوجد مرضى مشغولون");
         return;
@@ -3934,7 +3943,7 @@
       // (The title lives inside the modal's <h3> header.)
       const modalTitle = document.querySelector("#supply-order-modal .supply-order-head h3");
       if (modalTitle) {
-        modalTitle.textContent = "توزيع المستلزمات ثم إرسال بيانات المرضى إلى الجارت";
+        modalTitle.textContent = "توزيع المستلزمات ثم إرسال بيانات " + flowUnitName() + " إلى الجارت";
       }
       openSupplyOrderModal(occCount);
     });
@@ -3944,9 +3953,10 @@
     // (what the chart receives), plus the supplies of the last successful send
     // to the chart — so the order can be written by hand.
     $("order-list-btn").addEventListener("click", async () => {
+      if (!pickFlowUnit()) return;
       if (!state.medications || state.medications.length === 0) { flashHint("لا توجد أدوية في الكتالوج"); return; }
-      if (occupiedCount(orderedPatientsMap()) === 0) { flashHint("لا يوجد مرضى مشغولون"); return; }
-      const sent = loadSentSupplies();
+      if (occupiedCount(flowPatientsMap()) === 0) { flashHint("لا يوجد مرضى مشغولون"); return; }
+      const sent = loadSentSupplies(_flowUnit);
       // Thursday: the chart app doubles every medicine except the ones flagged
       // «لا يُضاعف يوم الخميس» there — read those so the order matches the chart
       let noDouble = null, noDoubleError = false;
@@ -3956,7 +3966,7 @@
         const byId = {};
         (state.medications || []).forEach(m => { if (m && m.id) byId[m.id] = m; });
         const names = new Set();
-        Object.values(orderedPatientsMap()).forEach(p => {
+        Object.values(flowPatientsMap()).forEach(p => {
           if (!p || !p.name || !p.name.trim()) return;
           (p.medications || []).forEach(pm => {
             const c = pm && byId[pm.id];
@@ -3978,7 +3988,7 @@
       showMedSummaryList(sent ? sent.dist : null, false, {
         order: true,
         noDouble, noDoubleError,
-        title: "الطلبية",
+        title: "الطلبية — " + flowUnitName(),
         note: sent
           ? "المستلزمات: آخر إرسال إلى الجارت" + (sent.day ? " ليوم " + sent.day : "") + (when ? " (" + when + ")" : "")
           : "لم تُرسل مستلزمات إلى الجارت من هذا الجهاز بعد"
@@ -4054,7 +4064,7 @@
         flashHint("تعذّر تحميل وحدة جسر الجارت");
         return;
       }
-      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]]);
+      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"]]);
       if (!unit) return;
       UI.showView("home");
       flashHint("يتم إرسال بيانات المرضى إلى الجارت...");
