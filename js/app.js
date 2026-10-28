@@ -2804,13 +2804,14 @@
     //   3. A modal gives more space for the textarea input
     let _dischargePending = null;  // holds {bedKey, patient, record}
     // Everyone who can open a card (pharmacists, admin) may discharge / record a death.
-    function exitAllowed(p) { return true; }
+    // Doctors + admin always; a pharmacist only with the «الخروج والوفاة والعودة إلى الطابق» permission (profiles.can_exit_patients).
+    function exitAllowed(p) { return !!(Auth && ((Auth.isDoctor && Auth.isDoctor()) || (Auth.canExitPatients && Auth.canExitPatients()))); }
 
     function openDischargeModal() {
       if (!state.currentBed) return;
       const p = state.patients[state.currentBed.key];
       if (!p || !p.name || !p.name.trim()) return;
-      if (!exitAllowed(p)) { flashHint("الخروج لمرضى الردهة من صلاحية الطبيب"); return; }
+      if (!exitAllowed(p)) { flashHint("تسجيل الخروج يحتاج صلاحية «الخروج والوفاة والعودة إلى الطابق»"); return; }
 
       _dischargePending = {
         bedKey: state.currentBed.key,
@@ -2927,7 +2928,7 @@
       if (!state.currentBed) return;
       const p = state.patients[state.currentBed.key];
       if (!p || !p.name || !p.name.trim()) return;
-      if (!exitAllowed(p)) { flashHint("تسجيل الوفاة لمرضى الردهة من صلاحية الطبيب"); return; }
+      if (!exitAllowed(p)) { flashHint("تسجيل الوفاة يحتاج صلاحية «الخروج والوفاة والعودة إلى الطابق»"); return; }
       if (!confirm(`هل تريد تسجيل وفاة المريض "${p.name}"؟\nستُحفظ بياناته في قائمة "وفيات".`)) return;
       const { key: bedKey, roomId, bed } = state.currentBed;
       const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
@@ -2969,7 +2970,7 @@
       const p = state.patients[state.currentBed.key];
       if (!p || !p.name || !p.name.trim()) return;
       const B = global.PharmacyBoarders;
-      if (!B.isBoarder(p) || (Auth && Auth.isDoctor && Auth.isDoctor())) return;
+      if (!B.isBoarder(p) || (Auth && Auth.isDoctor && Auth.isDoctor()) || !(Auth && Auth.canExitPatients && Auth.canExitPatients())) return;
       const dest = B.label(p);
       if (!confirm(`رجوع المريض "${p.name.trim()}" إلى طابقه (${dest})؟\nسيُفرَّغ السرير.`)) return;
       const { key: bedKey, roomId, bed } = state.currentBed;
@@ -4609,7 +4610,7 @@
       if (flagBtn) {
         const on = !flagBtn.dataset.on;
         const what = flagBtn.dataset.flag === "can_exit_patients"
-          ? "حذف المرضى وتفريغ الأسرّة والخروج والوفاة"
+          ? "تسجيل الخروج والوفاة والعودة إلى الطابق"
           : "إدارة مقولات شاشة العرض";
         if (!confirm((on ? "السماح لـ «" : "إلغاء سماح «") + flagBtn.dataset.name + "» بـ" + what + "؟")) return;
         const res = await Auth.setUserFlag(flagBtn.dataset.uid, flagBtn.dataset.flag, on);
@@ -4786,7 +4787,7 @@
         </div>
         <div class="admin-user-actions">
           <button class="btn-user-reset" data-uid="${uid}" data-name="${cleanName}" type="button">🔑 كلمة مرور</button>
-          ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الحذف والخروج" : "الحذف والخروج"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button>` : ""}
+          ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الخروج والوفاة والعودة" : "الخروج والوفاة والعودة"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button>` : ""}
           <button class="btn-user-toggle" data-uid="${uid}" data-active="${u.active}" type="button">${u.active === false ? "تفعيل" : "تعطيل"}</button>
           <button class="btn-user-delete" data-uid="${uid}" data-username="${uname}" data-name="${cleanName}" type="button">🗑 حذف</button>
         </div>

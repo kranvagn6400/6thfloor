@@ -553,14 +553,14 @@
     if (returnBtn) {
       const Auth = global.PharmacyAuth;
       const isDoctor = !!(Auth && Auth.isDoctor && Auth.isDoctor());
-      returnBtn.hidden = !B.isBoarder(patient) || isDoctor;
+      returnBtn.hidden = !B.isBoarder(patient) || isDoctor || !(Auth && Auth.canExitPatients && Auth.canExitPatients());
     }
     // Discharge / death: pharmacists only for boarders (other floors)
     const Auth2 = global.PharmacyAuth;
     const pharm = !!(Auth2 && Auth2.isPharmacist && Auth2.isPharmacist());
     ["discharge-patient-btn", "died-patient-btn"].forEach(id => {
       const b = document.getElementById(id);
-      if (b) b.hidden = false;   // pharmacists discharge / record deaths too
+      if (b) b.hidden = !(Auth2 && ((Auth2.isDoctor && Auth2.isDoctor()) || (Auth2.canExitPatients && Auth2.canExitPatients())));   // pharmacists: only with the permission
     });
 
     // The "missing plate number" highlight is set only by the add-med attempt
