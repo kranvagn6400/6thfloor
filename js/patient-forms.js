@@ -85,12 +85,14 @@
       px: [979, 1267], items: ALB_ITEMS, pdfName: "استمارة-ألبومين",
       hint: "تُصدر كل يوم لكل مريض على الألبومين",
       fields: [
-        F("name", "اسم المريض", 628, 812, 129, "r", { dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true }),
+        // like the meronem form: everything comes from the card (auto = shown, never typed) — except the diagnosis, which the
+        // pharmacist's card does not show, so it stays a field (filled from the card when there is one)
+        F("name", "اسم المريض", 628, 812, 129, "r", { auto: true, dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true, auto: true }),
         F("diag", "Diagnosis", 184, 425, 129, "l", { full: true }),
-        F("ward", "الطابق والردهة", 560, 790, 170, "r"), F("alb", "Serum albumin", 226, 540, 170, "l"),
-        F("count", "العدد المطلوب (رقمًا)", 560, 760, 211, "r", { num: true }), F("day", "Treatment day", 216, 540, 211, "l"),
-        F("words", "كتابةً", 560, 846, 253, "r"), F("weight", "Weight", 156, 540, 253, "l"),
-        F("creat", "S.creatinine", 204, 540, 296, "l")
+        F("ward", "الطابق والردهة", 560, 790, 170, "r", { auto: true }), F("alb", "Serum albumin", 226, 540, 170, "l", { auto: true }),
+        F("count", "العدد المطلوب (رقمًا)", 560, 760, 211, "r", { num: true, auto: true }), F("day", "Treatment day", 216, 540, 211, "l", { auto: true }),
+        F("words", "كتابةً", 560, 846, 253, "r", { auto: true }), F("weight", "Weight", 156, 540, 253, "l", { auto: true }),
+        F("creat", "S.creatinine", 204, 540, 296, "l", { auto: true })
       ]
     },
     meronem: {
