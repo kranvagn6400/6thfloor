@@ -141,6 +141,22 @@
   }
   const dayOf = (hit, p) => { const C = global.PharmacyClinical; return hit && C ? C.abxDay(hit.pm, p) : null; };
 
+  // The meronem / imipenem course (the user's rules):
+  //  • a form is made on the first day, for 7 or 14 days; the next form is due on the LAST day of that period (day 7 / day 14);
+  //  • a course is never longer than 21 days in all: after a 14-day period only 7 more days are allowed, and after 21 days there is
+  //    no point in going on with the drug — no more forms;
+  //  • patients who were already on the drug before the app: every one of them was dispensed for 14 days (from day 1).
+  const MAX_COURSE = 21;
+  const durationsAfter = (end) => { const rem = MAX_COURSE - end; return rem >= 14 ? [7, 14] : rem >= 7 ? [7] : []; };
+  // → { first: true } on day 1 with no form made yet, else { end, legacy } = the last day covered so far
+  function courseOf(p, day) {
+    const s = savedOf(p, "meronem", false), hist = (s && s.hist) || [];
+    const last = hist[hist.length - 1];
+    if (last) return { end: last.end || ((last.start || last.day || 1) + (last.dur || 7) - 1), legacy: false };
+    if (day === 1) return { first: true };
+    return { end: 14, legacy: true };
+  }
+
   // → { state: "done" | "due" | "late" | "soon" | "none", text }
   function dueInfo(formId, p) {
     const hit = findMed(formId, p);
@@ -149,15 +165,15 @@
     const day = dayOf(hit, p);
     if (hist.some(h => h.date === todayISO())) return { state: "done", text: "صُرفت اليوم ✓", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
-    const last = hist[hist.length - 1];
-    // no form recorded yet: the FIRST form is due on day 1 only; a patient already on day 2, 3, 4… got his form before (outside the app),
-    // so he is not listed — his next form follows from the one made here (issue it from «كل المرضى» when the period ends)
-    if (!last) return day === 1 ? { state: "due", text: "مطلوبة — اليوم الأول", day } : { state: "none", text: "لا استمارة مسجّلة في التطبيق (اليوم " + (day == null ? "؟" : day) + ")", day };
-    const next = (last.day || 1) + (last.dur || 7) - 1;
-    if (day == null) return { state: "soon", text: "تُجدَّد في اليوم " + next, day };
-    if (day > next) return { state: "late", text: "متأخرة (كان موعدها اليوم " + next + ")", day };
-    if (day === next) return { state: "due", text: "مطلوبة اليوم — تجديد", day };
-    return { state: "soon", text: "تُجدَّد في اليوم " + next + " (بعد " + (next - day) + " يوم)", day };
+    const c = courseOf(p, day);
+    if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
+    const end = c.end;
+    if (!durationsAfter(end).length) return { state: "none", text: "آخر مدة صرف (حتى اليوم " + end + ") — لا تجديد بعد 21 يومًا", day };
+    if (day != null && day > MAX_COURSE) return { state: "none", text: "تجاوز 21 يومًا — لا فائدة من الاستمرار", day };
+    if (day == null) return { state: "soon", text: "تُجدَّد في اليوم " + end, day };
+    if (day > end) return { state: "late", text: "متأخرة (كان موعدها اليوم " + end + ")", day };
+    if (day === end) return { state: "due", text: "مطلوبة اليوم — تجديد", day };
+    return { state: "soon", text: "تُجدَّد في اليوم " + end + " (بعد " + (end - day) + " يوم)", day };
   }
 
   function unitNameOf(key) {
@@ -456,11 +472,17 @@
     }
     let dur = "";
     if (form.duration) {
-      const d = parseInt(V.st.vals.durDays, 10) || 0;
-      dur = '<div class="pfe-card"><h4 class="pfe-h">تحديد مدة الصرف</h4><div class="pfs-chips" id="pfs-dur">' +
-        [7, 14].map(n => '<button type="button" data-d="' + n + '" class="' + (d === n ? "is-on" : "") + '">' + n + " يومًا</button>").join("") +
-        '</div><label class="pfe-f" style="margin-top:10px">أو اكتب عدد الأيام<input id="pfs-dcustom" type="number" inputmode="numeric" min="1" value="' + (d && d !== 7 && d !== 14 ? d : "") + '"></label>' +
-        '<p class="pfe-hint">تُصدر الاستمارة التالية في اليوم الأخير من هذه المدة (اليوم 7 أو 14).</p></div>';
+      const allowed = allowedNow();
+      let d = parseInt(V.st.vals.durDays, 10) || 0;
+      if (allowed.length && allowed.indexOf(d) < 0) { d = allowed.length === 1 ? allowed[0] : 0; V.st.vals.durDays = d ? String(d) : ""; V.st.vals.duration = d ? d + " أيام" : ""; }
+      const c = courseOf(V.p, dayOf(findMed("meronem", V.p), V.p));
+      const note = !allowed.length
+        ? "لا يجوز تجديد الاستمارة: بلغ العلاج الحد الأقصى (21 يومًا)."
+        : c.first ? "تُصدر الاستمارة التالية في آخر يوم من هذه المدة (اليوم 7 أو 14). ولا يزيد العلاج عن 21 يومًا."
+          : "هذا تجديد يبدأ من اليوم " + (c.end + 1) + ": يُسمح بـ " + allowed.join(" أو ") + " أيام فقط لأن العلاج لا يزيد عن 21 يومًا.";
+      dur = '<div class="pfe-card"><h4 class="pfe-h">تحديد مدة الصرف</h4>' +
+        (allowed.length ? '<div class="pfs-chips" id="pfs-dur">' + allowed.map(n => '<button type="button" data-d="' + n + '" class="' + (d === n ? "is-on" : "") + '">' + n + " أيام</button>").join("") + "</div>" : "") +
+        '<p class="pfe-hint">' + esc(note) + "</p></div>";
     }
     el.innerHTML =
       '<div class="pfe-top"><button type="button" class="pfe-x" id="pfs-back" aria-label="رجوع">✕</button><div><h3>' + esc(form.title) + "</h3><small>" + esc(V.p.name) + "</small></div></div>" +
@@ -505,11 +527,24 @@
       saveSoon();
     };
     const dchips = $("pfs-dur");
-    if (dchips) dchips.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b) return; const c = $("pfs-dcustom"); if (c) c.value = ""; setDur(+b.dataset.d); });
-    const dc = $("pfs-dcustom");
-    if (dc) dc.addEventListener("input", () => { const n = parseInt(dc.value, 10); setDur(n > 0 ? n : 0); });
+    if (dchips) dchips.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b) return; setDur(+b.dataset.d); });
     $("pfs-pdf").addEventListener("click", () => savePdf($("pfs-pdf")));
     $("pfs-preview").addEventListener("click", () => preview($("pfs-preview")));
+  }
+  // the dispensing periods the form may be made for now ([] = none: the 21-day limit is reached)
+  function allowedNow() {
+    const day = dayOf(findMed("meronem", V.p), V.p);
+    if (day != null && day > MAX_COURSE) return [];          // past 21 days: no more forms
+    const c = courseOf(V.p, day);
+    return c.first ? [7, 14] : durationsAfter(c.end);
+  }
+  // meronem: a period must be chosen, and it must be an allowed one
+  function checkDuration() {
+    if (!FORMS[V.form].duration) return true;
+    const allowed = allowedNow(), d = parseInt(V.st.vals.durDays, 10) || 0;
+    if (!allowed.length) { flash("لا يجوز تجديد استمارة الميرونيم: بلغ العلاج 21 يومًا"); return false; }
+    if (allowed.indexOf(d) < 0) { flash("اختر مدة الصرف (" + allowed.join(" أو ") + " أيام)"); return false; }
+    return true;
   }
   function updateSum() {
     const el = $("pfs-sum"); if (!el) return;
@@ -525,6 +560,7 @@
   }
   async function preview(b) {
     if (!V || b.disabled) return;
+    if (!checkDuration()) return;
     const form = FORMS[V.form];
     const label = b.textContent;
     b.disabled = true; b.textContent = "جارٍ التجهيز…";
@@ -545,6 +581,7 @@
   }
   async function savePdf(b) {
     if (!V || (b && b.disabled)) return;
+    if (!checkDuration()) return;
     const form = FORMS[V.form];
     const label = b ? b.textContent : "";
     if (b) { b.disabled = true; b.textContent = "جارٍ إنشاء الملف…"; }
@@ -571,9 +608,16 @@
   function issued() {
     if (!V) return;
     const day = dayOf(findMed(V.form, V.p), V.p) || 1;
-    const dur = parseInt(V.st.vals.durDays, 10) || (V.form === "meronem" ? 7 : 1);
+    const dur = parseInt(V.st.vals.durDays, 10) || 1;
+    const entry = { date: todayISO(), day, dur };
+    // saving the same day's form again replaces it (the period is worked out WITHOUT today's earlier entry)
     V.st.hist = (V.st.hist || []).filter(h => h.date !== todayISO());
-    V.st.hist.push({ date: todayISO(), day, dur });
+    if (V.form === "meronem") {
+      const c = courseOf(V.p, dayOf(findMed("meronem", V.p), V.p));
+      entry.start = c.first ? 1 : c.end + 1;               // a renewal continues right after the period that ended
+      entry.end = entry.start + dur - 1;
+    }
+    V.st.hist.push(entry);
     if (V.key && App()) App().savePatient(V.key);
     updateSum();
   }
