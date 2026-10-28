@@ -260,6 +260,8 @@
     } catch (e) { return text; }
   }
   // the type size that fits the text in its box (about 0.46 em per character with the paper's own fonts, never above 12 pt, never below 7)
+  // the albumin paper: these fields are nudged up a little from the general +2 (design px)
+  const ALB_DY = { name: -1.5, ward: -1.5, plate: -1, words: 0.5 };
   const sizeFor = (t, x0, x1, max) => Math.max(7, Math.min(max || 12, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
 
   // → the page's HTML (the picture + every value + the ticks)
@@ -275,7 +277,7 @@
       let text = f.k === "date" ? slash(v) : v;
       if (f.kashida) text = kashida(text, f);
       // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form only a little)
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : (form.id === "albumin" && (f.k === "name" || f.k === "plate" || f.k === "ward")) ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : (form.id === "albumin" && f.k === "ward") ? nameFs : (form.id === "albumin" && f.k === "words") ? sizeFor(text, f.x0, f.x1, BIG) : sizeFor(text, f.x0, f.x1, form.id === "albumin" && f.k === "name" ? BIG : 12));
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : form.id === "albumin" && ALB_DY[f.k] != null ? ALB_DY[f.k] : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : (form.id === "albumin" && f.k === "ward") ? nameFs : (form.id === "albumin" && f.k === "words") ? sizeFor(text, f.x0, f.x1, BIG) : sizeFor(text, f.x0, f.x1, form.id === "albumin" && f.k === "name" ? BIG : 12));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
