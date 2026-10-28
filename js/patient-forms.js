@@ -89,7 +89,7 @@
         // pharmacist's card does not show, so it stays a field (filled from the card when there is one)
         F("name", "اسم المريض", 628, 812, 129, "r", { auto: true, dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true, auto: true }),
         F("diag", "Diagnosis", 184, 425, 129, "l", { full: true }),
-        F("ward", "الطابق والردهة", 560, 790, 170, "r", { auto: true }), F("alb", "Serum albumin", 226, 540, 170, "l", { auto: true }),
+        F("ward", "الطابق والردهة", 430, 790, 170, "r", { auto: true }), F("alb", "Serum albumin", 226, 540, 170, "l", { auto: true }),
         F("count", "العدد المطلوب (رقمًا)", 560, 760, 211, "r", { num: true, auto: true }), F("day", "Treatment day", 216, 540, 211, "l", { auto: true }),
         F("words", "كتابةً", 560, 846, 253, "r", { auto: true }), F("weight", "Weight", 156, 540, 253, "l", { auto: true }),
         F("creat", "S.creatinine", 204, 540, 296, "l", { auto: true })
@@ -214,7 +214,7 @@
     ${S} .t.c { justify-content: center; text-align: center; }
     ${S} .t.l { direction: ltr; justify-content: flex-start; text-align: left; }
     ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #000; }
-    ${S} .ring { position: absolute; border: 2pt solid #000; border-radius: 6pt; background: transparent; }
+    ${S} .ring { position: absolute; border: 3.2pt solid #000; border-radius: 6pt; background: transparent; }
     ${S} .sp { display: inline-block; width: 0.32em; flex: none; }
   `;
   }
@@ -258,13 +258,15 @@
   function pageHtml(form, vals, st) {
     const [w, h] = form.px;
     let o = '<div class="pg" style="width:' + pt(w) + ";height:" + pt(h) + '"><img class="bg" src="' + form.bg + '" alt="">';
+    const nameField = form.fields.find(x => x.k === "name");
+    const nameFs = nameField && vals.name ? sizeFor(String(vals.name).trim(), nameField.x0, nameField.x1) : 12;
     form.fields.forEach(f => {
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
       let text = f.k === "date" ? slash(v) : v;
       if (f.kashida) text = kashida(text, f);
       // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form only a little)
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : sizeFor(text, f.x0, f.x1));
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : (form.id === "albumin" && (f.k === "name" || f.k === "plate" || f.k === "ward")) ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : (form.id === "albumin" && f.k === "ward") ? nameFs : sizeFor(text, f.x0, f.x1));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
