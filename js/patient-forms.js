@@ -85,7 +85,7 @@
       px: [979, 1267], items: ALB_ITEMS, pdfName: "استمارة-ألبومين",
       hint: "تُصدر كل يوم لكل مريض على الألبومين",
       fields: [
-        F("name", "اسم المريض", 628, 812, 129, "r"), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true }),
+        F("name", "اسم المريض", 628, 812, 129, "r", { dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true }),
         F("diag", "Diagnosis", 184, 425, 129, "l", { full: true }),
         F("ward", "الطابق والردهة", 560, 790, 170, "r"), F("alb", "Serum albumin", 226, 540, 170, "l"),
         F("count", "العدد المطلوب (رقمًا)", 560, 760, 211, "r", { num: true }), F("day", "Treatment day", 216, 540, 211, "l"),
@@ -100,8 +100,8 @@
       fields: [
         // auto = filled by the app, never typed (دائرة صحة and the hospital are fixed; the ward is the patient's unit; the rest comes from the card; no allergy)
         F("health", "دائرة صحة", 612, 774, 244, "r", { auto: true }), F("hospital", "مستشفى", 355, 540, 244, "r", { auto: true }), F("ward", "الردهة", 100, 296, 244, "r", { auto: true }),
-        F("name", "اسم المريض", 612, 770, 278, "r", { auto: true }), F("age", "العمر", 355, 555, 278, "r", { auto: true }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true }),
-        F("date", "التاريخ", 612, 800, 314, "r", { auto: true }), F("scr", "S.cr", 355, 543, 314, "r", { auto: true }),
+        F("name", "اسم المريض", 612, 770, 278, "r", { auto: true, dy: -4 }), F("age", "العمر", 355, 555, 278, "r", { auto: true }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true }),
+        F("date", "التاريخ", 612, 800, 314, "r", { auto: true, dy: -4 }), F("scr", "S.cr", 355, 543, 314, "r", { auto: true }),
         // the two typed fields are written in the MIDDLE of their cells
         F("dose", "الجرعة", 92, 688, 999, "r", { full: true, center: true, auto: true }), F("duration", "تحديد مدة الصرف", 92, 688, 1037, "r", { full: true, hidden: true, center: true })
       ]
@@ -223,7 +223,7 @@
   // the chosen condition = its cell outlined (a tick would run over the printed text)
   const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
   // the type size that fits the text in its box (about 0.55 em per character, never above 11 pt, never below 7)
-  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(10, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
+  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(9, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
 
   // → the page's HTML (the picture + every value + the ticks)
   function pageHtml(form, vals, st) {
@@ -234,7 +234,7 @@
       if (!v) return;
       const text = f.k === "date" ? slash(v) : v;
       // the typed text sits on the printed label's line: Arabic values a little higher than their box centre, English ones slightly
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.side === "l" ? -3.5 : -7), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.dy != null ? f.dy : f.side === "l" ? -3.5 : -7), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
