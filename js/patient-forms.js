@@ -153,13 +153,14 @@
     const s = savedOf(p, "meronem", false), hist = ((s && s.hist) || []).filter(h => !(ignoreToday && h.date === todayISO()));
     const last = hist[hist.length - 1];
     if (last) return { end: last.end || ((last.start || last.day || 1) + (last.dur || 7) - 1), legacy: false };
-    if (day === 1 || (s && Array.isArray(s.rej) && s.rej.length)) return { first: true };   // a form that was refused still has to be made
+    if (day === 1) return { first: true };
     return { end: 14, legacy: true };
   }
 
-  // ---- «رُفضت»: the pharmacy division / the manager refused the form → the patient is «Not indicated» for TODAY ----
-  // Nothing of that medicine is counted for the day: not sent to the chart, not in the order, not in the albumin amount, not charged in
-  // the private-ward record, and the handover paper says «Not indicated». Tomorrow everything is normal again.
+  // ---- «رُفضت» (ALBUMIN form only): the pharmacy division / the manager refused it → the patient is «Not indicated» for TODAY ----
+  // It is counted as not taken: the albumin amount in the critical-drug monitor, today's private-ward record (not charged) and the
+  // handover paper («Not indicated»). The ORDER and the CHART are NOT touched (the approval comes later than the chart is finished and
+  // printed, so there is nothing to gain). Tomorrow everything is normal again.
   function rejectedToday(p, formId) {
     const st = savedOf(p, formId, false);
     return !!(st && Array.isArray(st.rej) && st.rej.some(r => r.date === todayISO()));
@@ -170,7 +171,6 @@
     const C = global.PharmacyClinical, c = catalog().find(m => m && m.id === pm.id) || {};
     const probe = Object.assign({}, pm, c);
     if (((C && C.isAlbumin(probe)) || /albumin/i.test(String(pm.id || ""))) && rejectedToday(p, "albumin")) return true;
-    if (MER_RE.test([pm.id, c.nameTrade, c.nameEn, c.nameAr].join(" ")) && rejectedToday(p, "meronem")) return true;
     return false;
   }
   function markRejected(formId, p, key) {
@@ -250,13 +250,13 @@
     const s = savedOf(p, formId, false), hist = (s && s.hist) || [];
     const day = dayOf(hit, p);
     // refused today by the pharmacy division / the manager: «Not indicated» for the day (nothing is counted as taken)
-    if (rejectedToday(p, formId)) return { state: "rej", text: "رُفضت اليوم — Not indicated", day };
+    if (formId === "albumin" && rejectedToday(p, formId)) return { state: "rej", text: "رُفضت اليوم — Not indicated", day };
     if (hist.some(h => h.date === todayISO())) return { state: "done", text: "طُبعت اليوم ✓", day };
     // the file was made today but «تم الطبع» is not pressed yet: the form is still required
     if (s && s.pending && s.pending.date === todayISO()) return { state: "due", wait: true, text: "أُنشئ الملف — بانتظار الطبع", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
     const c = courseOf(p, day);
-    if (c.first) return { state: "due", text: day === 1 ? "مطلوبة — اليوم الأول" : "مطلوبة — رُفضت سابقًا", day };
+    if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
     const end = c.end;
     if (!durationsAfter(end).length) return { state: "none", text: "آخر مدة صرف (حتى اليوم " + end + ") — لا تجديد بعد 21 يومًا", day };
     if (day != null && day > MAX_COURSE) return { state: "none", text: "تجاوز 21 يومًا — لا فائدة من الاستمرار", day };
@@ -559,7 +559,7 @@
       if (!on) return false;
       // the meronem form: only the patients who deserve one now (first day, or the period ended and no new form yet —
       // a late one keeps showing on day 15, 16… until the new form is made)
-      if (V.form === "meronem") { const s = dueInfo("meronem", x.p).state; if (s !== "due" && s !== "late" && s !== "rej") return false; }
+      if (V.form === "meronem") { const s = dueInfo("meronem", x.p).state; if (s !== "due" && s !== "late") return false; }
       if (!q) return true;
       return (String(x.p.name || "").toLowerCase().indexOf(q) >= 0) || (String(x.p.plateNumber || "").indexOf(q) >= 0);
     });
@@ -567,7 +567,7 @@
       const d = dueInfo(V.form, x.p);
       // «تم الطبع» beside a form that needs printing: albumin any time, meronem once its file was made
       const canPrint = d.state === "due" || d.state === "late";
-      const canReject = d.state === "due" || d.state === "late" || d.state === "done";
+      const canReject = V.form === "albumin" && (d.state === "due" || d.state === "late" || d.state === "done");     // no refusal for the meronem form
       const acts = (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") +
         (canReject ? '<button type="button" class="pfs-rej">رُفضت</button>' : "") +
         (d.state === "rej" ? '<button type="button" class="pfs-unrej">إلغاء الرفض</button>' : "");
@@ -785,7 +785,7 @@
     const d = dueInfo(V.form, V.p);
     el.innerHTML = '<span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span>" +
       ((d.state === "due" || d.state === "late") ? '<button type="button" class="pfs-done-sm" id="pfs-printed">تم الطبع</button>' : "") +
-      ((d.state === "due" || d.state === "late" || d.state === "done") ? '<button type="button" class="pfs-rej-sm" id="pfs-reject">رُفضت</button>' : "") +
+      ((V.form === "albumin" && (d.state === "due" || d.state === "late" || d.state === "done")) ? '<button type="button" class="pfs-rej-sm" id="pfs-reject">رُفضت</button>' : "") +
       (d.state === "rej" ? '<button type="button" class="pfs-unrej-sm" id="pfs-unreject">إلغاء الرفض</button>' : "");
   }
 

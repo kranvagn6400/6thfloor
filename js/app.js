@@ -3554,7 +3554,6 @@
         const seen = new Set();
         (p.medications || []).forEach(pm => {
           if (!pm || !pm.id) return;
-          if (global.PharmacyChartBridge.refusedToday(p, pm)) return;      // its form was refused today: not counted
           const catalog = medById[pm.id];
           if (!catalog) return;
           if (chartOnly && catalog.form !== "supplies" && !String(catalog.nameChart || "").trim()) return;   // not sent
@@ -5683,7 +5682,8 @@
         r.parts.push(nm && dose ? dose + "×" + nm.m : [dose, e.freq].filter(Boolean).join(" "));
       } else {
         const q = Bridge.dailyQuantity ? Bridge.dailyQuantity(e.medId, e.freq, e.form) : null;
-        if (Bridge.refusedToday && Bridge.refusedToday(state.patients[e.key], { id: e.medId })) r.refused = true;       // Not indicated today
+        const PFm = global.PharmacyPatientForms;
+        if (PFm && PFm.medRejectedToday && PFm.medRejectedToday(state.patients[e.key], { id: e.medId })) r.refused = true;       // Not indicated today
         else r.qty += q || 0;
       }
     });
