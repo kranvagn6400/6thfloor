@@ -17,7 +17,7 @@
   //   "2×1" = 2 units, once/day (double dose, once)
   // N may be a half tablet: "½×2" = half a tablet twice a day, "1½×1".
   // "O/N" = on need (عند الحاجة) — counted as 1 on the chart like any word frequency
-  const FREQUENCIES = ["½×1", "½×2", "½×3", "1×1", "1×2", "1×3", "1×4", "1×5", "1×6", "1½×1", "1½×2", "1½×3", "2×1", "2×2", "2×3", "2×4", "2×5", "2×6", "3×1", "3×2", "3×3", "3×4", "3×5", "3×6", "4×1", "4×2", "4×3", "4×4", "4×5", "4×6", "O/N", "كل يومين", "كل 3 أيام", "كل أسبوع"];
+  const FREQUENCIES = ["½×1", "½×2", "½×3", "1×1", "1×2", "1×3", "1×4", "1×5", "1×6", "1½×1", "1½×2", "1½×3", "2×1", "2×2", "2×3", "2×4", "2×5", "2×6", "3×1", "3×2", "3×3", "3×4", "3×5", "3×6", "4×1", "4×2", "4×3", "4×4", "4×5", "4×6", "5×1", "6×1", "7×1", "8×1", "9×1", "10×1", "11×1", "12×1", "O/N", "كل يومين", "كل 3 أيام", "كل أسبوع"];
   // How the dose is given — its own field (med.mode), not a frequency.
   // Older prescriptions stored these AS the frequency: medMode() /
   // medFrequency() read those as mode + "1×1" (and the chart still
