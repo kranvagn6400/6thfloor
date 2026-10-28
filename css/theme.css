@@ -2524,3 +2524,6 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
   box-shadow: 0 0 8px color-mix(in srgb, var(--pal-accent, var(--primary, #1b6b5a)) 60%, transparent); transition: transform 240ms ease-out, opacity 300ms ease; }
 .fx-progress.on { opacity: 1; }
 .fx-progress.bad { background: var(--danger, #c2412d); box-shadow: 0 0 8px rgba(194, 65, 45, .6); }
+
+/* «استمارات المرضى»: the icon is white in light and dark mode */
+#forms-btn { color: #fff !important; }
