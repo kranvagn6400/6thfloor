@@ -243,6 +243,16 @@
     return { ok: true, undo() { st.hist = prevHist; if (prevPending) st.pending = prevPending; else delete st.pending; } };
   }
 
+  // «لم تُطبع»: takes back today's «تم الطبع» — the form is required again. → { ok, undo }
+  function unmarkPrinted(formId, p) {
+    const st = savedOf(p, formId, true);
+    const prevHist = st.hist.slice(), prevPending = st.pending || null;
+    if (!st.hist.some(h => h.date === todayISO())) return { ok: false };
+    st.hist = st.hist.filter(h => h.date !== todayISO());
+    delete st.pending;
+    return { ok: true, undo() { st.hist = prevHist; if (prevPending) st.pending = prevPending; else delete st.pending; } };
+  }
+
   // → { state: "done" | "due" | "late" | "soon" | "none", text }
   function dueInfo(formId, p) {
     const hit = findMed(formId, p);
@@ -460,6 +470,7 @@
     html[data-theme="dark"] #pf-editor .pfs-st.rej { background: #4d1d18; color: #ffb4a8; }
     #pf-editor .pfs-done { display: block; width: 100%; margin-top: 10px; height: 42px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
     #pf-editor .pfs-done-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
+    #pf-editor .pfs-notprinted, #pf-editor .pfs-notprinted-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; background: #8a6d1b; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
     #pf-editor .pfs-st.wait { background: #dbeafe; color: #1d4ed8; }
     html[data-theme="dark"] #pf-editor .pfs-st.wait { background: #17304f; color: #9cc4ff; }
     #pf-editor .pfs-pt b { display: block; font-size: 15px; margin-bottom: 4px; }
@@ -571,6 +582,7 @@
       const canPrint = d.state === "due" || d.state === "late";
       const canReject = V.form === "albumin" && (d.state === "due" || d.state === "late" || d.state === "done");     // no refusal for the meronem form
       const acts = (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") +
+        (d.state === "done" ? '<button type="button" class="pfs-notprinted">لم تُطبع</button>' : "") +
         (canReject ? '<button type="button" class="pfs-rej">رُفضت</button>' : "") +
         (d.state === "rej" ? '<button type="button" class="pfs-unrej">إلغاء الرفض</button>' : "");
       return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
@@ -580,6 +592,7 @@
     const list = $("pfs-list");
     list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
     list.querySelectorAll(".pfs-done").forEach(b => b.addEventListener("click", () => printedFromList(b.closest(".pfs-pt").dataset.key)));
+    list.querySelectorAll(".pfs-notprinted").forEach(b => b.addEventListener("click", () => notPrintedFromList(b.closest(".pfs-pt").dataset.key)));
     list.querySelectorAll(".pfs-rej").forEach(b => b.addEventListener("click", () => rejectFromList(b.closest(".pfs-pt").dataset.key, true)));
     list.querySelectorAll(".pfs-unrej").forEach(b => b.addEventListener("click", () => rejectFromList(b.closest(".pfs-pt").dataset.key, false)));
   }
@@ -596,6 +609,16 @@
       document.body.appendChild(o);
       o.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b && e.target !== o) return; o.remove(); resolve(b ? +b.dataset.d : 0); });
     });
+  }
+  function notPrintedFromList(key) {
+    const p = App().state.patients[key];
+    if (!p) return;
+    const res = unmarkPrinted(V.form, p);
+    if (!res.ok) { flash("هذه الاستمارة غير مسجّلة كمطبوعة اليوم"); return; }
+    App().savePatient(key);
+    if (V && V.view === "list") drawList();
+    refreshAlert();
+    undoToast("أُلغي «تم الطبع»: " + String(p.name || "").trim(), () => { res.undo(); App().savePatient(key); if (V && V.view === "list") drawList(); refreshAlert(); });
   }
   function rejectFromList(key, reject) {
     const p = App().state.patients[key];
@@ -754,6 +777,14 @@
         undoToast(on ? "سُجّل رفض الاستمارة (Not indicated لهذا اليوم)" : "أُلغي الرفض", () => { res.undo(); if (key) App().savePatient(key); if (V && V.p === p) updateSum(); refreshAlert(); });
         return;
       }
+      if (e.target.closest("#pfs-notprinted")) {
+        const key = V.key, p = V.p, res = unmarkPrinted(V.form, p);
+        if (!res.ok) return;
+        if (key) App().savePatient(key);
+        updateSum(); refreshAlert();
+        undoToast("أُلغي «تم الطبع»", () => { res.undo(); if (key) App().savePatient(key); if (V && V.p === p) updateSum(); refreshAlert(); });
+        return;
+      }
       if (!e.target.closest("#pfs-printed")) return;
       const key = V.key, p = V.p, form = V.form;
       const hasFile = V.st.pending && V.st.pending.date === todayISO();
@@ -787,6 +818,7 @@
     const d = dueInfo(V.form, V.p);
     el.innerHTML = '<span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span>" +
       ((d.state === "due" || d.state === "late") ? '<button type="button" class="pfs-done-sm" id="pfs-printed">تم الطبع</button>' : "") +
+      (d.state === "done" ? '<button type="button" class="pfs-notprinted-sm" id="pfs-notprinted">لم تُطبع</button>' : "") +
       ((V.form === "albumin" && (d.state === "due" || d.state === "late" || d.state === "done")) ? '<button type="button" class="pfs-rej-sm" id="pfs-reject">رُفضت</button>' : "") +
       (d.state === "rej" ? '<button type="button" class="pfs-unrej-sm" id="pfs-unreject">إلغاء الرفض</button>' : "");
   }
