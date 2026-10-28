@@ -259,10 +259,10 @@
     return pages;
   }
 
-  async function buildPdf(pages) {
+  // draws every page (html2canvas) and hands each canvas to each(canvas, index)
+  async function renderPages(pages, each) {
     const H2P = global.html2pdf;
-    const JsPDF = (global.jspdf && global.jspdf.jsPDF) || global.jsPDF;
-    if (!H2P || !JsPDF) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
+    if (!H2P) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
     const style = document.createElement("style");
     style.textContent = cssText("#pf-pdf-root");
     document.head.appendChild(style);
@@ -274,7 +274,6 @@
         await Promise.all([document.fonts.load("400 12pt Cairo"), document.fonts.load("700 12pt Cairo")]).catch(() => {});
         await document.fonts.ready;
       }
-      const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
       for (let i = 0; i < pages.length; i++) {
         const root = document.createElement("div");
         root.id = "pf-pdf-root";
@@ -283,14 +282,23 @@
         holder.innerHTML = "";
         holder.appendChild(root);
         const canvas = await H2P().set({ jsPDF: { unit: "pt", format: "a4", orientation: "landscape" }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 } }).from(root).toCanvas().get("canvas");
-        if (i > 0) pdf.addPage();
-        pdf.addImage(canvas.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, PG.w, PG.h);
+        each(canvas, i);
       }
-      return pdf.output("blob");
     } finally {
       holder.remove();
       style.remove();
     }
+  }
+
+  async function buildPdf(pages) {
+    const JsPDF = (global.jspdf && global.jspdf.jsPDF) || global.jsPDF;
+    if (!JsPDF) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
+    const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "landscape" });
+    await renderPages(pages, (canvas, i) => {
+      if (i > 0) pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, PG.w, PG.h);
+    });
+    return pdf.output("blob");
   }
 
   // ---- 4) the editor ----
@@ -309,6 +317,17 @@
     const st = document.createElement("style");
     st.id = "pfe-style";
     st.textContent = `
+    #pf-preview { position: fixed; inset: 0; z-index: 400; background: #4b5563; display: flex; flex-direction: column; direction: rtl; font-family: inherit; }
+    #pf-preview .pfv-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px; background: #14211f; color: #fff; }
+    #pf-preview .pfv-bar strong { flex: 1; font-size: 14px; min-width: 0; }
+    #pf-preview .pfv-bar button { height: 38px; border: 0; border-radius: 10px; font: inherit; font-weight: 800; cursor: pointer; background: #fff; color: #14211f; }
+    #pf-preview .pfv-x { width: 38px; font-size: 16px; background: rgba(255,255,255,.2) !important; color: #fff !important; border-radius: 50% !important; }
+    #pf-preview .pfv-z { width: 38px; font-size: 20px; line-height: 1; }
+    #pf-preview .pfv-save { padding: 0 14px; background: #f5b301 !important; }
+    #pf-preview .pfv-bar button:disabled { opacity: .6; }
+    #pf-preview .pfv-body { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 12px; }
+    #pf-preview .pfv-body img { display: block; width: 100%; height: auto; margin: 0 auto 12px; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.35); }
+
     #pf-editor { position: fixed; inset: 0; z-index: 300; background: var(--bg, #f3f6f9); display: flex; flex-direction: column; direction: rtl; color: var(--text, #14211f); font-family: inherit; }
     #pf-editor * { box-sizing: border-box; }
     #pf-editor .pfe-top { flex: none; display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px; background: var(--fill, var(--primary, #1f6f9f)); color: #fff; }
@@ -366,6 +385,8 @@
     #pf-editor .pfe-bottom { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px); background: var(--surface, #fff); border-top: 1px solid var(--border, #dbe2e8); }
     #pf-editor .pfe-sum { flex: 1; font-size: 13px; font-weight: 700; color: var(--text-muted, #5c6b73); line-height: 1.5; }
     #pf-editor .pfe-sum b { color: var(--text, #14211f); font-size: 16px; }
+    #pf-editor .pfe-pv { flex: none; height: 46px; padding: 0 16px; border: 1.5px solid var(--fill, var(--primary, #1f6f9f)); border-radius: 14px; background: var(--surface, #fff); color: var(--fill, var(--primary, #1f6f9f)); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfe-pv:disabled { opacity: .6; }
     #pf-editor .pfe-go { flex: none; height: 46px; padding: 0 22px; border: 0; border-radius: 14px; background: var(--fill, var(--primary, #1f6f9f)); color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
     #pf-editor .pfe-go:disabled { opacity: .6; }
     `;
@@ -373,6 +394,8 @@
   }
 
   function close() {
+    const pv = $("pf-preview");
+    if (pv) pv.remove();
     if (global.visualViewport) global.visualViewport.removeEventListener("resize", fitSuggestions);
     const e = $("pf-editor");
     if (e) e.remove();
@@ -513,7 +536,7 @@
           '<p class="pfe-hint" style="margin:0 0 6px">أدوية أضافها صيدلي الخفر ولم تُرسل من هنا. اكتب اسم الدواء فتظهر اقتراحات من الكتالوج.</p><div id="pfe-extra"></div>' +
           '<div class="pfe-addrow"><div class="pfe-ac"><input id="pfe-xn" placeholder="اسم الدواء" autocomplete="off" autocorrect="off" spellcheck="false"><div class="pfe-sug" id="pfe-sug" hidden></div></div><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة الدواء</button></div></div></details>' +
       "</div></div>" +
-      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
+      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-pv" id="pfe-preview">👁 معاينة</button><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
     document.body.appendChild(el);
     renderAll();
     // the entry date comes from the patient's log (the «admitted» event of this stay)
@@ -609,22 +632,58 @@
         saveSoon(); renderAll();
       }
     });
-    $("pfe-pdf").addEventListener("click", async () => {
-      const b = $("pfe-pdf");
-      if (b.disabled) return;
-      b.disabled = true; const label = b.textContent; b.textContent = "جارٍ إنشاء الملف…";
-      try {
-        const f = formData();
-        if (!f.rows.length) { flash("لا توجد مواد في الفترة المختارة"); return; }
-        const blob = await buildPdf(pagesOf(f));
-        const H = global.PharmacyHandover;
-        const name = "خروج-الخاص-" + String(S.name || "مريض").replace(/[\\/:*?"<>|\s]+/g, "-") + ".pdf";
-        if (H && H.deliverPdf) await H.deliverPdf(blob, name);
-      } catch (err) {
-        console.error("[private-form] pdf", err);
-        flash("تعذّر إنشاء الملف: " + (err && err.message || err));
-      } finally { b.disabled = false; b.textContent = label; }
-    });
+    $("pfe-pdf").addEventListener("click", () => savePdf($("pfe-pdf")));
+    $("pfe-preview").addEventListener("click", () => showPreview($("pfe-preview")));
+  }
+
+  async function savePdf(b) {
+    if (!S || (b && b.disabled)) return;
+    const label = b ? b.textContent : "";
+    if (b) { b.disabled = true; b.textContent = "جارٍ إنشاء الملف…"; }
+    try {
+      const f = formData();
+      if (!f.rows.length) { flash("لا توجد مواد في الفترة المختارة"); return; }
+      const blob = await buildPdf(pagesOf(f));
+      const H = global.PharmacyHandover;
+      const name = "خروج-الخاص-" + String(S.name || "مريض").replace(/[\\/:*?"<>|\s]+/g, "-") + ".pdf";
+      if (H && H.deliverPdf) await H.deliverPdf(blob, name);
+    } catch (err) {
+      console.error("[private-form] pdf", err);
+      flash("تعذّر إنشاء الملف: " + (err && err.message || err));
+    } finally { if (b) { b.disabled = false; b.textContent = label; } }
+  }
+
+  // «معاينة»: the pages exactly as they will print, in a viewer (zoom − / +, save from there too)
+  async function showPreview(b) {
+    if (!S || b.disabled) return;
+    const f = formData();
+    if (!f.rows.length) { flash("لا توجد مواد في الفترة المختارة"); return; }
+    const label = b.textContent;
+    b.disabled = true; b.textContent = "جارٍ التجهيز…";
+    try {
+      const urls = [];
+      await renderPages(pagesOf(f), (canvas) => urls.push(canvas.toDataURL("image/jpeg", 0.9)));
+      const old = $("pf-preview");
+      if (old) old.remove();
+      const el = document.createElement("div");
+      el.id = "pf-preview";
+      el.innerHTML =
+        '<div class="pfv-bar"><button type="button" class="pfv-x" id="pfv-close" aria-label="إغلاق">✕</button><strong>معاينة الاستمارة' + (urls.length > 1 ? " (" + urls.length + " صفحات)" : "") + '</strong>' +
+        '<button type="button" class="pfv-z" id="pfv-out" aria-label="تصغير">−</button><button type="button" class="pfv-z" id="pfv-in" aria-label="تكبير">+</button>' +
+        '<button type="button" class="pfv-save" id="pfv-save">📄 حفظ PDF</button></div>' +
+        '<div class="pfv-body" id="pfv-body">' + urls.map(u => '<img alt="" src="' + u + '">').join("") + "</div>";
+      document.body.appendChild(el);
+      let zoom = 100;
+      const body = $("pfv-body");
+      const apply = () => { body.querySelectorAll("img").forEach(i => { i.style.width = zoom + "%"; }); };
+      $("pfv-in").addEventListener("click", () => { zoom = Math.min(300, zoom + 40); apply(); });
+      $("pfv-out").addEventListener("click", () => { zoom = Math.max(100, zoom - 40); apply(); });
+      $("pfv-close").addEventListener("click", () => el.remove());
+      $("pfv-save").addEventListener("click", () => savePdf($("pfv-save")));
+    } catch (err) {
+      console.error("[private-form] preview", err);
+      flash("تعذّرت المعاينة: " + (err && err.message || err));
+    } finally { b.disabled = false; b.textContent = label; }
   }
 
   function init() {
