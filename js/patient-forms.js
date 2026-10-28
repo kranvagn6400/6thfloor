@@ -87,11 +87,11 @@
       fields: [
         // like the meronem form: everything comes from the card (auto = shown, never typed) — except the diagnosis, which the
         // pharmacist's card does not show, so it stays a field (filled from the card when there is one)
-        F("name", "اسم المريض", 628, 812, 129, "r", { auto: true, dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true, auto: true }),
+        F("name", "اسم المريض", 628, 806, 129, "r", { auto: true, dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true, auto: true }),
         F("diag", "Diagnosis", 184, 425, 129, "l", { full: true }),
-        F("ward", "الطابق والردهة", 430, 790, 170, "r", { auto: true }), F("alb", "Serum albumin", 226, 540, 170, "l", { auto: true }),
+        F("ward", "الطابق والردهة", 430, 786, 170, "r", { auto: true }), F("alb", "Serum albumin", 226, 540, 170, "l", { auto: true }),
         F("count", "العدد المطلوب (رقمًا)", 560, 760, 211, "r", { num: true, auto: true }), F("day", "Treatment day", 216, 540, 211, "l", { auto: true }),
-        F("words", "كتابةً", 560, 846, 253, "r", { auto: true }), F("weight", "Weight", 156, 540, 253, "l", { auto: true }),
+        F("words", "كتابةً", 560, 842, 253, "r", { auto: true }), F("weight", "Weight", 156, 540, 253, "l", { auto: true }),
         F("creat", "S.creatinine", 204, 540, 296, "l", { auto: true })
       ]
     },
@@ -184,7 +184,7 @@
       });
       return { name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(),
         ward: "السادس - " + unit, alb: labs.albumin || "", count: qty ? String(qty) : "", words: qty ? words(qty) : "",
-        day: day ? String(day) : "", weight: labs.weight || "", creat: labs.creatinine || "" };
+        day: day ? ordinal(day) : "", weight: labs.weight || "", creat: labs.creatinine || "" };
     }
     // the dose as the ward writes it: «1g x 3» / «500mg x 2» (the strength × the times a day, from the card)
     let dose = "";
@@ -197,6 +197,14 @@
     }
     return { health: "مدينة الطب", hospital: "بغداد التعليمي", ward: unit, name: String(p.name || "").trim(), age: String(p.age || "").trim(),
       weight: labs.weight || "", date: todayISO(), scr: labs.creatinine || "", dose, duration: "" };
+  }
+
+  // 1 → 1st, 2 → 2nd, 3 → 3rd, 4 → 4th … 11th 12th 13th … 21st (the albumin paper's «Treatment day»)
+  function ordinal(n) {
+    n = parseInt(n, 10);
+    if (!n || n < 1) return "";
+    const v = n % 100, sfx = ["th", "st", "nd", "rd"];
+    return n + (sfx[(v - 20) % 10] || sfx[v] || sfx[0]);
   }
 
   // ---------------- the paper (picture + the values on top) ----------------
@@ -252,21 +260,22 @@
     } catch (e) { return text; }
   }
   // the type size that fits the text in its box (about 0.46 em per character with the paper's own fonts, never above 12 pt, never below 7)
-  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(12, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
+  const sizeFor = (t, x0, x1, max) => Math.max(7, Math.min(max || 12, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
 
   // → the page's HTML (the picture + every value + the ticks)
   function pageHtml(form, vals, st) {
     const [w, h] = form.px;
     let o = '<div class="pg" style="width:' + pt(w) + ";height:" + pt(h) + '"><img class="bg" src="' + form.bg + '" alt="">';
     const nameField = form.fields.find(x => x.k === "name");
-    const nameFs = nameField && vals.name ? sizeFor(String(vals.name).trim(), nameField.x0, nameField.x1) : 12;
+    const BIG = 14;
+    const nameFs = nameField && vals.name ? sizeFor(String(vals.name).trim(), nameField.x0, nameField.x1, form.id === "albumin" ? BIG : 12) : 12;
     form.fields.forEach(f => {
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
       let text = f.k === "date" ? slash(v) : v;
       if (f.kashida) text = kashida(text, f);
       // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form only a little)
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : (form.id === "albumin" && (f.k === "name" || f.k === "plate" || f.k === "ward")) ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : (form.id === "albumin" && f.k === "ward") ? nameFs : sizeFor(text, f.x0, f.x1));
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : (form.id === "albumin" && (f.k === "name" || f.k === "plate" || f.k === "ward")) ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : (form.id === "albumin" && f.k === "ward") ? nameFs : (form.id === "albumin" && f.k === "words") ? sizeFor(text, f.x0, f.x1, BIG) : sizeFor(text, f.x0, f.x1, form.id === "albumin" && f.k === "name" ? BIG : 12));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
