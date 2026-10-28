@@ -2564,5 +2564,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 }
 #delete-patient { animation: deleteGlow .9s ease-in-out infinite; border-color: #5a0f0f; color: #fff; }
 #discharge-patient-btn { animation: dischargeGlow .9s ease-in-out infinite; border-color: #0b4a26; color: #fff; }
+@keyframes transferFlash {
+  0%, 100% { background: #2f7dd1; color: #fff; }
+  50%      { background: #0d2f5c; color: #fff; }
+}
+#transfer-ward-btn { animation: transferFlash .9s ease-in-out infinite; border-color: #0d2f5c; color: #fff; }
 #died-patient-btn { animation: diedFlash .9s ease-in-out infinite; border-color: #000; color: #fff; }
-@media (prefers-reduced-motion: reduce) { #delete-patient, #discharge-patient-btn, #died-patient-btn { animation: none; } }
+@media (prefers-reduced-motion: reduce) { #delete-patient, #discharge-patient-btn, #died-patient-btn, #transfer-ward-btn { animation: none; } }
