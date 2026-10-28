@@ -5563,7 +5563,29 @@
 
     const isAdmin = Auth && Auth.isAdmin();
 
-    records.forEach((r, i) => {
+    // «خرجوا» and «وفيات»: two sections — الخاص (private rooms) and العام
+    const PF = global.PharmacyPrivateForm;
+    const isPriv = (r) => !!(PF && PF.isPrivateRoom(r.roomNumber));
+    const groups = archiveKind(tab) === "transferred"
+      ? [[null, records]]
+      : [["الخاص", records.filter(isPriv)], ["العام", records.filter(r => !isPriv(r))]];
+    groups.forEach(([title, recs]) => {
+      if (title) {
+        const head = document.createElement("div");
+        head.className = "arch-group-head";
+        head.textContent = title + " (" + recs.length + ")";
+        list.appendChild(head);
+        if (!recs.length) {
+          const empty = document.createElement("div");
+          empty.className = "arch-group-empty";
+          empty.textContent = "لا يوجد مرضى في هذا القسم";
+          list.appendChild(empty);
+        }
+      }
+      recs.forEach(renderArchiveRow);
+    });
+
+    function renderArchiveRow(r) {
       const date = r.dischargedAt || r.diedAt || r.transferredAt || "";
       const dateStr = date
         ? new Date(date).toLocaleDateString("ar", { year: "numeric", month: "short", day: "numeric" })
@@ -5585,7 +5607,7 @@
           <div class="discharged-row-date">${dateStr}</div>
         </div>
         <div class="discharged-row-meta">
-          <span>غرفة ${r.roomNumber || "—"} · سرير ${r.roomNumber && r.bedNumber ? global.PharmacyWard.bedLabel(r.roomNumber, r.bedNumber) : "—"}</span>
+          <span>${r.roomNumber ? global.PharmacyWard.roomTitle(r.roomNumber) : "—"} · سرير ${r.roomNumber && r.bedNumber ? global.PharmacyWard.bedLabel(r.roomNumber, r.bedNumber) : "—"}</span>
           ${r.plateNumber ? `<span>· طبلة ${escapeHtml(r.plateNumber)}</span>` : ""}
           ${r.doctor ? `<span>· ${escapeHtml(r.doctor)}</span>` : ""}
           ${medCount ? `<span>· ${medCount} دواء</span>` : ""}
@@ -5600,8 +5622,17 @@
           <button type="button" data-del-id="${escapeHtml(r.id)}" style="padding:4px 10px;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;">🗑 حذف هذا السجل</button>
         </div>` : ""}
       `;
+      // «استمارة خروج الخاص»: private-room records (pharmacists + admin)
+      if (isPriv(r) && Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist()))) {
+        const fb = document.createElement("button");
+        fb.type = "button";
+        fb.className = "arch-form-btn";
+        fb.textContent = "📄 استمارة خروج الخاص";
+        fb.addEventListener("click", () => PF.open(null, r, { roomId: r.roomNumber, exit: PF.localDay(date) }));
+        row.appendChild(fb);
+      }
       list.appendChild(row);
-    });
+    }
     // Bind per-record delete buttons (admin only)
     if (isAdmin) {
       list.querySelectorAll("button[data-del-id]").forEach(btn => {

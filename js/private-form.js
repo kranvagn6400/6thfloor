@@ -65,10 +65,11 @@
   // ---- 2) the numbers ----
   function dayList(pr) { return Object.keys((pr && pr.days) || {}).filter(isDay).sort(); }
   // from = the day the patient entered (the «admitted» event of the current stay), unless edited; to = today unless edited
-  function range(pr, admitted) {
+  function range(pr, admitted, exit) {
     const days = dayList(pr);
-    return { from: (pr && pr.from) || admitted || days[0] || todayISO(), to: (pr && pr.to) || todayISO() };
+    return { from: (pr && pr.from) || admitted || days[0] || todayISO(), to: (pr && pr.to) || exit || todayISO() };
   }
+  const rng = () => range(S.pr, S.admitted, S.exit);
   // «شراء او كيماديا»: every medicine is كيماديا unless the pharmacist changed it (— = left empty)
   const srcOf = (meta) => (meta && meta.src != null ? meta.src : "كيماديا");
   const localDay = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-CA"); };
@@ -310,27 +311,58 @@
     const st = document.createElement("style");
     st.id = "pfe-style";
     st.textContent = `
-    #pf-editor { position: fixed; inset: 0; z-index: 300; background: var(--bg, #f4f6f8); display: flex; flex-direction: column; direction: rtl; }
-    #pf-editor .pfe-bar { display: flex; gap: 8px; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px; background: #14211f; color: #fff; flex-wrap: wrap; }
-    #pf-editor .pfe-bar strong { flex: 1; min-width: 140px; font-size: 14px; }
-    #pf-editor .pfe-bar button { padding: 9px 14px; border-radius: 10px; border: 0; font: inherit; font-weight: 800; cursor: pointer; background: #fff; color: #14211f; }
-    #pf-editor .pfe-bar button.pfe-go { background: #f5b301; }
-    #pf-editor .pfe-body { flex: 1; overflow-y: auto; padding: 12px 12px calc(env(safe-area-inset-bottom, 0px) + 24px); -webkit-overflow-scrolling: touch; }
-    #pf-editor .pfe-card { background: var(--surface, #fff); color: var(--text, #14211f); border: 1px solid var(--border, #d9dee3); border-radius: 14px; padding: 12px; margin-bottom: 12px; }
-    #pf-editor h4 { margin: 0 0 8px; font-size: 14px; }
-    #pf-editor .pfe-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-    #pf-editor label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 700; color: var(--text-muted, #5c6b73); }
-    #pf-editor input, #pf-editor select { font: inherit; font-size: 14px; padding: 8px; border-radius: 10px; border: 1.5px solid var(--border, #d9dee3); background: var(--surface, #fff); color: var(--text, #14211f); min-width: 0; width: 100%; }
-    #pf-editor .pfe-day { border-top: 1px dashed var(--border, #d9dee3); padding-top: 8px; margin-top: 8px; }
-    #pf-editor .pfe-day > b { font-size: 13px; }
-    #pf-editor .pfe-it { display: grid; grid-template-columns: 1fr 72px 34px; gap: 6px; align-items: center; margin-top: 6px; font-size: 13px; }
-    #pf-editor .pfe-it button, #pf-editor .pfe-add { border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; font-weight: 800; cursor: pointer; background: var(--bg, #eef1f4); color: var(--text, #14211f); }
-    #pf-editor .pfe-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-    #pf-editor .pfe-tbl th, #pf-editor .pfe-tbl td { border: 1px solid var(--border, #d9dee3); padding: 4px; text-align: center; }
-    #pf-editor .pfe-tbl td.n { text-align: right; min-width: 120px; }
-    #pf-editor .pfe-tbl input, #pf-editor .pfe-tbl select { padding: 5px; font-size: 13px; text-align: center; }
-    #pf-editor .pfe-scroll { overflow-x: auto; }
-    #pf-editor .pfe-hint { font-size: 12px; color: var(--text-muted, #5c6b73); margin: 6px 0 0; line-height: 1.6; }
+    #pf-editor { position: fixed; inset: 0; z-index: 300; background: var(--bg, #f3f6f9); display: flex; flex-direction: column; direction: rtl; color: var(--text, #14211f); font-family: inherit; }
+    #pf-editor * { box-sizing: border-box; }
+    #pf-editor .pfe-top { flex: none; display: flex; align-items: center; gap: 10px; padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px; background: var(--fill, var(--primary, #1f6f9f)); color: #fff; }
+    #pf-editor .pfe-top .pfe-x { width: 38px; height: 38px; border-radius: 50%; border: 0; background: rgba(255,255,255,.2); color: #fff; font-size: 18px; cursor: pointer; flex: none; }
+    #pf-editor .pfe-top h3 { margin: 0; font-size: 16px; font-weight: 800; line-height: 1.3; }
+    #pf-editor .pfe-top small { display: block; font-size: 12px; opacity: .85; font-weight: 600; margin-top: 2px; }
+    #pf-editor .pfe-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px 18px; }
+    #pf-editor .pfe-wrap { max-width: 720px; margin: 0 auto; }
+    #pf-editor .pfe-card { background: var(--surface, #fff); border: 1px solid var(--border, #dbe2e8); border-radius: 16px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    #pf-editor .pfe-h { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 12px; font-size: 15px; font-weight: 800; }
+    #pf-editor .pfe-badge { background: var(--bg, #eef2f6); color: var(--text-muted, #5c6b73); border-radius: 999px; padding: 3px 10px; font-size: 12px; font-weight: 700; }
+    #pf-editor .pfe-who { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--border, #dbe2e8); }
+    #pf-editor .pfe-av { width: 46px; height: 46px; border-radius: 50%; background: var(--fill, var(--primary, #1f6f9f)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; flex: none; }
+    #pf-editor .pfe-who b { display: block; font-size: 16px; }
+    #pf-editor .pfe-chip { display: inline-block; margin: 5px 0 0 6px; background: var(--bg, #eef2f6); border-radius: 8px; padding: 2px 9px; font-size: 12px; font-weight: 700; color: var(--text-muted, #5c6b73); }
+    #pf-editor .pfe-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #pf-editor .pfe-fields .full { grid-column: 1 / -1; }
+    #pf-editor label.pfe-f { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 700; color: var(--text-muted, #5c6b73); min-width: 0; }
+    #pf-editor input, #pf-editor select { font: inherit; font-size: 15px; height: 42px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--border, #dbe2e8); background: var(--surface, #fff); color: var(--text, #14211f); width: 100%; min-width: 0; }
+    #pf-editor input:focus, #pf-editor select:focus { outline: none; border-color: var(--primary, #1f6f9f); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #1f6f9f) 18%, transparent); }
+    #pf-editor .pfe-mat { border: 1px solid var(--border, #dbe2e8); border-radius: 14px; padding: 12px; margin-bottom: 10px; background: var(--surface, #fff); }
+    #pf-editor .pfe-mat-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    #pf-editor .pfe-no { width: 26px; height: 26px; border-radius: 50%; background: var(--bg, #eef2f6); color: var(--text-muted, #5c6b73); font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex: none; }
+    #pf-editor .pfe-mat-name { flex: 1; min-width: 0; font-weight: 800; font-size: 14.5px; text-align: start; overflow-wrap: anywhere; }
+    #pf-editor .pfe-qty { flex: none; background: var(--fill, var(--primary, #1f6f9f)); color: #fff; border-radius: 10px; padding: 4px 12px; font-weight: 800; font-size: 15px; }
+    #pf-editor .pfe-mat-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #pf-editor .pfe-money { position: relative; display: block; }
+    #pf-editor .pfe-money input { padding-inline-end: 44px; }
+    #pf-editor .pfe-money em { position: absolute; inset-inline-end: 12px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 12px; color: var(--text-muted, #5c6b73); font-weight: 700; pointer-events: none; }
+    #pf-editor .pfe-badge:empty { display: none; }
+    #pf-editor .pfe-mat-fields { align-items: start; }
+    #pf-editor .pfe-auto { font-size: 11px; color: var(--text-muted, #5c6b73); font-weight: 600; }
+    #pf-editor .pfe-empty { text-align: center; color: var(--text-muted, #5c6b73); font-size: 13px; padding: 18px 8px; line-height: 1.7; }
+    #pf-editor details.pfe-card > summary { cursor: pointer; font-size: 15px; font-weight: 800; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    #pf-editor details.pfe-card > summary::-webkit-details-marker { display: none; }
+    #pf-editor details.pfe-card > summary::after { content: "›"; transform: rotate(-90deg); font-size: 20px; color: var(--text-muted, #5c6b73); transition: transform .15s; }
+    #pf-editor details.pfe-card[open] > summary::after { transform: rotate(90deg); }
+    #pf-editor details.pfe-card > .pfe-in { margin-top: 12px; }
+    #pf-editor .pfe-day { border-top: 1px dashed var(--border, #dbe2e8); padding-top: 10px; margin-top: 10px; }
+    #pf-editor .pfe-day > b { font-size: 13px; color: var(--text-muted, #5c6b73); }
+    #pf-editor .pfe-it { display: grid; grid-template-columns: 1fr 78px 38px; gap: 8px; align-items: center; margin-top: 8px; font-size: 13.5px; }
+    #pf-editor .pfe-it span { overflow-wrap: anywhere; font-weight: 700; }
+    #pf-editor .pfe-it input { height: 38px; text-align: center; }
+    #pf-editor .pfe-it button { height: 38px; border: 0; border-radius: 10px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font-size: 14px; cursor: pointer; }
+    #pf-editor .pfe-addrow { display: grid; grid-template-columns: 1fr 78px; gap: 8px; margin-top: 10px; }
+    #pf-editor .pfe-addbtn { grid-column: 1 / -1; height: 42px; border: 0; border-radius: 12px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font: inherit; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfe-hint { font-size: 12px; color: var(--text-muted, #5c6b73); margin: 8px 0 0; line-height: 1.7; }
+    #pf-editor .pfe-bottom { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px); background: var(--surface, #fff); border-top: 1px solid var(--border, #dbe2e8); }
+    #pf-editor .pfe-sum { flex: 1; font-size: 13px; font-weight: 700; color: var(--text-muted, #5c6b73); line-height: 1.5; }
+    #pf-editor .pfe-sum b { color: var(--text, #14211f); font-size: 16px; }
+    #pf-editor .pfe-go { flex: none; height: 46px; padding: 0 22px; border: 0; border-radius: 14px; background: var(--fill, var(--primary, #1f6f9f)); color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfe-go:disabled { opacity: .6; }
     `;
     document.head.appendChild(st);
   }
@@ -343,7 +375,7 @@
   }
 
   function formData() {
-    const r = range(S.pr, S.admitted);
+    const r = rng();
     const rows = rowsOf(S.pr, r.from, r.to).map(x => {
       const meta = S.pr.meta[x.k] || {};
       // المجموع / فراض ادارية / الإجمالي are the accountant's: left blank on the paper
@@ -352,70 +384,89 @@
     return { name: S.name, plate: S.plate, ward: S.ward, from: r.from.replace(/-/g, "/"), to: r.to.replace(/-/g, "/"), rows };
   }
 
+  const fmtDay = (d) => d.replace(/-/g, "/");
+
   function renderDays() {
     const pr = S.pr;
     const days = dayList(pr);
+    $("pfe-days-count").textContent = days.length ? days.length + " يوم" : "—";
     const box = $("pfe-days");
-    if (!days.length) { box.innerHTML = '<div class="pfe-hint">لم يُسجَّل بعد أي إرسال إلى جارت الخاص لهذا المريض. أرسل الجارت أولاً، أو أضف المواد يدويًا أدناه.</div>'; return; }
+    if (!days.length) { box.innerHTML = '<div class="pfe-empty">لم يُسجَّل بعد أي إرسال إلى جارت الخاص لهذا المريض.<br>أرسل الجارت أولاً، أو أضف المواد يدويًا من الأسفل.</div>'; return; }
     box.innerHTML = days.map(d => {
       const items = (pr.days[d] || {}).items || [];
-      return '<div class="pfe-day" data-day="' + d + '"><b>' + d.replace(/-/g, "/") + "</b>" +
-        items.map((it, i) => '<div class="pfe-it" data-i="' + i + '"><span>' + esc(it.n) + '</span><input type="number" min="0" inputmode="numeric" class="pfe-dq" value="' + esc(it.q) + '"><button type="button" class="pfe-dx" aria-label="حذف">✕</button></div>').join("") +
+      return '<div class="pfe-day" data-day="' + d + '"><b>' + fmtDay(d) + "</b>" +
+        items.map((it, i) => '<div class="pfe-it" data-i="' + i + '"><span dir="auto">' + esc(it.n) + '</span><input type="number" min="0" inputmode="numeric" class="pfe-dq" value="' + esc(it.q) + '" aria-label="الكمية"><button type="button" class="pfe-dx" aria-label="حذف">✕</button></div>').join("") +
         "</div>";
     }).join("");
   }
 
   function renderExtra() {
     const ex = S.pr.extra;
-    $("pfe-extra").innerHTML = ex.map((x, i) => '<div class="pfe-it" data-i="' + i + '"><span>' + esc(x.n) + '</span><input type="number" min="0" inputmode="numeric" class="pfe-eq" value="' + esc(x.q) + '"><button type="button" class="pfe-ex" aria-label="حذف">✕</button></div>').join("");
+    $("pfe-extra-count").textContent = ex.length ? ex.length + " مادة" : "";
+    $("pfe-extra").innerHTML = ex.map((x, i) => '<div class="pfe-it" data-i="' + i + '"><span dir="auto">' + esc(x.n) + '</span><input type="number" min="0" inputmode="numeric" class="pfe-eq" value="' + esc(x.q) + '" aria-label="العدد"><button type="button" class="pfe-ex" aria-label="حذف">✕</button></div>').join("");
   }
 
   function renderTable() {
     const f = formData();
     const body = f.rows.map((r, i) => {
       const meta = S.pr.meta[r.k] || {};
-      return '<tr data-k="' + esc(r.k) + '"><td>' + (i + 1) + '</td><td class="n">' + esc(r.n) + "</td><td>" + r.q + "</td>" +
-        '<td><select class="pfe-src"><option value="">—</option><option value="شراء"' + (srcOf(meta) === "شراء" ? " selected" : "") + '>شراء</option><option value="كيماديا"' + (srcOf(meta) === "كيماديا" ? " selected" : "") + ">كيماديا</option></select></td>" +
-        '<td><input class="pfe-price" inputmode="decimal" value="' + esc(meta.price || "") + '"></td></tr>';
+      const src = srcOf(meta);
+      return '<div class="pfe-mat" data-k="' + esc(r.k) + '">' +
+        '<div class="pfe-mat-top"><span class="pfe-no">' + (i + 1) + '</span><span class="pfe-mat-name" dir="auto">' + esc(r.n) + '</span><span class="pfe-qty" dir="ltr">× ' + r.q + "</span></div>" +
+        '<div class="pfe-mat-fields">' +
+          '<label class="pfe-f">المصدر<select class="pfe-src"><option value="">—</option><option value="شراء"' + (src === "شراء" ? " selected" : "") + '>شراء</option><option value="كيماديا"' + (src === "كيماديا" ? " selected" : "") + ">كيماديا</option></select></label>" +
+          '<label class="pfe-f">سعر المفرد' +
+            '<span class="pfe-money"><input class="pfe-price" inputmode="decimal" placeholder="—" value="' + esc(meta.price || "") + '"><em>د.ع</em></span>' +
+            (meta.auto && !meta.hand ? '<span class="pfe-auto">من موقع الأسعار</span>' : "") + "</label>" +
+        "</div></div>";
     }).join("");
-    $("pfe-tbody").innerHTML = body || '<tr><td colspan="5">لا توجد مواد في هذه الفترة</td></tr>';
+    $("pfe-tbody").innerHTML = body || '<div class="pfe-empty">لا توجد مواد في الفترة المختارة.<br>غيّر تاريخ الدخول أو الخروج، أو أضف مادة يدويًا.</div>';
+    $("pfe-count").textContent = f.rows.length ? f.rows.length + " مادة" : "—";
+    const units = f.rows.reduce((a, r) => a + (Number(r.q) || 0), 0);
+    $("pfe-sum").innerHTML = f.rows.length ? "<b>" + f.rows.length + "</b> مادة · <b>" + units + "</b> وحدة" : "لا توجد مواد";
   }
 
   function renderAll() { renderDays(); renderExtra(); renderTable(); }
 
-  function open(key, source) {
+  // key = a bed in the ward; or key null + source = an archived record (المرضى السابقون) with opts { roomId, exit }
+  function open(key, source, opts) {
     const A = global.PharmacyAuth;
     if (!(A && (A.isAdmin() || (A.isPharmacist && A.isPharmacist())))) return;
     const app = App();
     const p = source || (app && app.state.patients[key]);
     if (!p) return;
     ensureStyle();
-    const r = key ? roomOfKey(key) : null;
+    opts = opts || {};
+    const r = key ? roomOfKey(key) : (opts.roomId ? global.PharmacyWard.roomById(opts.roomId) : null);
     const pr = priv(p, true);
     const unit = r ? global.PharmacyWard.UNITS.find(u => u.id === r.unit) : null;
     // الردهة: «الطابق السادس» + the unit the patient is in
-    const mine0 = S = { key: key || null, p, pr, admitted: "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), ward: pr.ward || (unit ? unit.name : "") };
+    const mine0 = S = { key: key || null, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), ward: pr.ward || (unit ? unit.name : "") };
     const old = $("pf-editor");
     if (old) old.remove();
     const el = document.createElement("div");
     el.id = "pf-editor";
-    const rg = range(pr, S.admitted);
+    const rg = rng();
+    const initial = (S.name || "؟").charAt(0);
     el.innerHTML =
-      '<div class="pfe-bar"><strong>استمارة خروج الخاص</strong><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button><button type="button" id="pfe-close">إغلاق</button></div>' +
-      '<div class="pfe-body">' +
-        '<div class="pfe-card"><h4>المريض</h4><div class="pfe-grid">' +
-          '<label>اسم المريض<input id="pfe-name" value="' + esc(S.name) + '" readonly></label>' +
-          '<label>رقم الطبلة<input id="pfe-plate" value="' + esc(S.plate) + '" readonly></label>' +
-          '<label>الردهة<input id="pfe-ward" value="' + esc(S.ward) + '"></label>' +
-          '<label>تاريخ الدخول<input type="date" id="pfe-from" value="' + rg.from + '"></label>' +
-          '<label>تاريخ الخروج<input type="date" id="pfe-to" value="' + rg.to + '"></label>' +
-        "</div>" + (S.key ? "" : '<p class="pfe-hint">هذا السجل من المرضى السابقين: يمكنك تعديل الأرقام والطباعة، لكن التعديلات لا تُحفظ.</p>') + "</div>" +
-        '<div class="pfe-card"><h4>الاستمارة (الكميات المجموعة)</h4><div class="pfe-scroll"><table class="pfe-tbl"><thead><tr><th>ت</th><th>اسم المادة</th><th>الكمية</th><th>شراء / كيماديا</th><th>سعر المفرد</th></tr></thead><tbody id="pfe-tbody"></tbody></table></div>' +
-          '<p class="pfe-hint">أعمدة المجموع والفراض الإدارية والإجمالي تُترك فارغة في الورقة (تخص المحاسب). سعر المفرد يُجلب من موقع الأسعار تلقائيًا (والأولوية له)، ويمكنك تعديله يدويًا.</p></div>' +
-        '<div class="pfe-card"><h4>الإرسالات المسجّلة يوميًا</h4><div id="pfe-days"></div><p class="pfe-hint">يُسجَّل كل يوم ما أُرسل إلى جارت الخاص وكان <b>متوفرًا</b> وقت الإرسال. عدّل الكمية أو احذف المادة إن لم يستلمها المريض.</p></div>' +
-        '<div class="pfe-card"><h4>مواد سُلِّمت من خارج التطبيق (مثلاً من صيدلي الخفر)</h4><div id="pfe-extra"></div>' +
-          '<div class="pfe-it" style="grid-template-columns:1fr 72px 70px"><input id="pfe-xn" placeholder="اسم المادة"><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-add" id="pfe-xadd">إضافة</button></div></div>' +
-      "</div>";
+      '<div class="pfe-top"><button type="button" class="pfe-x" id="pfe-close" aria-label="إغلاق">✕</button><div><h3>استمارة خروج الخاص</h3><small>' + esc(S.name) + "</small></div></div>" +
+      '<div class="pfe-scroll"><div class="pfe-wrap">' +
+        '<div class="pfe-card"><h4 class="pfe-h">بيانات المريض</h4>' +
+          '<div class="pfe-who"><span class="pfe-av">' + esc(initial) + "</span><div><b>" + esc(S.name) + '</b><span class="pfe-chip">رقم الطبلة: ' + esc(S.plate || "—") + "</span></div></div>" +
+          '<div class="pfe-fields">' +
+            '<label class="pfe-f full">الردهة<input id="pfe-ward" value="' + esc(S.ward) + '"></label>' +
+            '<label class="pfe-f">تاريخ الدخول<input type="date" id="pfe-from" value="' + rg.from + '"></label>' +
+            '<label class="pfe-f">تاريخ الخروج<input type="date" id="pfe-to" value="' + rg.to + '"></label>' +
+          "</div>" + (S.key ? "" : '<p class="pfe-hint">هذا السجل من المرضى السابقين: يمكنك تعديل الأرقام والطباعة، لكن التعديلات لا تُحفظ.</p>') + "</div>" +
+        '<div class="pfe-card"><h4 class="pfe-h">المواد المصروفة <span class="pfe-badge" id="pfe-count">—</span></h4><div id="pfe-tbody"></div>' +
+          '<p class="pfe-hint">أعمدة المجموع والفراض الإدارية والإجمالي تُترك فارغة في الورقة (تخص المحاسب). سعر المفرد يُجلب من موقع الأسعار تلقائيًا ويمكنك تعديله.</p></div>' +
+        '<details class="pfe-card"><summary>الإرسالات المسجّلة يوميًا <span class="pfe-badge" id="pfe-days-count">—</span></summary><div class="pfe-in"><div id="pfe-days"></div>' +
+          '<p class="pfe-hint">يُسجَّل كل يوم ما أُرسل إلى جارت الخاص وكان <b>متوفرًا</b> وقت الإرسال. عدّل الكمية أو احذف المادة إن لم يستلمها المريض.</p></div></details>' +
+        '<details class="pfe-card"' + (S.pr.extra.length ? " open" : "") + '><summary>مواد من خارج التطبيق <span class="pfe-badge" id="pfe-extra-count"></span></summary><div class="pfe-in">' +
+          '<p class="pfe-hint" style="margin:0 0 6px">مواد سلّمها صيدلي الخفر أو غيره ولم تُرسل من هنا.</p><div id="pfe-extra"></div>' +
+          '<div class="pfe-addrow"><input id="pfe-xn" placeholder="اسم المادة" autocomplete="off"><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة المادة</button></div></div></details>' +
+      "</div></div>" +
+      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
     document.body.appendChild(el);
     renderAll();
     // the entry date comes from the patient's log (the «admitted» event of this stay)
@@ -428,7 +479,7 @@
         if (S !== mine || !day || mine.pr.from) return;
         mine.admitted = day;
         const f = $("pfe-from");
-        if (f) f.value = range(mine.pr, day).from;
+        if (f) f.value = rng().from;
         renderTable();
       }).catch(() => { /* offline: the first sent day is used */ });
     }
@@ -437,11 +488,11 @@
     fetchLists().then(lists => {
       if (S !== mine0) return;
       let any = false;
-      rowsOf(S.pr, range(S.pr, S.admitted).from, range(S.pr, S.admitted).to).forEach(x => {
+      rowsOf(S.pr, rng().from, rng().to).forEach(x => {
         const meta = (S.pr.meta[x.k] = S.pr.meta[x.k] || {});
         if (meta.price || meta.hand) return;
         const p = pickPrice(x.n, lists);
-        if (p != null) { meta.price = String(p); any = true; }
+        if (p != null) { meta.price = String(p); meta.auto = true; any = true; }
       });
       if (any) { saveSoon(); renderTable(); }
     }).catch(() => {});
@@ -467,7 +518,7 @@
         S.pr.extra[i].q = isNaN(q) || q < 0 ? 0 : q;
         saveSoon(); renderTable();
       } else if (c.contains("pfe-src")) {
-        const k = t.closest("tr").dataset.k;
+        const k = t.closest("[data-k]").dataset.k;
         (S.pr.meta[k] = S.pr.meta[k] || {}).src = t.value;
         saveSoon();
       }
@@ -475,7 +526,7 @@
     el.addEventListener("input", (e) => {
       const t = e.target, c = t.classList;
       if (!c.contains("pfe-price")) return;
-      const k = t.closest("tr").dataset.k;
+      const k = t.closest("[data-k]").dataset.k;
       const meta = (S.pr.meta[k] = S.pr.meta[k] || {});
       meta.price = t.value; meta.hand = true;                 // typed by hand: never replaced by a list
       saveSoon();
@@ -524,7 +575,7 @@
     });
   }
 
-  global.PharmacyPrivateForm = { record, open, isPrivateBed, rowsOf, pagesOf, buildPdf, money, pickPrice };
+  global.PharmacyPrivateForm = { record, open, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);
