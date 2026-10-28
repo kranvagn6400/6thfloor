@@ -203,15 +203,16 @@
     @font-face { font-family: "Cairo"; src: url("${f("Cairo-Regular.ttf")}") format("truetype"); font-weight: 400; font-display: block; }
     @font-face { font-family: "Cairo"; src: url("${f("Cairo-Bold.ttf")}") format("truetype"); font-weight: 700; font-display: block; }
     ${S}, ${S} * { box-sizing: border-box; }
-    ${S} { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #111; word-spacing: 0.25em; }
+    ${S} { margin: 0; padding: 0; background: #fff; /* the ward's forms were written in Pages on an iPhone: English = Helvetica Neue, Arabic = Geeza Pro (Apple system fonts — exact on iPhone / iPad / Mac; elsewhere the nearest installed font) */
+    font-family: 'Helvetica Neue', Helvetica, 'Geeza Pro', 'GeezaPro', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #111; }
     ${S} .pg { position: relative; overflow: hidden; background: #fff; }
     ${S} .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 11pt; font-weight: 700; line-height: 1.3; white-space: nowrap; color: #0b2a6b; }
+    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 11pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #0b2a6b; }
     ${S} .t.c { justify-content: center; text-align: center; }
     ${S} .t.l { direction: ltr; justify-content: flex-start; text-align: left; }
     ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #0b2a6b; }
     ${S} .ring { position: absolute; border: 2pt solid #0b2a6b; border-radius: 6pt; background: transparent; }
-    ${S} .sp { display: inline-block; width: 0.5em; flex: none; }
+    ${S} .sp { display: inline-block; width: 0.32em; flex: none; }
   `;
   }
   const spaced = (html) => String(html).replace(/(^|>)([^<]*)/g, (m, a, b) => a + b.replace(/ /g, '<span class="sp"></span>'));
@@ -223,7 +224,7 @@
   // the chosen condition = its cell outlined (a tick would run over the printed text)
   const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
   // the type size that fits the text in its box (about 0.55 em per character, never above 11 pt, never below 7)
-  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(9, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
+  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(9.5, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
 
   // → the page's HTML (the picture + every value + the ticks)
   function pageHtml(form, vals, st) {
