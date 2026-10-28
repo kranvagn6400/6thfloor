@@ -69,6 +69,8 @@
     const days = dayList(pr);
     return { from: (pr && pr.from) || admitted || days[0] || todayISO(), to: (pr && pr.to) || todayISO() };
   }
+  // «شراء او كيماديا»: every medicine is كيماديا unless the pharmacist changed it (— = left empty)
+  const srcOf = (meta) => (meta && meta.src != null ? meta.src : "كيماديا");
   const localDay = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("en-CA"); };
   // → [{ k, n, q }] totals over the chosen days (+ the manual rows)
   function rowsOf(pr, from, to) {
@@ -345,7 +347,7 @@
     const rows = rowsOf(S.pr, r.from, r.to).map(x => {
       const meta = S.pr.meta[x.k] || {};
       // المجموع / فراض ادارية / الإجمالي are the accountant's: left blank on the paper
-      return { n: x.n, k: x.k, q: x.q, src: meta.src || "", price: num(meta.price), sum: null, fee: null, total: null };
+      return { n: x.n, k: x.k, q: x.q, src: srcOf(meta), price: num(meta.price), sum: null, fee: null, total: null };
     });
     return { name: S.name, plate: S.plate, ward: S.ward, from: r.from.replace(/-/g, "/"), to: r.to.replace(/-/g, "/"), rows };
   }
@@ -373,7 +375,7 @@
     const body = f.rows.map((r, i) => {
       const meta = S.pr.meta[r.k] || {};
       return '<tr data-k="' + esc(r.k) + '"><td>' + (i + 1) + '</td><td class="n">' + esc(r.n) + "</td><td>" + r.q + "</td>" +
-        '<td><select class="pfe-src"><option value="">—</option><option value="شراء"' + (meta.src === "شراء" ? " selected" : "") + '>شراء</option><option value="كيماديا"' + (meta.src === "كيماديا" ? " selected" : "") + ">كيماديا</option></select></td>" +
+        '<td><select class="pfe-src"><option value="">—</option><option value="شراء"' + (srcOf(meta) === "شراء" ? " selected" : "") + '>شراء</option><option value="كيماديا"' + (srcOf(meta) === "كيماديا" ? " selected" : "") + ">كيماديا</option></select></td>" +
         '<td><input class="pfe-price" inputmode="decimal" value="' + esc(meta.price || "") + '"></td></tr>';
     }).join("");
     $("pfe-tbody").innerHTML = body || '<tr><td colspan="5">لا توجد مواد في هذه الفترة</td></tr>';
