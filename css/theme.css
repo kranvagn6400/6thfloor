@@ -2527,6 +2527,3 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 
 /* «استمارات المرضى»: the icon is white in light and dark mode */
 #forms-btn { color: #fff !important; }
-
-/* «حكمة اليوم»: its icon is white */
-#quote-btn { color: #fff !important; }
