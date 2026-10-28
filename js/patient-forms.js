@@ -83,7 +83,7 @@
     albumin: {
       id: "albumin", title: "استمارة صرف الألبومين", short: "الألبومين", bg: "img/forms/albumin.jpg",
       px: [979, 1267], items: ALB_ITEMS, pdfName: "استمارة-ألبومين",
-      hint: "تُصدر كل يوم لكل مريض على الألبومين",
+      hint: "",
       fields: [
         // like the meronem form: everything comes from the card (auto = shown, never typed) — except the diagnosis, which the
         // pharmacist's card does not show, so it stays a field (filled from the card when there is one)
