@@ -208,11 +208,11 @@
     font-family: 'Helvetica Neue', Helvetica, 'Geeza Pro', 'GeezaPro', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #111; }
     ${S} .pg { position: relative; overflow: hidden; background: #fff; }
     ${S} .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 12pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #0b2a6b; }
+    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 12pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #000; }
     ${S} .t.c { justify-content: center; text-align: center; }
     ${S} .t.l { direction: ltr; justify-content: flex-start; text-align: left; }
-    ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #0b2a6b; }
-    ${S} .ring { position: absolute; border: 2pt solid #0b2a6b; border-radius: 6pt; background: transparent; }
+    ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #000; }
+    ${S} .ring { position: absolute; border: 2pt solid #000; border-radius: 6pt; background: transparent; }
     ${S} .sp { display: inline-block; width: 0.32em; flex: none; }
   `;
   }
