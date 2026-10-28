@@ -192,7 +192,7 @@
       const nm = Meds.parseFreq ? Meds.parseFreq(freq) : null;
       dose = strength && nm ? strength + " x " + nm.m : [strength, freq].filter(Boolean).join(" ");
     }
-    return { health: "مدينة الطب", hospital: "مستشفى بغداد التعليمي", ward: unit, name: String(p.name || "").trim(), age: String(p.age || "").trim(),
+    return { health: "مدينة الطب", hospital: "بغداد التعليمي", ward: unit, name: String(p.name || "").trim(), age: String(p.age || "").trim(),
       weight: labs.weight || "", date: todayISO(), scr: labs.creatinine || "", dose, duration: "" };
   }
 
@@ -234,8 +234,8 @@
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
       const text = f.k === "date" ? slash(v) : v;
-      // typed in the paper's own fonts at the label's size (11 pt) and on the label's line (Arabic labels sit ~2 px above their cell's centre)
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.side === "l" ? 0 : -2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
+      // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form a little more)
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + 2 + (f.cy === 244 ? 2 : 0), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
