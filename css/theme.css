@@ -2551,18 +2551,18 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 
 /* patient-card exit buttons: delete / empty bed = red glow, discharge = green glow, death = black / white flash (flat line) */
 @keyframes deleteGlow {
-  0%, 100% { box-shadow: 0 0 6px 1px rgba(255, 40, 40, .5); }
-  50%      { box-shadow: 0 0 22px 7px rgba(255, 40, 40, 1); }
+  0%, 100% { background: #d92d2d; color: #fff; }
+  50%      { background: #5a0f0f; color: #fff; }
 }
 @keyframes dischargeGlow {
-  0%, 100% { box-shadow: 0 0 6px 1px rgba(30, 200, 90, .5); }
-  50%      { box-shadow: 0 0 22px 7px rgba(30, 220, 100, 1); }
+  0%, 100% { background: #1fae5a; color: #fff; }
+  50%      { background: #0b4a26; color: #fff; }
 }
 @keyframes diedFlash {
   0%, 100% { background: #3a3a3a; color: #fff; }
   50%      { background: #000; color: #fff; }
 }
-#delete-patient { animation: deleteGlow 1.2s ease-in-out infinite; }
-#discharge-patient-btn { animation: dischargeGlow 1.2s ease-in-out infinite; }
+#delete-patient { animation: deleteGlow .9s ease-in-out infinite; border-color: #5a0f0f; color: #fff; }
+#discharge-patient-btn { animation: dischargeGlow .9s ease-in-out infinite; border-color: #0b4a26; color: #fff; }
 #died-patient-btn { animation: diedFlash .9s ease-in-out infinite; border-color: #000; color: #fff; }
 @media (prefers-reduced-motion: reduce) { #delete-patient, #discharge-patient-btn, #died-patient-btn { animation: none; } }
