@@ -27,6 +27,15 @@
     var t = e.target && e.target.closest ? e.target.closest(TARGET) : null;
     if (!t || t.disabled || t.hidden) return;
     flash(t, t.matches(FIRE) ? "fx-fire" : "neon-hit", t.matches(FIRE) ? 950 : 1550);
+    // the عام / خاص toggle redraws the whole unit header on a tap, which would drop the effect with the old button:
+    // put it on the new button of the same kind
+    if (t.classList.contains("kind-btn")) {
+      var kind = t.dataset.kind;
+      setTimeout(function () {
+        var nb = document.querySelector('#rooms-grid .kind-btn[data-kind="' + kind + '"]');
+        if (nb && nb !== t) flash(nb, "neon-hit", 1400);
+      }, 90);
+    }
   }, true);
 
   // a medicine ticked in the «إضافة علاج» sheet → a light sweep over its row
