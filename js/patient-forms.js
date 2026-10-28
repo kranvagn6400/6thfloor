@@ -150,7 +150,9 @@
     if (hist.some(h => h.date === todayISO())) return { state: "done", text: "صُرفت اليوم ✓", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
     const last = hist[hist.length - 1];
-    if (!last) return { state: "due", text: "مطلوبة — لم تُصدر بعد", day };
+    // no form recorded yet: the FIRST form is due on day 1 only; a patient already on day 2, 3, 4… got his form before (outside the app),
+    // so he is not listed — his next form follows from the one made here (issue it from «كل المرضى» when the period ends)
+    if (!last) return day === 1 ? { state: "due", text: "مطلوبة — اليوم الأول", day } : { state: "none", text: "لا استمارة مسجّلة في التطبيق (اليوم " + (day == null ? "؟" : day) + ")", day };
     const next = (last.day || 1) + (last.dur || 7) - 1;
     if (day == null) return { state: "soon", text: "تُجدَّد في اليوم " + next, day };
     if (day > next) return { state: "late", text: "متأخرة (كان موعدها اليوم " + next + ")", day };
