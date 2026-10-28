@@ -189,7 +189,7 @@
     if (!hit) return { state: "none", text: "ليس على الدواء" };
     const s = savedOf(p, formId, false), hist = (s && s.hist) || [];
     const day = dayOf(hit, p);
-    if (hist.some(h => h.date === todayISO())) return { state: "done", text: "صُرفت اليوم ✓", day };
+    if (hist.some(h => h.date === todayISO())) return { state: "done", text: "طُبعت اليوم ✓", day };
     // the file was made today but «تم الطبع» is not pressed yet: the form is still required
     if (s && s.pending && s.pending.date === todayISO()) return { state: "due", wait: true, text: "أُنشئ الملف — بانتظار الطبع", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
