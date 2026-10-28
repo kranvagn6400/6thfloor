@@ -346,7 +346,16 @@
   // date: the chart's day ("YYYY-MM-DD"); empty = today
   async function sendTsv(tsv, logId, onProgress, date, unit) {
     const Sync = global.PharmacyChartSync;
-    const r = Sync ? await Sync.send(tsv, onProgress, date, unit) : { ok: false, message: "تعذّر تحميل وحدة الإرسال" };
+    const Fx = global.PharmacyFx;
+    if (Fx && Fx.progress) Fx.progress.start();
+    let r;
+    try {
+      r = Sync ? await Sync.send(tsv, onProgress, date, unit) : { ok: false, message: "تعذّر تحميل وحدة الإرسال" };
+    } catch (e) {
+      if (Fx && Fx.progress) Fx.progress.done(false);
+      throw e;
+    }
+    if (Fx && Fx.progress) Fx.progress.done(r.cancelled ? null : !!r.ok);
     if (logId && global.PharmacyChartLog && !r.cancelled) global.PharmacyChartLog.setResult(logId, r);
     return r;
   }

@@ -3913,7 +3913,7 @@
               const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit);
               if (r.cancelled) return;
               flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
-              if (r.ok) { saveSentSupplies(supplyDistribution, day, flowKey()); closeMedSummary(); }
+              if (r.ok) { saveSentSupplies(supplyDistribution, day, flowKey()); closeMedSummary(); if (global.PharmacyFx) global.PharmacyFx.rocket(); }
             } catch (err) {
               flashHint("تعذّر الإرسال: " + (err.message || err));
             } finally {
@@ -4124,6 +4124,7 @@
         try {
           const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit, unit === "p" ? "private" : "general");
           if (!r.cancelled) flashHint(global.PharmacyChartSync.describe(r));
+          if (r.ok && global.PharmacyFx) global.PharmacyFx.rocket();
         } catch (err) {
           flashHint("تعذّر الإرسال: " + (err.message || err));
         }

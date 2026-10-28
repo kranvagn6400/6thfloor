@@ -104,6 +104,58 @@
       pendingBed = key; pendingAt = Date.now();
       var n = 0, iv = setInterval(function () { ensureRing(); if ((!pendingBed && !ringKey) || ++n > 130) clearInterval(iv); }, 500);
     },
+    // a thin progress bar at the top while something is sent (start → creeps toward 90% → done: fills, fades)
+    progress: (function () {
+      var el = null, iv = null, w = 0;
+      function bar() {
+        if (!el) {
+          el = document.createElement("div");
+          el.className = "fx-progress";
+          el.setAttribute("aria-hidden", "true");
+          document.body.appendChild(el);
+        }
+        return el;
+      }
+      function set(p) { w = p; bar().style.transform = "scaleX(" + (p / 100) + ")"; }
+      return {
+        start: function () {
+          clearInterval(iv);
+          var b = bar();
+          b.className = "fx-progress";
+          b.style.transition = "none"; set(0); void b.offsetWidth; b.style.transition = "";
+          b.classList.add("on");
+          set(12);
+          iv = setInterval(function () { set(w + (92 - w) * 0.08); }, 220);   // slows down, never reaches the end alone
+        },
+        done: function (ok) {                       // ok: true = sent, false = failed, null = cancelled
+          clearInterval(iv);
+          var b = bar();
+          if (ok === null) { b.classList.remove("on"); return; }
+          if (ok === false) b.classList.add("bad");
+          set(100);
+          setTimeout(function () { b.classList.remove("on"); }, ok === false ? 1100 : 450);
+        }
+      };
+    })(),
+    // a rocket flies from the bottom of the screen to the top (after a successful send to the chart)
+    rocket: function () {
+      if (!allowed()) return;
+      try { if (global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches) return; } catch (e) { /* no matchMedia */ }
+      var old = document.getElementById("fx-rocket");
+      if (old) old.remove();
+      var r = document.createElement("div");
+      r.id = "fx-rocket";
+      r.className = "fx-rocket";
+      r.setAttribute("aria-hidden", "true");
+      r.innerHTML = '<i class="fx-rk-trail"></i><i class="fx-rk-glow"></i>'
+        + '<svg class="fx-rk-body" viewBox="0 0 22 70" width="26" height="82"><defs><linearGradient id="fx-rk-g" x1="0" x2="1"><stop offset="0" stop-color="#8d99a6"/><stop offset=".45" stop-color="#ffffff"/><stop offset="1" stop-color="#9aa6b2"/></linearGradient></defs>'
+        + '<path d="M6 40 L0 60 L6 54 Z M16 40 L22 60 L16 54 Z" fill="var(--pal-accent, var(--primary, #1b6b5a))"/>'
+        + '<path d="M11 0 C16.5 12 17.5 28 16.5 54 L5.5 54 C4.5 28 5.5 12 11 0 Z" fill="url(#fx-rk-g)"/>'
+        + '<path d="M5.7 46 L16.3 46 L16.5 54 L5.5 54 Z" fill="var(--pal-accent, var(--primary, #1b6b5a))" opacity=".9"/>'
+        + '<path d="M7.5 54 L14.5 54 L13.3 58 L8.7 58 Z" fill="#59636e"/></svg>';
+      document.body.appendChild(r);
+      setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, 2400);
+    },
     allowed: allowed,
     // saved effects (theme.css): plasma | ice | rainbow | gold | scan | double — not wired to anything yet
     play: function (el, name) { if (el) flash(el, "fx-" + name, 1300); }

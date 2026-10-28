@@ -234,6 +234,7 @@
         renderAccount();
         render();
         if (!r.cancelled) flash(global.PharmacyChartSync.describe(r));
+        if (r.ok && global.PharmacyFx) global.PharmacyFx.rocket();
       }
     });
   }
