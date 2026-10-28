@@ -229,15 +229,15 @@
       h += box("s b", 620, 1228, 33, 28, "<span>مستشفى بغداد التعليمي</span> <span>-</span> <span>وحدة الصيدلة السريرية</span>", 11);
       h += box("s b", 91, 571, 33, 28, "القطاع الخاص للمرضى الراقدين في الجناح الخاص", 11);
       h += box("s b", 900, 1220, 94, 28, lab("قائمة الادوية المصروفة من تاريخ:"), 11);
-      h += box("", 780, 895, 94, 28, esc(form.from), 11);
+      h += box("", 790, 940, 94, 28, esc(form.from), 11);     // centred between «من تاريخ:» and «لغاية:»
       h += box("s b", 700, 780, 94, 28, lab("لغاية:"), 11);
-      h += box("", 520, 698, 94, 28, esc(form.to), 11);
+      h += box("s", 540, 728, 94, 28, esc(form.to), 11);      // right next to «لغاية:»
       h += box("s b", 1085, 1218, 133, 28, lab("اسم المريض:"), 11);
-      h += box("s", 800, 1080, 133, 28, esc(form.name), 11);
+      h += box("s", 800, 1104, 133, 28, esc(form.name), 11);
       h += box("s b", 680, 808, 133, 28, lab("رقم الطبلة:"), 11);
-      h += box("", 480, 676, 133, 28, esc(form.plate), 11);
+      h += box("s", 520, 708, 133, 28, esc(form.plate), 11);
       h += box("s b", 270, 363, 133, 28, lab("الردهة:"), 11);
-      h += box("", 30, 266, 133, 28, esc(form.ward), form.ward.length > 24 ? 9 : form.ward.length > 18 ? 10 : 11);
+      h += box("s", 30, 296, 133, 28, esc(form.ward), form.ward.length > 24 ? 9 : form.ward.length > 18 ? 10 : 11);
       // the ruled table: outer lines, the column lines, the header line (darker), a line under each row
       const bottom = HEAD_B + ROWS * ROW_H;
       h += hline(COLS[8], COLS[0], TOP, "#9a9a9a") + hline(COLS[8], COLS[0], bottom, "#9a9a9a");
@@ -356,6 +356,13 @@
     #pf-editor .pfe-it input { height: 38px; text-align: center; }
     #pf-editor .pfe-it button { height: 38px; border: 0; border-radius: 10px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font-size: 14px; cursor: pointer; }
     #pf-editor .pfe-addrow { display: grid; grid-template-columns: 1fr 78px; gap: 8px; margin-top: 10px; }
+    #pf-editor .pfe-ac { position: relative; min-width: 0; }
+    #pf-editor .pfe-sug { position: absolute; inset-inline: 0; top: calc(100% + 4px); z-index: 5; max-height: 240px; overflow-y: auto; background: var(--surface, #fff); border: 1px solid var(--border, #dbe2e8); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+    #pf-editor .pfe-sug[hidden] { display: none; }
+    #pf-editor .pfe-sug button { display: block; width: 100%; text-align: start; padding: 10px 12px; border: 0; border-bottom: 1px solid var(--border, #dbe2e8); background: transparent; color: var(--text, #14211f); font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+    #pf-editor .pfe-sug button:last-child { border-bottom: 0; }
+    #pf-editor .pfe-sug button small { display: block; font-weight: 600; color: var(--text-muted, #5c6b73); font-size: 11.5px; }
+    #pf-editor .pfe-sug .pfe-none { padding: 10px 12px; font-size: 12.5px; color: var(--text-muted, #5c6b73); }
     #pf-editor .pfe-addbtn { grid-column: 1 / -1; height: 42px; border: 0; border-radius: 12px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font: inherit; font-weight: 800; cursor: pointer; }
     #pf-editor .pfe-hint { font-size: 12px; color: var(--text-muted, #5c6b73); margin: 8px 0 0; line-height: 1.7; }
     #pf-editor .pfe-bottom { flex: none; display: flex; align-items: center; gap: 12px; padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 10px); background: var(--surface, #fff); border-top: 1px solid var(--border, #dbe2e8); }
@@ -391,7 +398,7 @@
     const days = dayList(pr);
     $("pfe-days-count").textContent = days.length ? days.length + " يوم" : "—";
     const box = $("pfe-days");
-    if (!days.length) { box.innerHTML = '<div class="pfe-empty">لم يُسجَّل بعد أي إرسال إلى جارت الخاص لهذا المريض.<br>أرسل الجارت أولاً، أو أضف المواد يدويًا من الأسفل.</div>'; return; }
+    if (!days.length) { box.innerHTML = '<div class="pfe-empty">لم يُسجَّل بعد أي إرسال إلى جارت الخاص لهذا المريض.<br>أرسل الجارت أولاً، أو أضف الأدوية من قسم «أدوية أضافها الخفر».</div>'; return; }
     box.innerHTML = days.map(d => {
       const items = (pr.days[d] || {}).items || [];
       return '<div class="pfe-day" data-day="' + d + '"><b>' + fmtDay(d) + "</b>" +
@@ -420,13 +427,40 @@
             (meta.auto && !meta.hand ? '<span class="pfe-auto">من موقع الأسعار</span>' : "") + "</label>" +
         "</div></div>";
     }).join("");
-    $("pfe-tbody").innerHTML = body || '<div class="pfe-empty">لا توجد مواد في الفترة المختارة.<br>غيّر تاريخ الدخول أو الخروج، أو أضف مادة يدويًا.</div>';
+    $("pfe-tbody").innerHTML = body || '<div class="pfe-empty">لا توجد مواد في الفترة المختارة.<br>غيّر تاريخ الدخول أو الخروج، أو أضف دواءً من قسم «أدوية أضافها الخفر».</div>';
     $("pfe-count").textContent = f.rows.length ? f.rows.length + " مادة" : "—";
     const units = f.rows.reduce((a, r) => a + (Number(r.q) || 0), 0);
     $("pfe-sum").innerHTML = f.rows.length ? "<b>" + f.rows.length + "</b> مادة · <b>" + units + "</b> وحدة" : "لا توجد مواد";
   }
 
   function renderAll() { renderDays(); renderExtra(); renderTable(); }
+
+  // catalogue suggestions for the typed text: every typed word must be in the medicine's names / dose
+  function suggestions(q) {
+    const words = String(q || "").toLowerCase().split(/\s+/).filter(Boolean);
+    if (!words.length) return [];
+    const out = [];
+    ((App() && App().state.medications) || []).forEach(m => {
+      if (!m || out.length >= 8) return;
+      const hay = [m.nameTrade, m.nameEn, m.nameAr, m.nameChart, m.defaultDose, m.id].join(" ").toLowerCase();
+      if (!words.every(w => hay.indexOf(w) >= 0)) return;
+      const label = String(m.nameChart || "").trim() || [m.nameTrade || m.nameEn, m.defaultDose].filter(Boolean).join(" ");
+      const sub = [m.nameAr, m.nameEn && m.nameEn !== m.nameTrade ? m.nameEn : "", m.available === false ? "غير متوفر" : ""].filter(Boolean).join(" · ");
+      out.push({ label, sub });
+    });
+    return out;
+  }
+  function showSuggestions() {
+    const box = $("pfe-sug"), q = $("pfe-xn").value.trim();
+    if (!box) return;
+    if (!q) { box.hidden = true; box.innerHTML = ""; return; }
+    const list = suggestions(q);
+    box.innerHTML = list.length
+      ? list.map((x, i) => '<button type="button" data-i="' + i + '"><span dir="auto">' + esc(x.label) + "</span>" + (x.sub ? "<small dir=\"auto\">" + esc(x.sub) + "</small>" : "") + "</button>").join("")
+      : '<div class="pfe-none">لا يوجد في الكتالوج — يُضاف بالاسم كما كتبته</div>';
+    box._list = list;
+    box.hidden = false;
+  }
 
   // key = a bed in the ward; or key null + source = an archived record (المرضى السابقون) with opts { roomId, exit }
   function open(key, source, opts) {
@@ -439,9 +473,8 @@
     opts = opts || {};
     const r = key ? roomOfKey(key) : (opts.roomId ? global.PharmacyWard.roomById(opts.roomId) : null);
     const pr = priv(p, true);
-    const unit = r ? global.PharmacyWard.UNITS.find(u => u.id === r.unit) : null;
-    // الردهة: «الطابق السادس» + the unit the patient is in
-    const mine0 = S = { key: key || null, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), ward: pr.ward || (unit ? unit.name : "") };
+    // الردهة is left empty (the unit is already known in the app); the pharmacist may type it
+    const mine0 = S = { key: key || null, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), ward: pr.ward || "" };
     const old = $("pf-editor");
     if (old) old.remove();
     const el = document.createElement("div");
@@ -462,9 +495,9 @@
           '<p class="pfe-hint">أعمدة المجموع والفراض الإدارية والإجمالي تُترك فارغة في الورقة (تخص المحاسب). سعر المفرد يُجلب من موقع الأسعار تلقائيًا ويمكنك تعديله.</p></div>' +
         '<details class="pfe-card"><summary>الإرسالات المسجّلة يوميًا <span class="pfe-badge" id="pfe-days-count">—</span></summary><div class="pfe-in"><div id="pfe-days"></div>' +
           '<p class="pfe-hint">يُسجَّل كل يوم ما أُرسل إلى جارت الخاص وكان <b>متوفرًا</b> وقت الإرسال. عدّل الكمية أو احذف المادة إن لم يستلمها المريض.</p></div></details>' +
-        '<details class="pfe-card"' + (S.pr.extra.length ? " open" : "") + '><summary>مواد من خارج التطبيق <span class="pfe-badge" id="pfe-extra-count"></span></summary><div class="pfe-in">' +
-          '<p class="pfe-hint" style="margin:0 0 6px">مواد سلّمها صيدلي الخفر أو غيره ولم تُرسل من هنا.</p><div id="pfe-extra"></div>' +
-          '<div class="pfe-addrow"><input id="pfe-xn" placeholder="اسم المادة" autocomplete="off"><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة المادة</button></div></div></details>' +
+        '<details class="pfe-card"' + (S.pr.extra.length ? " open" : "") + '><summary>أدوية أضافها الخفر <span class="pfe-badge" id="pfe-extra-count"></span></summary><div class="pfe-in">' +
+          '<p class="pfe-hint" style="margin:0 0 6px">أدوية أضافها صيدلي الخفر ولم تُرسل من هنا. اكتب اسم الدواء فتظهر اقتراحات من الكتالوج.</p><div id="pfe-extra"></div>' +
+          '<div class="pfe-addrow"><div class="pfe-ac"><input id="pfe-xn" placeholder="اسم الدواء" autocomplete="off" autocorrect="off" spellcheck="false"><div class="pfe-sug" id="pfe-sug" hidden></div></div><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة الدواء</button></div></div></details>' +
       "</div></div>" +
       '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
     document.body.appendChild(el);
@@ -498,6 +531,16 @@
     }).catch(() => {});
 
     $("pfe-close").addEventListener("click", close);
+    $("pfe-xn").addEventListener("input", showSuggestions);
+    $("pfe-xn").addEventListener("focus", showSuggestions);
+    $("pfe-sug").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-i]");
+      if (!b) return;
+      const pick = $("pfe-sug")._list[+b.dataset.i];
+      $("pfe-xn").value = pick.label;
+      $("pfe-sug").hidden = true;
+      $("pfe-xq").focus();
+    });
     $("pfe-ward").addEventListener("input", (e) => { S.ward = e.target.value; S.pr.ward = e.target.value; saveSoon(); });
     ["pfe-from", "pfe-to"].forEach(id => $(id).addEventListener("change", (e) => {
       if (!isDay(e.target.value)) return;
@@ -533,6 +576,7 @@
     });
     el.addEventListener("click", (e) => {
       const t = e.target;
+      if (!t.closest(".pfe-ac")) { const sg = $("pfe-sug"); if (sg) sg.hidden = true; }
       if (t.classList.contains("pfe-dx")) {
         const day = t.closest(".pfe-day").dataset.day, i = +t.closest(".pfe-it").dataset.i;
         S.pr.days[day].items.splice(i, 1);
@@ -543,9 +587,9 @@
         saveSoon(); renderAll();
       } else if (t.id === "pfe-xadd") {
         const n = $("pfe-xn").value.trim(), q = parseInt($("pfe-xq").value, 10);
-        if (!n || isNaN(q) || q < 1) { flash("اكتب اسم المادة والعدد"); return; }
+        if (!n || isNaN(q) || q < 1) { flash("اكتب اسم الدواء والعدد"); return; }
         S.pr.extra.push({ k: "x:" + Date.now(), n, q });
-        $("pfe-xn").value = ""; $("pfe-xq").value = "";
+        $("pfe-xn").value = ""; $("pfe-xq").value = ""; $("pfe-sug").hidden = true;
         saveSoon(); renderAll();
       }
     });
