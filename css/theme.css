@@ -646,8 +646,6 @@ html.role-pharmacist #view-patient .patient-demographics-row,
 html.role-pharmacist #view-patient .patient-body-row,
 html.role-pharmacist #view-patient .patient-allergy-row,
 html.role-pharmacist #view-patient .patient-diagnosis-row,
-html.role-pharmacist #view-patient #patient-labs-history,
-html.role-pharmacist #view-patient #gfr-card,
 html.role-pharmacist #view-patient .previous-admission-banner {
   display: none !important;
 }
@@ -2095,9 +2093,15 @@ html[data-theme="dark"] .lab-cell { background: #10241F; }
 .lab-cell .lab-input { padding-inline: 6px; }
 #patient-labs-row { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; }
 
-/* Doctors: labs folded until «عرض التحاليل» (patient-header.labs-open) */
-html.role-doctor #view-patient .patient-header:not(.labs-open) #patient-labs-row,
-html.role-doctor #view-patient .patient-header:not(.labs-open) #patient-labs-history { display: none !important; }
+/* Every role: the labs (cells + previous results) fold under «عرض التحاليل» (patient-header.labs-open); the eGFR card stays visible */
+#view-patient .patient-header:not(.labs-open) #patient-labs-row,
+#view-patient .patient-header:not(.labs-open) #patient-labs-history { display: none !important; }
+/* Pharmacists: the same «التحاليل» bar as the doctors (after the origin row), then all the labs */
+html.role-pharmacist #view-patient .doc-labs-toolbar { order: 5; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+html.role-pharmacist #view-patient .doc-labs-toolbar .doc-section-title { display: block; margin: 0; }
+html.role-pharmacist #view-patient #patient-labs-row { order: 6; }
+html.role-pharmacist #view-patient #gfr-card { order: 7; }
+html.role-pharmacist #view-patient #patient-labs-history { order: 8; }
 
 /* Catalogue-only admin view (an allowed pharmacist): only the medicines list + form */
 #view-admin.catalog-only > *:not(.back-btn):not(.section-title):not(.admin-layout) { display: none !important; }
@@ -2251,7 +2255,6 @@ html[data-theme="dark"] .crit-day { color: #F87171; }
 
 /* «تحاليل الورقة» (doctor + admin): which labs the patient sheet prints */
 html.role-admin #view-patient .doc-labs-toolbar { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin: 10px 0 4px; }
-html.role-admin #labs-toggle-btn { display: none; }
 html.role-pharmacist #labs-print-btn { display: none; }
 .labs-print-panel { flex-basis: 100%; margin-top: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface, #fff); }
 .labs-print-hint { font-size: 12.5px; font-weight: 800; color: var(--text-muted); margin-bottom: 8px; }

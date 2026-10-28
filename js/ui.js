@@ -437,11 +437,7 @@
       ["CRP",           "crp"]
     ];
 
-    // Pharmacists see only creatinine + albumin
-    const AuthL = global.PharmacyAuth;
-    if (AuthL && AuthL.isPharmacist && AuthL.isPharmacist() && !(AuthL.isAdmin && AuthL.isAdmin())) {
-      for (let i = labDefs.length - 1; i >= 0; i--) if (labDefs[i][1] !== "creatinine" && labDefs[i][1] !== "albumin") labDefs.splice(i, 1);
-    }
+    // Every role sees all the labs (pharmacists too)
 
     if (labsContainer) {
       labsContainer.innerHTML = "";
@@ -564,7 +560,7 @@
     const pharm = !!(Auth2 && Auth2.isPharmacist && Auth2.isPharmacist());
     ["discharge-patient-btn", "died-patient-btn"].forEach(id => {
       const b = document.getElementById(id);
-      if (b) b.hidden = pharm && !(Auth2.canExitPatients && Auth2.canExitPatients());
+      if (b) b.hidden = false;   // pharmacists discharge / record deaths too
     });
 
     // The "missing plate number" highlight is set only by the add-med attempt

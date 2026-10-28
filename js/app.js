@@ -2577,7 +2577,7 @@
       // admin may delete a patient, so everyone else gets the name back.
       const saved = Storage.loadPatients()[state.currentBed.key];
       if (p && (!p.name || !p.name.trim()) && saved && saved.name && saved.name.trim() &&
-          !(Auth && ((Auth.isPharmacist && Auth.isPharmacist()) || (Auth.canExitPatients && Auth.canExitPatients())))) {
+          !(Auth && Auth.isAdmin && Auth.isAdmin())) {
         p.name = saved.name;
         $("patient-name-input").value = saved.name;
         flashHint("لا يمكن حذف المريض");
@@ -2746,7 +2746,7 @@
     $("delete-patient").addEventListener("click", () => {
       if (!state.currentBed) return;
       // Deleting a patient: the admin and the pharmacists (they have no discharge)
-      if (!(Auth && ((Auth.isPharmacist && Auth.isPharmacist()) || (Auth.canExitPatients && Auth.canExitPatients())))) { flashHint("حذف المريض غير متاح"); return; }
+      if (!(Auth && Auth.isAdmin && Auth.isAdmin())) { flashHint("حذف المريض غير متاح"); return; }
       const p = state.patients[state.currentBed.key];
       const name = p && p.name ? p.name : "";
       const msg = name
@@ -2781,12 +2781,8 @@
     //      as a reference so the doctor can compare / copy it
     //   3. A modal gives more space for the textarea input
     let _dischargePending = null;  // holds {bedKey, patient, record}
-    // Pharmacists do NOT discharge / record death (they delete the bed instead) unless
-    // the admin granted them canExitPatients.
-    function exitAllowed(p) {
-      const isPharm = Auth && Auth.isPharmacist && Auth.isPharmacist();
-      return !isPharm || !!(Auth.canExitPatients && Auth.canExitPatients());
-    }
+    // Everyone who can open a card (pharmacists, admin) may discharge / record a death.
+    function exitAllowed(p) { return true; }
 
     function openDischargeModal() {
       if (!state.currentBed) return;
@@ -2849,12 +2845,9 @@
       if (!_dischargePending) return;
       const inputEl = $("discharge-final-diagnosis");
       const errEl = $("discharge-error");
+      // The final diagnosis is optional (it may stay empty)
       const finalDiagnosis = (inputEl && inputEl.value || "").trim();
-      if (!finalDiagnosis) {
-        if (errEl) errEl.hidden = false;
-        if (inputEl) inputEl.focus();
-        return;
-      }
+      if (errEl) errEl.hidden = true;
       const { bedKey, patient: p, roomId, bed } = _dischargePending;
       const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
       const record = {
@@ -2882,7 +2875,7 @@
         global.PharmacyArchive.add("discharged", record);
         if (Auth && Auth.auditLog) {
           Auth.auditLog("patient_discharged",
-            `خروج المريض "${p.name}" من ${global.PharmacyWard.roomTitle(roomId)} سرير ${global.PharmacyWard.bedLabel(roomId, bed)} — تشخيص نهائي: ${finalDiagnosis}`);
+            `خروج المريض "${p.name}" من ${global.PharmacyWard.roomTitle(roomId)} سرير ${global.PharmacyWard.bedLabel(roomId, bed)}${finalDiagnosis ? " — تشخيص نهائي: " + finalDiagnosis : ""}`);
         }
         pushNotification("patient_discharged",
           `خروج المريض: ${p.name.trim()} — ${global.PharmacyWard.roomTitle(roomId)}`,
@@ -5989,7 +5982,7 @@
     $("allergy-toggle").setAttribute("aria-expanded", "false");
     // Deleting a patient: admin + pharmacists
     const delBtn = $("delete-patient");
-    if (delBtn) delBtn.hidden = !(Auth && ((Auth.isPharmacist && Auth.isPharmacist()) || (Auth.canExitPatients && Auth.canExitPatients())));
+    if (delBtn) delBtn.hidden = !(Auth && Auth.isAdmin && Auth.isAdmin());
     // Hide the per-patient print button for pharmacists — only
     // admin + doctor can print individual patient sheets.
     const printBtn = $("print-patient-sheet-btn");

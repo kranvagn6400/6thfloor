@@ -267,3 +267,5 @@ Dark mode: --primary is a light mint there (text colour); controls filled with i
 aborted app start + logout in production). After UI changes, load the app in the browser for
 each role (pharmacist / doctor / admin) and confirm start-up finishes (search works) and
 logout reaches the login screen.
+
+- Labs fold under «عرض التحاليل» for every role and pharmacists see all labs; pharmacists have discharge / died buttons (final diagnosis optional); the bed-delete button («تفريغ السرير وحذف المريض») is ADMIN only.
