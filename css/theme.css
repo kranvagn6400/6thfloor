@@ -2559,10 +2559,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
   50%      { box-shadow: 0 0 22px 7px rgba(30, 220, 100, 1); }
 }
 @keyframes diedFlash {
-  0%, 49%   { background: #111 !important; color: #fff !important; }
-  50%, 100% { background: #fff !important; color: #111 !important; }
+  0%, 100% { background: #3a3a3a; color: #fff; }
+  50%      { background: #000; color: #fff; }
 }
 #delete-patient { animation: deleteGlow 1.2s ease-in-out infinite; }
 #discharge-patient-btn { animation: dischargeGlow 1.2s ease-in-out infinite; }
-#died-patient-btn { animation: diedFlash 1.4s steps(1) infinite; border: 2px solid #111 !important; }
+#died-patient-btn { animation: diedFlash .9s ease-in-out infinite; border-color: #000; color: #fff; }
 @media (prefers-reduced-motion: reduce) { #delete-patient, #discharge-patient-btn, #died-patient-btn { animation: none; } }
