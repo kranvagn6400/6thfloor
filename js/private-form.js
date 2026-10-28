@@ -215,6 +215,7 @@
     ${S} .t { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 0 3pt; font-weight: 400; font-size: 11pt; line-height: 1.15; white-space: nowrap; }
     ${S} .t.s { justify-content: flex-start; text-align: right; }
     ${S} .t.b { font-weight: 700; word-spacing: 0.4em; }
+    ${S} .t.v { overflow: visible; }
     ${S} .g { position: absolute; }
     ${S} .sp { display: inline-block; width: 0.32em; }
   `;
@@ -226,16 +227,16 @@
     const n = Math.max(1, Math.ceil(form.rows.length / ROWS));
     for (let pi = 0; pi < n; pi++) {
       let h = '<div class="pg">';
-      h += box("s b", 620, 1228, 33, 28, "<span>مستشفى بغداد التعليمي</span> <span>-</span> <span>وحدة الصيدلة السريرية</span>", 11);
-      h += box("s b", 91, 571, 33, 28, "القطاع الخاص للمرضى الراقدين في الجناح الخاص", 11);
-      h += box("s b", 900, 1220, 94, 28, lab("قائمة الادوية المصروفة من تاريخ:"), 11);
-      h += box("", 790, 940, 94, 28, esc(form.from), 11);     // centred between «من تاريخ:» and «لغاية:»
-      h += box("s b", 700, 780, 94, 28, lab("لغاية:"), 11);
-      h += box("s", 540, 728, 94, 28, esc(form.to), 11);      // right next to «لغاية:»
-      h += box("s b", 1085, 1218, 133, 28, lab("اسم المريض:"), 11);
-      h += box("s", 800, 1104, 133, 28, esc(form.name), 11);
-      h += box("s b", 680, 808, 133, 28, lab("رقم الطبلة:"), 11);
-      h += box("s", 520, 708, 133, 28, esc(form.plate), 11);
+      h += box("s b v", 620, 1228, 25, 44, "<span>مستشفى بغداد التعليمي</span> <span>-</span> <span>وحدة الصيدلة السريرية</span>", 11);
+      h += box("s b v", 91, 571, 25, 44, "القطاع الخاص للمرضى الراقدين في الجناح الخاص", 11);
+      h += box("s b v", 900, 1220, 86, 44, lab("قائمة الادوية المصروفة من تاريخ:"), 11);
+      h += box("v", 790, 940, 86, 44, esc(form.from), 11);     // centred between «من تاريخ:» and «لغاية:»
+      h += box("s b v", 700, 780, 86, 44, lab("لغاية:"), 11);
+      h += box("s v", 540, 728, 86, 44, esc(form.to), 11);      // right next to «لغاية:»
+      h += box("s b v", 1085, 1218, 125, 44, lab("اسم المريض:"), 11);
+      h += box("s v", 800, 1104, 125, 44, esc(form.name), 11);
+      h += box("s b v", 680, 808, 125, 44, lab("رقم الطبلة:"), 11);
+      h += box("s v", 520, 708, 125, 44, esc(form.plate), 11);
       // the ruled table: outer lines, the column lines, the header line (darker), a line under each row
       const bottom = HEAD_B + ROWS * ROW_H;
       h += hline(COLS[8], COLS[0], TOP, "#9a9a9a") + hline(COLS[8], COLS[0], bottom, "#9a9a9a");
