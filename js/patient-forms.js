@@ -99,9 +99,9 @@
       hint: "تُصدر في أول يوم، ثم في آخر يوم من مدة الصرف (اليوم 7 أو 14)",
       fields: [
         // auto = filled by the app, never typed (دائرة صحة and the hospital are fixed; the ward is the patient's unit; the rest comes from the card; no allergy)
-        F("health", "دائرة صحة", 612, 774, 244, "r", { auto: true }), F("hospital", "مستشفى", 355, 540, 244, "r", { auto: true }), F("ward", "الردهة", 100, 296, 244, "r", { auto: true }),
-        F("name", "اسم المريض", 612, 770, 278, "r", { auto: true, dy: -4 }), F("age", "العمر", 355, 555, 278, "r", { auto: true }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true }),
-        F("date", "التاريخ", 612, 800, 314, "r", { auto: true, dy: -4 }), F("scr", "S.cr", 355, 543, 314, "r", { auto: true }),
+        F("health", "دائرة صحة", 612, 774, 244, "r", { auto: true }), F("hospital", "مستشفى", 355, 524, 244, "r", { auto: true }), F("ward", "الردهة", 100, 296, 244, "r", { auto: true }),
+        F("name", "اسم المريض", 612, 770, 278, "r", { auto: true, dy: -4 }), F("age", "العمر", 355, 555, 278, "r", { auto: true, dy: -4 }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true, dy: -4 }),
+        F("date", "التاريخ", 612, 800, 314, "r", { auto: true, dy: -4 }), F("scr", "S.cr", 355, 543, 314, "r", { auto: true, dy: -4 }),
         // the two typed fields are written in the MIDDLE of their cells
         F("dose", "الجرعة", 92, 688, 999, "r", { full: true, center: true, auto: true }), F("duration", "تحديد مدة الصرف", 92, 688, 1037, "r", { full: true, hidden: true, center: true })
       ]
