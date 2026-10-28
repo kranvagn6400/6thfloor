@@ -642,8 +642,6 @@ html.role-doctor #view-patient .patient-origin-row { display: none !important; }
 
 /* Pharmacist account: only patient name, plate number, specialist and
    origin floor in the patient header (the meds section stays). */
-html.role-pharmacist #view-patient .patient-demographics-row,
-html.role-pharmacist #view-patient .patient-body-row,
 html.role-pharmacist #view-patient .patient-allergy-row,
 html.role-pharmacist #view-patient .patient-diagnosis-row,
 html.role-pharmacist #view-patient .previous-admission-banner {
@@ -2023,6 +2021,9 @@ html.role-pharmacist #view-patient .patient-name-row { order: 1; }
 html.role-pharmacist #view-patient .patient-doctor-row:not(.patient-diagnosis-row) { order: 2; }
 html.role-pharmacist #view-patient .patient-plate-row { order: 3; }
 html.role-pharmacist #view-patient .patient-origin-row { order: 4; }
+/* age + sex and weight + height are shown to pharmacists too (after the origin row) */
+html.role-pharmacist #view-patient .patient-demographics-row { order: 4; }
+html.role-pharmacist #view-patient .patient-body-row { order: 4; }
 
 /* Dark mode on phones: search fields (type=search) get the system's own white
    background on iOS / some Android browsers — light text on white. Tell the
