@@ -217,6 +217,9 @@
       weight: labs.weight || "", date: todayISO(), scr: labs.creatinine || "", dose, duration: "" };
   }
 
+  // the dispensing period as the ward writes it: «7 أيام» / «14 يوما»
+  const durText = (n) => (+n >= 3 && +n <= 10 ? n + " أيام" : n + " يوما");
+
   // 1 → 1st, 2 → 2nd, 3 → 3rd, 4 → 4th … 11th 12th 13th … 21st (the albumin paper's «Treatment day»)
   function ordinal(n) {
     n = parseInt(n, 10);
@@ -474,14 +477,14 @@
     if (form.duration) {
       const allowed = allowedNow();
       let d = parseInt(V.st.vals.durDays, 10) || 0;
-      if (allowed.length && allowed.indexOf(d) < 0) { d = allowed.length === 1 ? allowed[0] : 0; V.st.vals.durDays = d ? String(d) : ""; V.st.vals.duration = d ? d + " أيام" : ""; }
+      if (allowed.length && allowed.indexOf(d) < 0) { d = allowed.length === 1 ? allowed[0] : 0; V.st.vals.durDays = d ? String(d) : ""; V.st.vals.duration = d ? durText(d) : ""; }
       const c = courseOf(V.p, dayOf(findMed("meronem", V.p), V.p));
       const note = !allowed.length
         ? "لا يجوز تجديد الاستمارة: بلغ العلاج الحد الأقصى (21 يومًا)."
         : c.first ? "تُصدر الاستمارة التالية في آخر يوم من هذه المدة (اليوم 7 أو 14). ولا يزيد العلاج عن 21 يومًا."
-          : "هذا تجديد يبدأ من اليوم " + (c.end + 1) + ": يُسمح بـ " + allowed.join(" أو ") + " أيام فقط لأن العلاج لا يزيد عن 21 يومًا.";
+          : "هذا تجديد يبدأ من اليوم " + (c.end + 1) + ": يُسمح بـ " + allowed.map(durText).join(" أو ") + " فقط لأن العلاج لا يزيد عن 21 يومًا.";
       dur = '<div class="pfe-card"><h4 class="pfe-h">تحديد مدة الصرف</h4>' +
-        (allowed.length ? '<div class="pfs-chips" id="pfs-dur">' + allowed.map(n => '<button type="button" data-d="' + n + '" class="' + (d === n ? "is-on" : "") + '">' + n + " أيام</button>").join("") + "</div>" : "") +
+        (allowed.length ? '<div class="pfs-chips" id="pfs-dur">' + allowed.map(n => '<button type="button" data-d="' + n + '" class="' + (d === n ? "is-on" : "") + '">' + durText(n) + "</button>").join("") + "</div>" : "") +
         '<p class="pfe-hint">' + esc(note) + "</p></div>";
     }
     el.innerHTML =
@@ -522,7 +525,7 @@
     });
     const setDur = (n) => {
       V.st.vals.durDays = n ? String(n) : "";
-      V.st.vals.duration = n ? n + " أيام" : "";
+      V.st.vals.duration = n ? durText(n) : "";
       const chips = $("pfs-dur"); if (chips) chips.querySelectorAll("button").forEach(x => x.classList.toggle("is-on", +x.dataset.d === n));
       saveSoon();
     };
@@ -543,7 +546,7 @@
     if (!FORMS[V.form].duration) return true;
     const allowed = allowedNow(), d = parseInt(V.st.vals.durDays, 10) || 0;
     if (!allowed.length) { flash("لا يجوز تجديد استمارة الميرونيم: بلغ العلاج 21 يومًا"); return false; }
-    if (allowed.indexOf(d) < 0) { flash("اختر مدة الصرف (" + allowed.join(" أو ") + " أيام)"); return false; }
+    if (allowed.indexOf(d) < 0) { flash("اختر مدة الصرف (" + allowed.map(durText).join(" أو ") + ")"); return false; }
     return true;
   }
   function updateSum() {
@@ -555,7 +558,7 @@
   // the page(s) to print with the values as they are now
   function pages() {
     const eff = effective();
-    if (FORMS[V.form].duration && !eff.duration && V.st.vals.durDays) eff.duration = V.st.vals.durDays + " أيام";
+    if (FORMS[V.form].duration && !eff.duration && V.st.vals.durDays) eff.duration = durText(V.st.vals.durDays);
     return [pageHtml(FORMS[V.form], eff, V.st)];
   }
   async function preview(b) {
