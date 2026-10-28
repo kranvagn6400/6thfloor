@@ -100,7 +100,7 @@
       fields: [
         // auto = filled by the app, never typed (دائرة صحة and the hospital are fixed; the ward is the patient's unit; the rest comes from the card; no allergy)
         F("health", "دائرة صحة", 612, 774, 244, "r", { auto: true }), F("hospital", "مستشفى", 355, 524, 244, "r", { auto: true }), F("ward", "الردهة", 100, 296, 244, "r", { auto: true }),
-        F("name", "اسم المريض", 612, 770, 278, "r", { auto: true, dy: -4 }), F("age", "العمر", 355, 555, 278, "r", { auto: true, dy: -4 }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true, dy: -4 }),
+        F("name", "اسم المريض", 608, 770, 278, "r", { auto: true, dy: -4 }), F("age", "العمر", 355, 555, 278, "r", { auto: true, dy: -4 }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true, dy: -4 }),
         F("date", "التاريخ", 612, 800, 314, "r", { auto: true, dy: -4 }), F("scr", "S.cr", 355, 543, 314, "r", { auto: true, dy: -4 }),
         // the two typed fields are written in the MIDDLE of their cells
         F("dose", "الجرعة", 92, 688, 999, "r", { full: true, center: true, auto: true }), F("duration", "تحديد مدة الصرف", 92, 688, 1037, "r", { full: true, hidden: true, center: true })
@@ -223,8 +223,8 @@
   }
   // the chosen condition = its cell outlined (a tick would run over the printed text)
   const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
-  // the type size that fits the text in its box (about 0.55 em per character, never above 11 pt, never below 7)
-  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(11, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
+  // the type size that fits the text in its box (about 0.46 em per character with the paper's own fonts, never above 11 pt, never below 7)
+  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(11, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
 
   // → the page's HTML (the picture + every value + the ticks)
   function pageHtml(form, vals, st) {
