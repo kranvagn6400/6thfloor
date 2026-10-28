@@ -100,7 +100,7 @@
       fields: [
         // auto = filled by the app, never typed (دائرة صحة and the hospital are fixed; the ward is the patient's unit; the rest comes from the card; no allergy)
         // each top value is CENTRED between the label's colon and the cell's left column line
-        F("health", "دائرة صحة", 608, 778, 244, "r", { auto: true, center: true }), F("hospital", "مستشفى", 352, 541, 244, "r", { auto: true, center: true }), F("ward", "الردهة", 96, 297, 244, "r", { auto: true, center: true }),
+        F("health", "دائرة صحة", 608, 778, 244, "r", { auto: true, center: true, kashida: { at: [1, 2], share: [1, 2] } }), F("hospital", "مستشفى", 352, 529, 244, "r", { auto: true, center: true, kashida: { at: [2, 6], share: [2, 1] } }), F("ward", "الردهة", 96, 297, 244, "r", { auto: true, center: true }),
         F("name", "اسم المريض", 608, 772, 278, "r", { auto: true, dy: -4, center: true }), F("age", "العمر", 352, 557, 278, "r", { auto: true, dy: -4, center: true }), F("weight", "الوزن", 96, 300, 278, "r", { auto: true, dy: -4, center: true }),
         F("date", "التاريخ", 608, 802, 314, "r", { auto: true, dy: -4, center: true }), F("scr", "S.cr", 352, 545, 314, "r", { auto: true, dy: -4, center: true }),
         // the two typed fields are written in the MIDDLE of their cells
@@ -224,6 +224,31 @@
   }
   // the chosen condition = its cell outlined (a tick would run over the printed text)
   const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
+  // The fonts of the paper (also the stack the page CSS uses, so the measure matches what is drawn)
+  const FONT_STACK = "'Helvetica Neue', Helvetica, 'Geeza Pro', 'GeezaPro', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif";
+  // «مدينة الطب» → «مـــدينة الـــطب»: tatweels are put after the letter index at[i] of each word, so the whole text just fills the
+  // box (measured with the real font: n = (box − text) / width of one ـ), shared between the words by share[]
+  function kashida(text, f) {
+    try {
+      const words = String(text).split(" ");
+      if (words.length !== f.kashida.at.length) return text;
+      const cv = document.createElement("canvas").getContext("2d");
+      cv.font = "16px " + FONT_STACK;                                    // 12 pt
+      const tat = cv.measureText("ـ").width || 4;
+      const base = cv.measureText(words.join(" ")).width + 16 * 0.32 * (words.length - 1);
+      const target = (f.x1 - f.x0) * K * (96 / 72) * 0.94;
+      const n = Math.floor((target - base) / tat);
+      if (n < words.length) return text;
+      const total = f.kashida.share.reduce((a, b) => a + b, 0);
+      let left = n;
+      return words.map((w, i) => {
+        const cnt = i === words.length - 1 ? left : Math.round(n * f.kashida.share[i] / total);
+        left -= cnt;
+        const at = f.kashida.at[i];
+        return w.slice(0, at) + "ـ".repeat(Math.max(0, cnt)) + w.slice(at);
+      }).join(" ");
+    } catch (e) { return text; }
+  }
   // the type size that fits the text in its box (about 0.46 em per character with the paper's own fonts, never above 12 pt, never below 7)
   const sizeFor = (t, x0, x1) => Math.max(7, Math.min(12, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
 
@@ -234,9 +259,10 @@
     form.fields.forEach(f => {
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
-      const text = f.k === "date" ? slash(v) : v;
+      let text = f.k === "date" ? slash(v) : v;
+      if (f.kashida) text = kashida(text, f);
       // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form only a little)
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : sizeFor(text, f.x0, f.x1));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
