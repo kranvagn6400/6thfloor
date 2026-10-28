@@ -153,8 +153,68 @@
     const s = savedOf(p, "meronem", false), hist = ((s && s.hist) || []).filter(h => !(ignoreToday && h.date === todayISO()));
     const last = hist[hist.length - 1];
     if (last) return { end: last.end || ((last.start || last.day || 1) + (last.dur || 7) - 1), legacy: false };
-    if (day === 1) return { first: true };
+    if (day === 1 || (s && Array.isArray(s.rej) && s.rej.length)) return { first: true };   // a form that was refused still has to be made
     return { end: 14, legacy: true };
+  }
+
+  // ---- «رُفضت»: the pharmacy division / the manager refused the form → the patient is «Not indicated» for TODAY ----
+  // Nothing of that medicine is counted for the day: not sent to the chart, not in the order, not in the albumin amount, not charged in
+  // the private-ward record, and the handover paper says «Not indicated». Tomorrow everything is normal again.
+  function rejectedToday(p, formId) {
+    const st = savedOf(p, formId, false);
+    return !!(st && Array.isArray(st.rej) && st.rej.some(r => r.date === todayISO()));
+  }
+  // is this medicine of the patient one whose form was refused today? (albumin / meronem)
+  function medRejectedToday(p, pm) {
+    if (!p || !pm) return false;
+    const C = global.PharmacyClinical, c = catalog().find(m => m && m.id === pm.id) || {};
+    const probe = Object.assign({}, pm, c);
+    if (((C && C.isAlbumin(probe)) || /albumin/i.test(String(pm.id || ""))) && rejectedToday(p, "albumin")) return true;
+    if (MER_RE.test([pm.id, c.nameTrade, c.nameEn, c.nameAr].join(" ")) && rejectedToday(p, "meronem")) return true;
+    return false;
+  }
+  function markRejected(formId, p, key) {
+    const st = savedOf(p, formId, true), today = todayISO();
+    const snap = { hist: st.hist.slice(), pending: st.pending || null, rej: (st.rej || []).slice(), priv: null, hv: null };
+    // the Lasix that goes with this albumin (counted BEFORE the refusal is recorded: afterwards it is 0)
+    const BR = global.PharmacyChartBridge;
+    const lasixExtra = formId === "albumin" && BR && BR.lasixExtraOf ? BR.lasixExtraOf(p) : 0;
+    st.hist = st.hist.filter(h => h.date !== today);                       // a refused form was not «issued»
+    delete st.pending;
+    st.rej = (st.rej || []).filter(r => r.date !== today);
+    st.rej.push({ date: today, day: dayOf(findMed(formId, p), p) || 1 });
+    // the private-ward record: what that medicine cost today is taken off (restored by «تراجع»)
+    const pr = p.labs && p.labs._priv && p.labs._priv.days && p.labs._priv.days[today];
+    if (pr && Array.isArray(pr.items)) {
+      snap.priv = JSON.parse(JSON.stringify(pr.items));
+      const names = new Set();
+      ((p && p.medications) || []).forEach(pm => {
+        const hit = medRejectedToday(p, pm);
+        const c = catalog().find(m => m && m.id === pm.id) || {};
+        if (hit && String(c.nameChart || "").trim()) names.add(String(c.nameChart).trim());
+      });
+      const lasixName = lasixExtra ? String((catalog().find(m => m && m.id === BR.LASIX_ID) || {}).nameChart || "").trim() : "";
+      pr.items = pr.items.map(it => (lasixName && it.k === lasixName) ? Object.assign({}, it, { q: (Number(it.q) || 0) - lasixExtra }) : it)
+        .filter(it => !names.has(it.k) && (Number(it.q) || 0) > 0);
+    }
+    // the handover paper: «Not indicated» for the albumin of this patient
+    const H = global.PharmacyHandover;
+    if (formId === "albumin" && H && H.setAlbStatus && key) { snap.hv = H.getAlbStatus ? H.getAlbStatus(key) : ""; H.setAlbStatus(key, "ni"); }
+    return { ok: true, undo() {
+      st.hist = snap.hist; st.rej = snap.rej;
+      if (snap.pending) st.pending = snap.pending; else delete st.pending;
+      if (snap.priv && pr) pr.items = snap.priv;
+      if (formId === "albumin" && H && H.setAlbStatus && key) H.setAlbStatus(key, snap.hv || "");
+    } };
+  }
+  // «إلغاء الرفض»: the patient is indicated again (the albumin / meronem counts come back with the next send)
+  function clearRejected(formId, p, key) {
+    const st = savedOf(p, formId, true), today = todayISO(), before = (st.rej || []).slice();
+    st.rej = before.filter(r => r.date !== today);
+    const H = global.PharmacyHandover;
+    let hv = null;
+    if (formId === "albumin" && H && H.setAlbStatus && key) { hv = H.getAlbStatus ? H.getAlbStatus(key) : ""; if (hv === "ni") H.setAlbStatus(key, ""); }
+    return { ok: true, undo() { st.rej = before; if (formId === "albumin" && H && H.setAlbStatus && key && hv === "ni") H.setAlbStatus(key, "ni"); } };
   }
 
   // the record of a form (what is kept in hist once it is printed): the day of the course, the period and the days it covers
@@ -189,12 +249,14 @@
     if (!hit) return { state: "none", text: "ليس على الدواء" };
     const s = savedOf(p, formId, false), hist = (s && s.hist) || [];
     const day = dayOf(hit, p);
+    // refused today by the pharmacy division / the manager: «Not indicated» for the day (nothing is counted as taken)
+    if (rejectedToday(p, formId)) return { state: "rej", text: "رُفضت اليوم — Not indicated", day };
     if (hist.some(h => h.date === todayISO())) return { state: "done", text: "طُبعت اليوم ✓", day };
     // the file was made today but «تم الطبع» is not pressed yet: the form is still required
     if (s && s.pending && s.pending.date === todayISO()) return { state: "due", wait: true, text: "أُنشئ الملف — بانتظار الطبع", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
     const c = courseOf(p, day);
-    if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
+    if (c.first) return { state: "due", text: day === 1 ? "مطلوبة — اليوم الأول" : "مطلوبة — رُفضت سابقًا", day };
     const end = c.end;
     if (!durationsAfter(end).length) return { state: "none", text: "آخر مدة صرف (حتى اليوم " + end + ") — لا تجديد بعد 21 يومًا", day };
     if (day != null && day > MAX_COURSE) return { state: "none", text: "تجاوز 21 يومًا — لا فائدة من الاستمرار", day };
@@ -386,6 +448,14 @@
     #pf-editor .pfs-all-done { background: #1b8a3a; color: #fff; }
     #pf-editor .pfs-batch button:disabled { opacity: .6; }
     #pf-editor .pfs-main { display: block; width: 100%; text-align: start; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
+    #pf-editor .pfs-acts { display: flex; gap: 8px; margin-top: 10px; }
+    #pf-editor .pfs-acts button { flex: 1; height: 42px; border: 0; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfs-acts .pfs-done { margin-top: 0; width: auto; }
+    #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { background: #c2412d; color: #fff; }
+    #pf-editor .pfs-unrej, #pf-editor .pfs-unrej-sm { background: var(--bg, #eef2f6); color: var(--text, #14211f); }
+    #pf-editor .pfs-rej-sm, #pf-editor .pfs-unrej-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
+    #pf-editor .pfs-st.rej { background: #fde2e0; color: #a02315; }
+    html[data-theme="dark"] #pf-editor .pfs-st.rej { background: #4d1d18; color: #ffb4a8; }
     #pf-editor .pfs-done { display: block; width: 100%; margin-top: 10px; height: 42px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
     #pf-editor .pfs-done-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
     #pf-editor .pfs-st.wait { background: #dbeafe; color: #1d4ed8; }
@@ -489,7 +559,7 @@
       if (!on) return false;
       // the meronem form: only the patients who deserve one now (first day, or the period ended and no new form yet —
       // a late one keeps showing on day 15, 16… until the new form is made)
-      if (V.form === "meronem") { const s = dueInfo("meronem", x.p).state; if (s !== "due" && s !== "late") return false; }
+      if (V.form === "meronem") { const s = dueInfo("meronem", x.p).state; if (s !== "due" && s !== "late" && s !== "rej") return false; }
       if (!q) return true;
       return (String(x.p.name || "").toLowerCase().indexOf(q) >= 0) || (String(x.p.plateNumber || "").indexOf(q) >= 0);
     });
@@ -497,13 +567,19 @@
       const d = dueInfo(V.form, x.p);
       // «تم الطبع» beside a form that needs printing: albumin any time, meronem once its file was made
       const canPrint = d.state === "due" || d.state === "late";
+      const canReject = d.state === "due" || d.state === "late" || d.state === "done";
+      const acts = (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") +
+        (canReject ? '<button type="button" class="pfs-rej">رُفضت</button>' : "") +
+        (d.state === "rej" ? '<button type="button" class="pfs-unrej">إلغاء الرفض</button>' : "");
       return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
-        (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") + "</div>";
+        (acts ? '<div class="pfs-acts">' + acts + "</div>" : "") + "</div>";
     }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "</div>";
     updateBatch();
     const list = $("pfs-list");
     list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
     list.querySelectorAll(".pfs-done").forEach(b => b.addEventListener("click", () => printedFromList(b.closest(".pfs-pt").dataset.key)));
+    list.querySelectorAll(".pfs-rej").forEach(b => b.addEventListener("click", () => rejectFromList(b.closest(".pfs-pt").dataset.key, true)));
+    list.querySelectorAll(".pfs-unrej").forEach(b => b.addEventListener("click", () => rejectFromList(b.closest(".pfs-pt").dataset.key, false)));
   }
   // asks which dispensing period (the allowed ones) — a small dialog; resolves 0 when cancelled
   function pickDuration(allowed, name) {
@@ -518,6 +594,16 @@
       document.body.appendChild(o);
       o.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b && e.target !== o) return; o.remove(); resolve(b ? +b.dataset.d : 0); });
     });
+  }
+  function rejectFromList(key, reject) {
+    const p = App().state.patients[key];
+    if (!p) return;
+    const form = V.form;
+    const res = reject ? markRejected(form, p, key) : clearRejected(form, p, key);
+    App().savePatient(key);
+    if (V && V.view === "list") drawList();
+    refreshAlert();
+    undoToast((reject ? "سُجّل رفض الاستمارة (Not indicated لهذا اليوم): " : "أُلغي الرفض: ") + String(p.name || "").trim(), () => { res.undo(); App().savePatient(key); if (V && V.view === "list") drawList(); refreshAlert(); });
   }
   async function printedFromList(key) {
     const p = App().state.patients[key];
@@ -657,6 +743,15 @@
     if (dchips) dchips.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b) return; setDur(+b.dataset.d); });
     $("pfs-pdf").addEventListener("click", () => savePdf($("pfs-pdf")));
     $("pfs-sum").addEventListener("click", (e) => {
+      const rj = e.target.closest("#pfs-reject, #pfs-unreject");
+      if (rj) {
+        const key = V.key, p = V.p, form = V.form, on = rj.id === "pfs-reject";
+        const res = on ? markRejected(form, p, key) : clearRejected(form, p, key);
+        if (key) App().savePatient(key);
+        updateSum(); refreshAlert();
+        undoToast(on ? "سُجّل رفض الاستمارة (Not indicated لهذا اليوم)" : "أُلغي الرفض", () => { res.undo(); if (key) App().savePatient(key); if (V && V.p === p) updateSum(); refreshAlert(); });
+        return;
+      }
       if (!e.target.closest("#pfs-printed")) return;
       const key = V.key, p = V.p, form = V.form;
       const hasFile = V.st.pending && V.st.pending.date === todayISO();
@@ -689,7 +784,9 @@
     const el = $("pfs-sum"); if (!el) return;
     const d = dueInfo(V.form, V.p);
     el.innerHTML = '<span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span>" +
-      ((d.state === "due" || d.state === "late") ? '<button type="button" class="pfs-done-sm" id="pfs-printed">تم الطبع</button>' : "");
+      ((d.state === "due" || d.state === "late") ? '<button type="button" class="pfs-done-sm" id="pfs-printed">تم الطبع</button>' : "") +
+      ((d.state === "due" || d.state === "late" || d.state === "done") ? '<button type="button" class="pfs-rej-sm" id="pfs-reject">رُفضت</button>' : "") +
+      (d.state === "rej" ? '<button type="button" class="pfs-unrej-sm" id="pfs-unreject">إلغاء الرفض</button>' : "");
   }
 
   // the page(s) to print with the values as they are now
@@ -868,7 +965,7 @@
     document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAlert(); });
   }
 
-  global.PharmacyPatientForms = { open: openList, words, dueInfo, FORMS, refreshAlert, pendingForms, _dbg: { pageHtml, cssText, spaced, tbox } };
+  global.PharmacyPatientForms = { open: openList, words, dueInfo, FORMS, refreshAlert, pendingForms, medRejectedToday, rejectedToday, _dbg: { pageHtml, cssText, spaced, tbox } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

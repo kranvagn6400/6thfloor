@@ -461,7 +461,10 @@
     $("hv-print").addEventListener("click", preview);
   }
 
-  const handover = { open, collect, documentHtml, buildPdf, deliverPdf, load, PREP };
+  // the albumin entitlement status of a patient for TODAY ("ni" = Not indicated), set from the forms page when the form is refused
+  function setAlbStatus(key, status) { const v = load(); if (status) v.alb[key] = status; else delete v.alb[key]; save(v); }
+  function getAlbStatus(key) { return load().alb[key] || ""; }
+  const handover = { open, collect, documentHtml, buildPdf, deliverPdf, load, PREP, setAlbStatus, getAlbStatus };
   global.PharmacyHandover = handover;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

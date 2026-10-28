@@ -149,10 +149,15 @@
   // Lasix quantity sent to the chart (the Lasix order itself is never changed).
   const LASIX_ID = "lasix-20mg-amp";
   function isAlbuminMed(pm) { return !!(pm && /albumin/i.test(String(pm.id || ""))); }
+  // the form of this medicine was refused today (forms page «رُفضت»): not sent, not counted
+  function refusedToday(patient, pm) {
+    const F = global.PharmacyPatientForms;
+    return !!(F && F.medRejectedToday && F.medRejectedToday(patient, pm));
+  }
   function lasixExtraOf(patient) {
     let n = 0;
     ((patient && patient.medications) || []).forEach(pm => {
-      if (isAlbuminMed(pm)) n += parseInt(pm.lasixExtra, 10) || 0;
+      if (isAlbuminMed(pm) && !refusedToday(patient, pm)) n += parseInt(pm.lasixExtra, 10) || 0;
     });
     return n;
   }
@@ -179,7 +184,7 @@
         if (!p || !p.name || !p.name.trim()) return;
 
         const meds = (Array.isArray(p.medications) ? p.medications : [])
-          .filter(pm => pm && pm.id !== "syringe-5cc")
+          .filter(pm => pm && pm.id !== "syringe-5cc" && !refusedToday(p, pm))
           .map(pm => {
             const catalog = (state.medications || []).find(m => m && m.id === pm.id);
             const source = catalog || pm;
@@ -408,6 +413,7 @@
     freqToDose,
     dailyQuantity,
     lasixExtraOf,
+    refusedToday,
     LASIX_ID,
     buildChartTSV,
     CHART_URL,
