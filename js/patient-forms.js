@@ -368,6 +368,12 @@
     #pf-editor .pfs-chip { height: 42px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--border, #dbe2e8); background: var(--surface, #fff); color: var(--text, #14211f); font: inherit; font-weight: 800; font-size: 13px; cursor: pointer; }
     #pf-editor .pfs-chip.is-on { background: var(--bg, #eef2f6); border-color: var(--fill, var(--primary, #1f6f9f)); }
     #pf-editor .pfs-pt { display: block; width: 100%; text-align: start; border: 1px solid var(--border, #dbe2e8); background: var(--surface, #fff); color: var(--text, #14211f); border-radius: 14px; padding: 12px; margin-bottom: 10px; font: inherit; cursor: pointer; }
+    #pf-editor .pfs-batch { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    #pf-editor .pfs-batch button { flex: 1 1 160px; height: 46px; border: 0; border-radius: 14px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfs-batch button[hidden] { display: none; }
+    #pf-editor .pfs-print-all { background: var(--fill, var(--primary, #1f6f9f)); color: #fff; }
+    #pf-editor .pfs-all-done { background: #1b8a3a; color: #fff; }
+    #pf-editor .pfs-batch button:disabled { opacity: .6; }
     #pf-editor .pfs-main { display: block; width: 100%; text-align: start; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
     #pf-editor .pfs-done { display: block; width: 100%; margin-top: 10px; height: 42px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
     #pf-editor .pfs-done-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
@@ -440,6 +446,7 @@
         '<div class="pfs-tabs">' + tabs + "</div>" +
         (FORMS[V.form].hint ? '<p class="pfe-hint" style="margin:0 2px 10px">' + esc(FORMS[V.form].hint) + "</p>" : "") +
         '<div class="pfs-search"><input id="pfs-q" placeholder="ابحث باسم المريض أو رقم الطبلة" autocomplete="off" value="' + esc(V.q) + '"><button type="button" class="pfs-chip' + (V.all ? " is-on" : "") + '" id="pfs-all">كل المرضى</button></div>' +
+        '<div class="pfs-batch"><button type="button" class="pfs-print-all" id="pfs-print-all"></button><button type="button" class="pfs-all-done" id="pfs-all-done" hidden>تم طباعة الكل</button></div>' +
         '<div id="pfs-list"></div>' +
       "</div></div>";
     fillList();
@@ -447,6 +454,23 @@
     el.querySelectorAll(".pfs-tab").forEach(b => b.addEventListener("click", () => { V.form = b.dataset.f; drawList(); }));
     $("pfs-q").addEventListener("input", (e) => { V.q = e.target.value; fillList(); });
     $("pfs-all").addEventListener("click", () => { V.all = !V.all; $("pfs-all").classList.toggle("is-on", V.all); fillList(); });
+    $("pfs-print-all").addEventListener("click", () => printAll(V.form));
+    $("pfs-all-done").addEventListener("click", () => printedAll(V.form));
+  }
+  // the batch buttons of the open tab: how many forms are required / waiting for the print
+  function updateBatch() {
+    const b = $("pfs-print-all"), d = $("pfs-all-done");
+    if (!b || !d) return;
+    let need = 0, wait = 0;
+    patients().forEach(x => {
+      if (!findMed(V.form, x.p)) return;
+      const i = dueInfo(V.form, x.p);
+      if (i.state === "due" || i.state === "late") { need++; if (i.wait) wait++; }
+    });
+    b.hidden = !need;
+    b.textContent = "طباعة كل استمارات " + FORMS[V.form].short + " (" + need + ")";
+    d.hidden = !wait;
+    d.textContent = "تم طباعة الكل (" + wait + ")";
   }
   function fillList() {
     const q = V.q.trim().toLowerCase();
@@ -466,6 +490,7 @@
       return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
         (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") + "</div>";
     }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "<br>اضغط «كل المرضى» لإصدار الاستمارة لمريض آخر.</div>";
+    updateBatch();
     const list = $("pfs-list");
     list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
     list.querySelectorAll(".pfs-done").forEach(b => b.addEventListener("click", () => printedFromList(b.closest(".pfs-pt").dataset.key)));
@@ -609,12 +634,13 @@
     $("pfs-preview").addEventListener("click", () => preview($("pfs-preview")));
   }
   // the dispensing periods the form may be made for now ([] = none: the 21-day limit is reached)
-  function allowedNow() {
-    const day = dayOf(findMed("meronem", V.p), V.p);
+  function allowedFor(p) {
+    const day = dayOf(findMed("meronem", p), p);
     if (day != null && day > MAX_COURSE) return [];          // past 21 days: no more forms
-    const c = courseOf(V.p, day);
+    const c = courseOf(p, day);
     return c.first ? [7, 14] : durationsAfter(c.end);
   }
+  function allowedNow() { return allowedFor(V.p); }
   // meronem: a period must be chosen, and it must be an allowed one
   function checkDuration() {
     if (!FORMS[V.form].duration) return true;
@@ -684,6 +710,81 @@
       flash("تعذّر إنشاء الملف: " + (err && err.message || err));
     } finally { if (b) { b.disabled = false; b.textContent = label; } }
   }
+  // ---- print ALL the required forms of one kind (albumin on its own, meronem on its own) as ONE file, a page per patient ----
+  function formValues(formId, key, p) {
+    const st = savedOf(p, formId, true), d = defaults(formId, key, p);
+    const eff = Object.assign({}, d, st.vals);
+    FORMS[formId].fields.forEach(f => { if (f.auto) eff[f.k] = d[f.k]; });
+    if (FORMS[formId].duration && !eff.duration && st.vals.durDays) eff.duration = durText(st.vals.durDays);
+    return { eff, st };
+  }
+  let batchBusy = false;
+  async function printAll(formId) {
+    if (batchBusy) return;
+    const form = FORMS[formId], btn = $("pfs-print-all");
+    const rows = patients().filter(x => findMed(formId, x.p)).filter(x => { const s = dueInfo(formId, x.p).state; return s === "due" || s === "late"; });
+    if (!rows.length) { flash("لا توجد استمارات مطلوبة"); return; }
+    const pagesHtml = [], used = [];
+    let skipped = 0, noCondition = 0;
+    rows.forEach(x => {
+      const st = savedOf(x.p, formId, true);
+      if (form.duration) {                              // meronem: a valid period must be chosen (a single allowed one is taken)
+        const allowed = allowedFor(x.p);
+        let d = parseInt(st.vals.durDays, 10) || 0;
+        if (allowed.length === 1 && allowed.indexOf(d) < 0) { d = allowed[0]; st.vals.durDays = String(d); st.vals.duration = durText(d); }
+        if (!allowed.length || allowed.indexOf(d) < 0) { skipped++; return; }
+      }
+      const v = formValues(formId, x.key, x.p);
+      if (!v.st.ticks.length) noCondition++;
+      pagesHtml.push(pageHtml(form, v.eff, v.st));
+      used.push(x);
+    });
+    if (!pagesHtml.length) { flash("لم تُحدَّد مدة الصرف لأي مريض — افتح كل استمارة واختر المدة أولًا"); return; }
+    batchBusy = true;
+    const label = btn ? btn.textContent : "";
+    if (btn) btn.disabled = true;
+    try {
+      const JsPDF = (global.jspdf && global.jspdf.jsPDF) || global.jsPDF;
+      if (!JsPDF) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
+      const o = renderOpts(form);
+      const pdf = new JsPDF({ unit: "pt", format: [o.w, o.h], orientation: o.w > o.h ? "landscape" : "portrait" });
+      await PF().renderPages(pagesHtml, (canvas, i) => {
+        if (i > 0) pdf.addPage([o.w, o.h]);
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.9), "JPEG", 0, 0, o.w, o.h);
+        if (btn) btn.textContent = "جارٍ التجهيز " + (i + 1) + " / " + pagesHtml.length;
+      }, o);
+      const blob = pdf.output("blob");
+      const H = global.PharmacyHandover;
+      const how = H && H.deliverPdf ? await H.deliverPdf(blob, "استمارات-" + form.short + "-" + todayISO() + ".pdf") : "downloaded";
+      if (how === "cancelled") { flash("لم يُحفظ الملف — الاستمارات ما زالت مطلوبة"); return; }
+      used.forEach(x => { savedOf(x.p, formId, true).pending = buildEntry(formId, x.p); if (App()) App().savePatient(x.key); });
+      refreshAlert();
+      if (V && V.view === "list") drawList();
+      flash("حُفظ ملف " + used.length + " استمارة" + (skipped ? " — تُخطّي " + skipped + " لعدم تحديد مدة الصرف" : "") + (noCondition ? " — " + noCondition + " بلا حالة مختارة" : "") + ". اضغط «تم طباعة الكل» بعد الطباعة");
+    } catch (err) {
+      console.error("[patient-forms] batch", err);
+      flash("تعذّر إنشاء الملف: " + (err && err.message || err));
+    } finally {
+      batchBusy = false;
+      const b2 = $("pfs-print-all"); if (b2) { b2.disabled = false; if (b2.textContent.indexOf("جارٍ") === 0) b2.textContent = label; }
+    }
+  }
+  // «تم طباعة الكل»: every file made today and waiting for the print is marked printed (one «تراجع» takes them all back)
+  function printedAll(formId) {
+    const done = [];
+    patients().forEach(x => {
+      if (!findMed(formId, x.p)) return;
+      const st = savedOf(x.p, formId, false);
+      if (!(st && st.pending && st.pending.date === todayISO())) return;
+      const res = markPrinted(formId, x.p, false);
+      if (res.ok) { done.push({ x, res }); if (App()) App().savePatient(x.key); }
+    });
+    if (!done.length) { flash("لا توجد استمارات بانتظار الطبع"); return; }
+    refreshAlert();
+    if (V && V.view === "list") drawList();
+    undoToast("سُجّلت طباعة " + done.length + " استمارة", () => { done.forEach(d => { d.res.undo(); if (App()) App().savePatient(d.x.key); }); if (V && V.view === "list") drawList(); refreshAlert(); });
+  }
+
   // the file was saved / shared: the form now WAITS for the print — «تم الطبع» is what takes it off the required list
   function makePending() {
     if (!V) return;

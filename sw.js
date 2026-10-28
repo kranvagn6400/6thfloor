@@ -12,7 +12,7 @@
    - Supabase API calls are never cached.
    ============================================================ */
 
-const CACHE_VERSION = 'pharma-ward-v396';
+const CACHE_VERSION = 'pharma-ward-v397';
 const PRECACHE_URLS = [
   './',
   './index.html',
