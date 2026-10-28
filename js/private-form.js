@@ -264,6 +264,7 @@
   // opts (optional): { w, h, css, rootId } — the page size in pt, its stylesheet and root id (default = the private form)
   async function renderPages(pages, each, opts) {
     opts = opts || {};
+    const SCALE = opts.scale || 2;
     const W = opts.w || PG.w, H = opts.h || PG.h, rootId = opts.rootId || "pf-pdf-root";
     const H2P = global.html2pdf;
     if (!H2P) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
@@ -287,7 +288,7 @@
         holder.appendChild(root);
         // a background picture must be decoded before the page is photographed
         await Promise.all(Array.from(root.querySelectorAll("img")).map(im => (im.decode ? im.decode().catch(() => {}) : Promise.resolve())));
-        const canvas = await H2P().set({ jsPDF: { unit: "pt", format: [W, H], orientation: W > H ? "landscape" : "portrait" }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 } }).from(root).toCanvas().get("canvas");
+        const canvas = await H2P().set({ jsPDF: { unit: "pt", format: [W, H], orientation: W > H ? "landscape" : "portrait" }, html2canvas: { scale: SCALE, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 } }).from(root).toCanvas().get("canvas");
         each(canvas, i);
       }
     } finally {

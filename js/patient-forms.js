@@ -276,7 +276,8 @@
     (form.culture || []).forEach(c => { if (st.culture === c.v) o += ring(c.rect); });
     return o + "</div>";
   }
-  const renderOpts = (form) => ({ w: form.px[0] * K, h: form.px[1] * K, css: cssText("#pfs-root"), rootId: "pfs-root" });
+  // scale 3 = 4 pixels per point (about 290 dpi) — the background pictures were made at the same density, so nothing is resampled
+  const renderOpts = (form) => ({ w: form.px[0] * K, h: form.px[1] * K, css: cssText("#pfs-root"), rootId: "pfs-root", scale: 3 });
 
   // ---------------- the screens ----------------
   let V = null;     // { view: "list" | "edit", form, filter, all, q, key, p, st, vals }
