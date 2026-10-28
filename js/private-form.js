@@ -10,7 +10,7 @@
         sometimes the night pharmacist, who does not use the app, handed the medicine), the source (شراء / كيماديا),
         unit price, administrative fees; then the form is printed as a PDF (landscape A4, drawn like the paper form).
    labs._priv = { days: { "YYYY-MM-DD": { items: [{ k, n, q }] } }, extra: [{ k, n, q }], meta: { k: { src, price, fee } },
-                  from, to, ward }
+                  from, to }
    ============================================================ */
 (function (global) {
   "use strict";
@@ -220,7 +220,7 @@
   `;
   }
 
-  // form = { name, plate, ward, from, to, rows: [{ n, q, src, price, sum, fee, total }] }
+  // form = { name, plate, from, to, rows: [{ n, q, src, price, sum, fee, total }] }
   function pagesOf(form) {
     const pages = [];
     const n = Math.max(1, Math.ceil(form.rows.length / ROWS));
@@ -236,8 +236,6 @@
       h += box("s", 800, 1104, 133, 28, esc(form.name), 11);
       h += box("s b", 680, 808, 133, 28, lab("رقم الطبلة:"), 11);
       h += box("s", 520, 708, 133, 28, esc(form.plate), 11);
-      h += box("s b", 270, 363, 133, 28, lab("الردهة:"), 11);
-      h += box("s", 30, 296, 133, 28, esc(form.ward), form.ward.length > 24 ? 9 : form.ward.length > 18 ? 10 : 11);
       // the ruled table: outer lines, the column lines, the header line (darker), a line under each row
       const bottom = HEAD_B + ROWS * ROW_H;
       h += hline(COLS[8], COLS[0], TOP, "#9a9a9a") + hline(COLS[8], COLS[0], bottom, "#9a9a9a");
@@ -296,7 +294,7 @@
   }
 
   // ---- 4) the editor ----
-  let S = null;            // { key, p, pr, name, plate, ward }
+  let S = null;            // { key, p, pr, name, plate }
   let saveTimer = null;
 
   function flash(msg) { const a = App(); if (a && a.flashHint) a.flashHint(msg); }
@@ -375,6 +373,7 @@
   }
 
   function close() {
+    if (global.visualViewport) global.visualViewport.removeEventListener("resize", fitSuggestions);
     const e = $("pf-editor");
     if (e) e.remove();
     if (S && S.key) { clearTimeout(saveTimer); const a = App(); if (a) a.savePatient(S.key); }
@@ -388,7 +387,7 @@
       // المجموع / فراض ادارية / الإجمالي are the accountant's: left blank on the paper
       return { n: x.n, k: x.k, q: x.q, src: srcOf(meta), price: num(meta.price), sum: null, fee: null, total: null };
     });
-    return { name: S.name, plate: S.plate, ward: S.ward, from: r.from.replace(/-/g, "/"), to: r.to.replace(/-/g, "/"), rows };
+    return { name: S.name, plate: S.plate, from: r.from.replace(/-/g, "/"), to: r.to.replace(/-/g, "/"), rows };
   }
 
   const fmtDay = (d) => d.replace(/-/g, "/");
@@ -450,6 +449,20 @@
     });
     return out;
   }
+  // On a phone the keyboard covers the lower part of the screen: bring the field to the top of the visible area,
+  // give the page room to scroll, and size the list to what is left above the keyboard.
+  function fitSuggestions() {
+    const box = $("pfe-sug"), xn = $("pfe-xn");
+    const sc = document.querySelector("#pf-editor .pfe-scroll"), top = document.querySelector("#pf-editor .pfe-top");
+    if (!box || !xn || !sc || !top || box.hidden) return;
+    const vv = global.visualViewport;
+    const visibleBottom = (vv ? vv.offsetTop + vv.height : global.innerHeight) - 8;
+    sc.style.paddingBottom = "70vh";
+    sc.scrollTop += xn.getBoundingClientRect().top - (top.getBoundingClientRect().bottom + 12);
+    box.style.maxHeight = Math.max(110, Math.min(260, visibleBottom - xn.getBoundingClientRect().bottom - 8)) + "px";
+  }
+  function relaxScroll() { const sc = document.querySelector("#pf-editor .pfe-scroll"); if (sc) sc.style.paddingBottom = ""; }
+
   function showSuggestions() {
     const box = $("pfe-sug"), q = $("pfe-xn").value.trim();
     if (!box) return;
@@ -460,6 +473,8 @@
       : '<div class="pfe-none">لا يوجد في الكتالوج — يُضاف بالاسم كما كتبته</div>';
     box._list = list;
     box.hidden = false;
+    fitSuggestions();
+    setTimeout(fitSuggestions, 250);          // again once the keyboard has finished opening
   }
 
   // key = a bed in the ward; or key null + source = an archived record (المرضى السابقون) with opts { roomId, exit }
@@ -474,7 +489,7 @@
     const r = key ? roomOfKey(key) : (opts.roomId ? global.PharmacyWard.roomById(opts.roomId) : null);
     const pr = priv(p, true);
     // الردهة is left empty (the unit is already known in the app); the pharmacist may type it
-    const mine0 = S = { key: key || null, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), ward: pr.ward || "" };
+    const mine0 = S = { key: key || null, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim() };
     const old = $("pf-editor");
     if (old) old.remove();
     const el = document.createElement("div");
@@ -487,7 +502,6 @@
         '<div class="pfe-card"><h4 class="pfe-h">بيانات المريض</h4>' +
           '<div class="pfe-who"><span class="pfe-av">' + esc(initial) + "</span><div><b>" + esc(S.name) + '</b><span class="pfe-chip">رقم الطبلة: ' + esc(S.plate || "—") + "</span></div></div>" +
           '<div class="pfe-fields">' +
-            '<label class="pfe-f full">الردهة<input id="pfe-ward" value="' + esc(S.ward) + '"></label>' +
             '<label class="pfe-f">تاريخ الدخول<input type="date" id="pfe-from" value="' + rg.from + '"></label>' +
             '<label class="pfe-f">تاريخ الخروج<input type="date" id="pfe-to" value="' + rg.to + '"></label>' +
           "</div>" + (S.key ? "" : '<p class="pfe-hint">هذا السجل من المرضى السابقين: يمكنك تعديل الأرقام والطباعة، لكن التعديلات لا تُحفظ.</p>') + "</div>" +
@@ -533,6 +547,9 @@
     $("pfe-close").addEventListener("click", close);
     $("pfe-xn").addEventListener("input", showSuggestions);
     $("pfe-xn").addEventListener("focus", showSuggestions);
+    $("pfe-xn").addEventListener("blur", () => setTimeout(() => { const sg = $("pfe-sug"); if (sg) sg.hidden = true; relaxScroll(); }, 200));
+    $("pfe-sug").addEventListener("mousedown", (e) => e.preventDefault());       // choosing a suggestion keeps the keyboard / field focus
+    if (global.visualViewport) global.visualViewport.addEventListener("resize", fitSuggestions);
     $("pfe-sug").addEventListener("click", (e) => {
       const b = e.target.closest("button[data-i]");
       if (!b) return;
@@ -541,7 +558,6 @@
       $("pfe-sug").hidden = true;
       $("pfe-xq").focus();
     });
-    $("pfe-ward").addEventListener("input", (e) => { S.ward = e.target.value; S.pr.ward = e.target.value; saveSoon(); });
     ["pfe-from", "pfe-to"].forEach(id => $(id).addEventListener("change", (e) => {
       if (!isDay(e.target.value)) return;
       S.pr[id === "pfe-from" ? "from" : "to"] = e.target.value;
