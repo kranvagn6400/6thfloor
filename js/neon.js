@@ -36,6 +36,14 @@
         if (nb && nb !== t) flash(nb, "neon-hit", 1400);
       }, 90);
     }
+    // same for the «استمارات المرضى» tabs (الألبومين / الميرونيم): the page is redrawn on a tap
+    if (t.classList.contains("pfs-tab")) {
+      var form = t.dataset.f;
+      setTimeout(function () {
+        var nb = document.querySelector('#pf-editor .pfs-tab[data-f="' + form + '"]');
+        if (nb && nb !== t) flash(nb, "neon-hit", 1400);
+      }, 90);
+    }
   }, true);
 
   // a medicine ticked in the «إضافة علاج» sheet → a light sweep over its row
