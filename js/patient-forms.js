@@ -224,7 +224,7 @@
   // the chosen condition = its cell outlined (a tick would run over the printed text)
   const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
   // the type size that fits the text in its box (about 0.55 em per character, never above 11 pt, never below 7)
-  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(9.5, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
+  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(11, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.55)));
 
   // → the page's HTML (the picture + every value + the ticks)
   function pageHtml(form, vals, st) {
@@ -234,8 +234,8 @@
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
       const text = f.k === "date" ? slash(v) : v;
-      // the typed text sits on the printed label's line: Arabic values a little higher than their box centre, English ones slightly
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.dy != null ? f.dy : f.side === "l" ? -3.5 : -7), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
+      // typed in the paper's own fonts at the label's size (11 pt) and on the label's line (Arabic labels sit ~2 px above their cell's centre)
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.side === "l" ? 0 : -2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), sizeFor(text, f.x0, f.x1));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
