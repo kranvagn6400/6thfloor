@@ -601,7 +601,9 @@
       const blob = pdf.output("blob");
       const H = global.PharmacyHandover;
       const name = form.pdfName + "-" + String(V.p.name || "مريض").trim().replace(/[\\/:*?"<>|\s]+/g, "-") + ".pdf";
-      if (H && H.deliverPdf) await H.deliverPdf(blob, name);
+      // the form counts as issued only when the file was really saved / shared: closing the share sheet («إلغاء») does not
+      const how = H && H.deliverPdf ? await H.deliverPdf(blob, name) : "downloaded";
+      if (how === "cancelled") { flash("لم يُحفظ الملف — الاستمارة ما زالت مطلوبة"); return; }
       issued();
     } catch (err) {
       console.error("[patient-forms] pdf", err);
