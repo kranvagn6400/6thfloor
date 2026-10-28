@@ -217,6 +217,17 @@
   }
 
 
+  // the NEWEST result of a lab, by its date: the card's current value or any older-entered one in the lab history
+  // (a result keyed in with an earlier date must not hide a newer one)
+  function latestLab(p, key) {
+    const labs = (p && p.labs) || {};
+    let best = { v: labs[key] != null ? String(labs[key]).trim() : "", d: (labs._dates && labs._dates[key]) || "" };
+    (Array.isArray(p && p.labHistory) ? p.labHistory : []).forEach(h => {
+      if (h && h.key === key && h.value != null && String(h.value).trim() && h.date && h.date > best.d) best = { v: String(h.value).trim(), d: h.date };
+    });
+    return best.v;
+  }
+
   // the values the form starts with (what the card knows); anything the pharmacist typed overrides it
   function defaults(formId, key, p) {
     const labs = p.labs || {}, hit = findMed(formId, p), day = dayOf(hit, p);
@@ -229,8 +240,8 @@
         if (global.PharmacyClinical.isAlbumin(Object.assign({}, pm, c)) && Bridge && Bridge.dailyQuantity) qty += Bridge.dailyQuantity(pm.id, pm.frequency || c.defaultFrequency || "", c.form) || 0;
       });
       return { name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(),
-        ward: "السادس - " + unit, alb: labs.albumin || "", count: qty ? String(qty) : "", words: qty ? words(qty) : "",
-        day: day ? ordinal(day) : "", weight: labs.weight || "", creat: labs.creatinine || "" };
+        ward: "السادس - " + unit, alb: latestLab(p, "albumin"), count: qty ? String(qty) : "", words: qty ? words(qty) : "",
+        day: day ? ordinal(day) : "", weight: labs.weight || "", creat: latestLab(p, "creatinine") };
     }
     // the dose as the ward writes it: «1g x 3» / «500mg x 2» (the strength × the times a day, from the card)
     let dose = "";
@@ -242,7 +253,7 @@
       dose = strength && nm ? strength + " x " + nm.m : [strength, freq].filter(Boolean).join(" ");
     }
     return { health: "مدينة الطب", hospital: "بغداد التعليمي", ward: unit, name: String(p.name || "").trim(), age: String(p.age || "").trim(),
-      weight: labs.weight || "", date: todayISO(), scr: labs.creatinine || "", dose, duration: "" };
+      weight: labs.weight || "", date: todayISO(), scr: latestLab(p, "creatinine"), dose, duration: "" };
   }
 
   // the dispensing period as the ward writes it: «7 أيام» / «14 يوما»
