@@ -451,7 +451,9 @@
     #pf-editor .pfs-acts { display: flex; gap: 8px; margin-top: 10px; }
     #pf-editor .pfs-acts button { flex: 1; height: 42px; border: 0; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
     #pf-editor .pfs-acts .pfs-done { margin-top: 0; width: auto; }
-    #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { background: #c2412d; color: #fff; }
+    #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { background: #c2412d; color: #fff; animation: pfsRejBlink .9s ease-in-out infinite; }
+    @keyframes pfsRejBlink { 0%, 100% { background: #d92d2d; } 50% { background: #5a0f0f; } }
+    @media (prefers-reduced-motion: reduce) { #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { animation: none; } }
     #pf-editor .pfs-unrej, #pf-editor .pfs-unrej-sm { background: var(--bg, #eef2f6); color: var(--text, #14211f); }
     #pf-editor .pfs-rej-sm, #pf-editor .pfs-unrej-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
     #pf-editor .pfs-st.rej { background: #fde2e0; color: #a02315; }

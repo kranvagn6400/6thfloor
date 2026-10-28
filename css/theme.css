@@ -2540,3 +2540,11 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes orderSwitch { 0%, 100% { background: #f5b301; } 50% { background: #2f7dd1; } }
 #order-list-btn.is-alert { animation: orderSwitch 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { #forms-btn.is-alert { animation: none; box-shadow: 0 0 0 2px #ffb020; } #order-list-btn.is-alert { animation: none; background: #2f7dd1; } }
+
+/* log-out buttons: slow red danger glow (effect 3) */
+@keyframes logoutGlow {
+  0%, 100% { box-shadow: 0 0 6px 1px rgba(255, 40, 40, .5); }
+  50%      { box-shadow: 0 0 22px 7px rgba(255, 40, 40, 1); }
+}
+#logout-btn, #settings-logout-btn { animation: logoutGlow 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { #logout-btn, #settings-logout-btn { animation: none; } }
