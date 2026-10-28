@@ -98,7 +98,7 @@
     meronem: {
       id: "meronem", title: "استمارة الميرونيم / الإيميبينيم", short: "الميرونيم", bg: "img/forms/meronem.jpg",
       px: [952, 1347], items: MER_ITEMS, culture: MER_CULTURE, duration: true, pdfName: "استمارة-ميرونيم",
-      hint: "تُصدر في أول يوم، ثم في آخر يوم من مدة الصرف (اليوم 7 أو 14)",
+      hint: "",
       fields: [
         // auto = filled by the app, never typed (دائرة صحة and the hospital are fixed; the ward is the patient's unit; the rest comes from the card; no allergy)
         // each top value is CENTRED between the label's colon and the cell's left column line
@@ -401,10 +401,10 @@
       return '<button type="button" class="pfs-tab' + (V.form === id ? " is-on" : "") + '" data-f="' + id + '">' + esc(FORMS[id].short) + "<small>" + (n ? n + " مطلوبة" : "لا مطلوب") + "</small></button>";
     }).join("");
     el.innerHTML =
-      '<div class="pfe-top"><button type="button" class="pfe-x" id="pfs-close" aria-label="إغلاق">✕</button><div><h3>استمارات المرضى</h3><small>استمارات يطلبها المذخر قبل تجهيز الدواء</small></div></div>' +
+      '<div class="pfe-top"><button type="button" class="pfe-x" id="pfs-close" aria-label="إغلاق">✕</button><div><h3>استمارات المرضى</h3></div></div>' +
       '<div class="pfe-scroll"><div class="pfe-wrap">' +
         '<div class="pfs-tabs">' + tabs + "</div>" +
-        '<p class="pfe-hint" style="margin:0 2px 10px">' + esc(FORMS[V.form].hint) + "</p>" +
+        (FORMS[V.form].hint ? '<p class="pfe-hint" style="margin:0 2px 10px">' + esc(FORMS[V.form].hint) + "</p>" : "") +
         '<div class="pfs-search"><input id="pfs-q" placeholder="ابحث باسم المريض أو رقم الطبلة" autocomplete="off" value="' + esc(V.q) + '"><button type="button" class="pfs-chip' + (V.all ? " is-on" : "") + '" id="pfs-all">كل المرضى</button></div>' +
         '<div id="pfs-list"></div>' +
       "</div></div>";
