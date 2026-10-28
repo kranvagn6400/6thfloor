@@ -356,6 +356,7 @@
       throw e;
     }
     if (Fx && Fx.progress) Fx.progress.done(r.cancelled ? null : !!r.ok);
+    if (r.ok && Fx && Fx.orderGlow) Fx.orderGlow(true);          // the order is ready to be read: «الطلبية» glows
     if (logId && global.PharmacyChartLog && !r.cancelled) global.PharmacyChartLog.setResult(logId, r);
     return r;
   }

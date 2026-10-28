@@ -110,7 +110,27 @@
     document.addEventListener("visibilitychange", function () { ensureRing(); ensureGlitch(); });
   });
 
+  // «الطلبية» glows after a successful send to the chart and stays lit until it is pressed (the order opens); the flag lives on
+  // this device (a reload keeps it) and is raised again by the next successful send
+  var ORDER_KEY = "pharma.orderGlow";
+  function applyOrderGlow() {
+    var b = document.getElementById("order-list-btn");
+    if (!b) return;
+    var on = false;
+    try { on = localStorage.getItem(ORDER_KEY) === "1"; } catch (e) { /* blocked */ }
+    b.classList.toggle("is-alert", on);
+  }
+  function setOrderGlow(on) {
+    try { if (on) localStorage.setItem(ORDER_KEY, "1"); else localStorage.removeItem(ORDER_KEY); } catch (e) { /* blocked */ }
+    applyOrderGlow();
+  }
+  document.addEventListener("click", function (e) {
+    if (e.target && e.target.closest && e.target.closest("#order-list-btn")) setOrderGlow(false);
+  }, true);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", applyOrderGlow); else applyOrderGlow();
+
   global.PharmacyFx = {
+    orderGlow: setOrderGlow,
     glitchBed: function (key, ms) {
       glitchKey = key; glitchUntil = Date.now() + (ms || 9500);
       setTimeout(ensureGlitch, 0); setTimeout(ensureGlitch, 400);
