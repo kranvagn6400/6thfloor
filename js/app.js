@@ -1718,11 +1718,29 @@
     return true;
   }
 
-  // رقم الطبلة: exactly 6 digits
-  function toPlateDigits(v) {
-    return String(v || "").replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/\D/g, "").slice(0, 6);
+  // رقم الطبلة: exactly 6 digits; the private rooms (خاص) use exactly 5 digits, mandatory
+  function plateLenFor(roomId) {
+    const r = global.PharmacyWard && global.PharmacyWard.roomById(roomId);
+    return r && r.kind === "private" ? 5 : 6;
   }
-  function isValidPlate(v) { return /^\d{6}$/.test(String(v || "").trim()); }
+  function currentPlateLen() { return state.currentBed ? plateLenFor(state.currentBed.roomId) : 6; }
+  function toPlateDigits(v, len) {
+    return String(v || "").replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/\D/g, "").slice(0, len || 6);
+  }
+  function isValidPlate(v, len) { return new RegExp("^\\d{" + (len || 6) + "}$").test(String(v || "").trim()); }
+  // Placeholder + max length of the plate field for the open bed
+  function applyPlateRules() {
+    const field = $("patient-plate-input");
+    if (!field || !state.currentBed) return;
+    const len = currentPlateLen();
+    field.maxLength = len;
+    if (len === 5) field.placeholder = "رقم الطبلة (5 أرقام) *";
+    else {
+      const Auth = global.PharmacyAuth;
+      const optional = !!(Auth && ((Auth.isDoctor && Auth.isDoctor()) || (Auth.isAdmin && Auth.isAdmin())));
+      field.placeholder = optional ? "رقم الطبلة (6 أرقام — اختياري)" : "رقم الطبلة (6 أرقام) *";
+    }
+  }
 
   // Other patients in the ward with the same plate number (→ [{ key, name }])
   function plateDuplicates(bedKey, plate) {
@@ -2321,20 +2339,21 @@
     $("patient-plate-input").addEventListener("input", (e) => {
       if (!state.currentBed) return;
       // 6 digits only (Arabic-Indic digits become 0-9)
-      const digits = toPlateDigits(e.target.value);
+      const len = currentPlateLen();
+      const digits = toPlateDigits(e.target.value, len);
       if (digits !== e.target.value) e.target.value = digits;
       const p = ensurePatient(state.currentBed.key);
       p.plateNumber = digits;
-      if (isValidPlate(digits)) e.target.classList.remove("is-required-missing");
+      if (isValidPlate(digits, len)) e.target.classList.remove("is-required-missing");
       updatePlateDupWarning(false);
       // NOTE: No persistPatient() on input — only on blur.
     });
     $("patient-plate-input").addEventListener("blur", (e) => {
       if (!state.currentBed) return;
       clearTimeout(plateTimer);
-      if (e.target.value && !isValidPlate(e.target.value)) {
+      if (e.target.value && !isValidPlate(e.target.value, currentPlateLen())) {
         e.target.classList.add("is-required-missing");
-        flashHint("رقم الطبلة يتكون من 6 أرقام");
+        flashHint("رقم الطبلة يتكون من " + currentPlateLen() + " أرقام");
       } else {
         updatePlateDupWarning(true);
       }
@@ -5157,15 +5176,16 @@
     // Plate number (رقم الطبلة) = 6 digits, mandatory before adding medicines
     // for pharmacists only; optional for doctors and the admin — but a number
     // they do write must be 6 digits too.
-    const plateOptional = !!(Auth && ((Auth.isDoctor && Auth.isDoctor()) || (Auth.isAdmin && Auth.isAdmin())));
+    const plateLen = currentPlateLen();   // private rooms: 5 digits, mandatory for everyone
+    const plateOptional = plateLen === 6 && !!(Auth && ((Auth.isDoctor && Auth.isDoctor()) || (Auth.isAdmin && Auth.isAdmin())));
     const plateVal = String((current && current.plateNumber) || "").trim();
-    if ((!plateOptional || plateVal) && !isValidPlate(plateVal)) {
+    if ((!plateOptional || plateVal) && !isValidPlate(plateVal, plateLen)) {
       const plate = $("patient-plate-input");
       if (plate) {
         plate.classList.add("is-required-missing");
         plate.focus();
       }
-      flashHint(plateVal ? "رقم الطبلة يتكون من 6 أرقام" : "أدخل رقم الطبلة أولاً (6 أرقام) — الحقل إجباري");
+      flashHint(plateVal ? "رقم الطبلة يتكون من " + plateLen + " أرقام" : "أدخل رقم الطبلة أولاً (" + plateLen + " أرقام) — الحقل إجباري");
       return;
     }
     resetSheet();
@@ -6016,6 +6036,7 @@
     const canLabs = !!(Auth && ((Auth.isAdmin && Auth.isAdmin()) || (Auth.isPharmacist && Auth.isPharmacist()) || (Auth.isDoctor && Auth.isDoctor())));
     document.querySelectorAll(".lab-input").forEach(el => { el.disabled = !canLabs; });
     document.querySelectorAll(".lab-add-btn").forEach(btn => { btn.hidden = !canLabs; });
+    applyPlateRules();
   }
 
   // -------- Lightweight toast (no extra DOM) --------

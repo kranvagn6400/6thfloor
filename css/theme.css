@@ -2488,3 +2488,12 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .crit-diag-btn.has-note:not(.is-open) { background: var(--success, #1d8a5a); }
 .crit-lab-hist { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; font-size: 12.5px; color: var(--text-muted); }
 .crit-lab-hist small { opacity: .8; }
+
+/* iPhone: the send-to-chart review (and the supplies order) fit the VISIBLE screen, below the notch, and the ✕ is a proper touch target */
+.med-summary-modal, .supply-order-modal { padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px calc(env(safe-area-inset-bottom, 0px) + 12px); }
+.med-summary-card, .supply-order-card { max-height: calc(100vh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+@supports (height: 100dvh) {
+  .med-summary-card, .supply-order-card { max-height: calc(100dvh - 24px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+}
+.med-summary-head, .supply-order-head { padding-top: 10px; padding-bottom: 10px; }
+.med-summary-close, .supply-order-close { width: 44px; height: 44px; font-size: 20px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
