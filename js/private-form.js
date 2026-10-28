@@ -305,7 +305,20 @@
   let S = null;            // { key, p, pr, name, plate }
   let saveTimer = null;
 
-  function flash(msg) { const a = App(); if (a && a.flashHint) a.flashHint(msg); }
+  // a message that shows ABOVE the editor / preview (the app's own toast is hidden behind them)
+  function flash(msg) {
+    let t = $("pfe-toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "pfe-toast";
+      t.style.cssText = "position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 14px);z-index:100000;background:#1f2937;color:#fff;padding:12px 16px;border-radius:14px;font:700 14px/1.6 inherit;font-family:inherit;text-align:center;direction:rtl;box-shadow:0 8px 24px rgba(0,0,0,.35);";
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(t._t);
+    t._t = setTimeout(() => { t.hidden = true; }, 5000);
+  }
   function saveSoon() {
     if (!S || !S.key) return;
     clearTimeout(saveTimer);
@@ -536,7 +549,7 @@
           '<p class="pfe-hint" style="margin:0 0 6px">أدوية أضافها صيدلي الخفر ولم تُرسل من هنا. اكتب اسم الدواء فتظهر اقتراحات من الكتالوج.</p><div id="pfe-extra"></div>' +
           '<div class="pfe-addrow"><div class="pfe-ac"><input id="pfe-xn" placeholder="اسم الدواء" autocomplete="off" autocorrect="off" spellcheck="false"><div class="pfe-sug" id="pfe-sug" hidden></div></div><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة الدواء</button></div></div></details>' +
       "</div></div>" +
-      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-pv" id="pfe-preview">👁 معاينة</button><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
+      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-pv" id="pfe-preview">معاينة</button><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
     document.body.appendChild(el);
     renderAll();
     // the entry date comes from the patient's log (the «admitted» event of this stay)
@@ -660,9 +673,16 @@
     if (!f.rows.length) { flash("لا توجد مواد في الفترة المختارة"); return; }
     const label = b.textContent;
     b.disabled = true; b.textContent = "جارٍ التجهيز…";
+    flash("جارٍ تجهيز المعاينة… قد تستغرق بضع ثوانٍ");
     try {
+      const canvases = [];
+      await renderPages(pagesOf(f), (canvas) => canvases.push(canvas));
       const urls = [];
-      await renderPages(pagesOf(f), (canvas) => urls.push(canvas.toDataURL("image/jpeg", 0.9)));
+      for (const c of canvases) {
+        // a blob URL is lighter than a giant data: URL (iPhone)
+        const blob = await new Promise(res => { try { c.toBlob(res, "image/jpeg", 0.9); } catch (e) { res(null); } });
+        urls.push(blob ? URL.createObjectURL(blob) : c.toDataURL("image/jpeg", 0.9));
+      }
       const old = $("pf-preview");
       if (old) old.remove();
       const el = document.createElement("div");
@@ -678,6 +698,7 @@
       const apply = () => { body.querySelectorAll("img").forEach(i => { i.style.width = zoom + "%"; }); };
       $("pfv-in").addEventListener("click", () => { zoom = Math.min(300, zoom + 40); apply(); });
       $("pfv-out").addEventListener("click", () => { zoom = Math.max(100, zoom - 40); apply(); });
+      const toast = $("pfe-toast"); if (toast) toast.hidden = true;
       $("pfv-close").addEventListener("click", () => el.remove());
       $("pfv-save").addEventListener("click", () => savePdf($("pfv-save")));
     } catch (err) {
