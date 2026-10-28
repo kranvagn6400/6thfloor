@@ -270,3 +270,5 @@ logout reaches the login screen.
 
 - Labs fold under «عرض التحاليل» for every role and pharmacists see all labs; pharmacists have discharge / died buttons (final diagnosis optional); the bed-delete button («تفريغ السرير وحذف المريض») is ADMIN only.
 - Albumin + Lasix: the albumin medicine card has «لازكس مرافق (أمبول)» (med.lasixExtra, 0-8). chart-bridge `lasixExtraOf` adds it to the patient's Lasix 20mg amp quantity in the chart TSV (or sends it alone when the patient has no Lasix) and in the review / order tally; the Lasix order itself is never changed. Needs the Lasix medicine to have a chart name.
+- التسليم والاستلام is back (settings + admin page); its printed title is «استمارة تسليم واستلام الخفر» with «الطابق السادس» under it. «تحاليل الورقة» is hidden for the floor managers (limited-admin CSS), kept for Mustafa.
+- Handover print = a PDF made in the app (handover.js buildPdf: each page drawn off-screen, html2pdf/html2canvas -> jsPDF; iPhone share sheet via navigator.share, else a download) — no window.print, so no browser header/footer.

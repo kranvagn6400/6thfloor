@@ -2436,8 +2436,8 @@ html[data-theme="dark"] .pills-print-sel { background: var(--fill, var(--primary
 .unit-head.is-private { opacity: .85; }
 .room-beds.single { display: grid; grid-template-columns: 1fr; gap: 6px; }
 
-/* 6th Floor has no handover / receipt form */
-#settings-handover-btn, #admin-handover-btn, .admin-discharged-section:has(#admin-handover-btn) { display: none !important; }
+/* The floor managers (Aya, Aminah) do not get «تحاليل الورقة» — only the supreme admin */
+html.limited-admin #labs-print-btn, html.limited-admin #labs-print-panel { display: none !important; }
 
 /* 6th Floor: the floor manager (limited admin) does not get these */
 html.limited-admin #admin-tv-btn, html.limited-admin #settings-tv-btn, html.limited-admin #display-mode-btn,

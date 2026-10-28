@@ -154,25 +154,27 @@
   const T1 = { top: 151.8, rows: 13 }, T2 = { top: 523.1, rows: 11 }, ROW_H = 22.74;
   const X0 = 57.7, X1 = 537.6;                     // the outer lines of every block
   const STATUS = { ni: "Not indicated", ns: "لم يتوفر ختم أخصائي", dr: "عند السحب", np: "لم يتواجد المريض صباحًا" };
-  const cssText = () => {
+  // S = "" for the preview frame (own document); "#hv-pdf-root " when the pages are drawn inside the app for the PDF
+  const cssText = (S) => {
+    S = S || "";
     const f = (n) => new URL("fonts/" + n, location.href).href;
     return `
     @font-face { font-family: "Cairo"; src: url("${f("Cairo-Regular.ttf")}") format("truetype"); font-weight: 400; font-display: block; }
     @font-face { font-family: "Cairo"; src: url("${f("Cairo-Bold.ttf")}") format("truetype"); font-weight: 700; font-display: block; }
-    @page { size: A4; margin: 0; }
+    ${S ? "#hv-pdf-root, #hv-pdf-root * { box-sizing: border-box; } #hv-pdf-root { margin: 0; padding: 0; background: #fff; font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #000; word-spacing: 0.25em; }" : `@page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; background: #fff; }
-    body { font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif; direction: rtl; color: #000; }
-    .pg { position: relative; width: ${PG.w}pt; height: ${PG.h}pt; overflow: hidden; page-break-after: always; break-after: page; }
-    .pg:last-child { page-break-after: auto; break-after: auto; }
-    .t { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 0 3pt; font-weight: 400; font-size: 12pt; line-height: 1.15; }
-    .t.s { justify-content: flex-start; text-align: right; }
-    .t.b { font-weight: 700; }
-    .t.w { line-height: 1.2; padding: 0 8pt; justify-content: flex-start; }
-    .t.w .wp { width: 100%; text-align: right; white-space: pre-line; }
-    .k { position: absolute; border: 2pt solid #000; }
-    .l { position: absolute; background: #bdbdbd; }
-    .d { position: absolute; background: #6b6b6b; }
+    html, body { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif; direction: rtl; color: #000; }`}
+    ${S}.pg { position: relative; width: ${PG.w}pt; height: ${PG.h}pt; overflow: hidden; page-break-after: always; break-after: page; }
+    ${S}.pg:last-child { page-break-after: auto; break-after: auto; }
+    ${S}.t { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; padding: 0 3pt; font-weight: 400; font-size: 12pt; line-height: 1.15; }
+    ${S}.t.s { justify-content: flex-start; text-align: right; }
+    ${S}.t.b { font-weight: 700; }
+    ${S}.t.w { line-height: 1.2; padding: 0 8pt; justify-content: flex-start; }
+    ${S}.t.w .wp { width: 100%; text-align: right; white-space: pre-line; }
+    ${S}.k { position: absolute; border: 2pt solid #000; }
+    ${S}.l { position: absolute; background: #bdbdbd; }
+    ${S}.d { position: absolute; background: #6b6b6b; }
   `;
   };
   const pt = (n) => n.toFixed(2) + "pt";
@@ -220,7 +222,9 @@
   function pageHtml(v, alb, oth) {
     let h = '<div class="pg">';
     // title, with the floor after «الطابق:»
-    h += box("s b", 60, 424.5, 17, 22, "استمارة تسليم واستلام الخفر / الطابق السادس", 14);     // our ward is on the 6th floor
+    h += box("b", X0, X1, 3, 22, "استمارة تسليم واستلام الخفر", 14);
+    h += box("b", X0, X1, 29, 22, "الطابق السادس", 14);     // the floor: centred, same font + size as the title
+    h += '<div style="position:absolute;left:0;top:10pt;width:100%;height:100%">';     // everything below the title block sits 10 pt lower
     // header block: receiver | giver | date
     h += thick(57.7, 109.1) + vline("d", 177.9, 58.7, 108.1, 0.5) + vline("d", 370.9, 58.7, 108.1, 0.5);
     h += box("s", 371, 537, 64, 36, "الصيدلي المستلم<br>(الخفر):").replace('style="', 'style="line-height:17pt;align-items:flex-start;padding-right:5pt;');
@@ -260,7 +264,7 @@
       if (r.p) h += box("w", COL.time[0] + 1, COL.name[1] - 1, top + ROW_H, r.p * ROW_H, '<div class="wp">' + esc(r.prep) + "</div>", 12);
       row += r.k;
     });
-    return h + "</div>";
+    return h + "</div></div>";
   }
 
   // → { html, pages }
@@ -283,8 +287,62 @@
       pages.push(pageHtml(v, alb, oth));
       if (pi > 50) break;
     }
-    const html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تسليم واستلام ' + esc(v.date) + "</title><style>" + cssText() + "</style></head><body>" + pages.join("") + "</body></html>";
-    return { html, pages: pages.length };
+    const html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title> </title><style>' + cssText() + "</style></head><body>" + pages.join("") + "</body></html>";
+    return { html, pages: pages.length, pagesHtml: pages };
+  }
+
+  // ---- PDF: each page is drawn in the app, photographed (html2pdf / html2canvas) and put on an A4 page of a PDF ----
+  async function buildPdf(doc, name) {
+    const H2P = global.html2pdf;
+    const JsPDF = (global.jspdf && global.jspdf.jsPDF) || global.jsPDF;
+    if (!H2P || !JsPDF) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
+    const style = document.createElement("style");
+    style.textContent = cssText("#hv-pdf-root ");
+    document.head.appendChild(style);
+    const holder = document.createElement("div");
+    holder.style.cssText = "position:fixed;left:-10000px;top:0;width:" + PG.w + "pt;pointer-events:none;";
+    document.body.appendChild(holder);
+    try {
+      if (document.fonts && document.fonts.load) {
+        await Promise.all([document.fonts.load("400 12pt Cairo"), document.fonts.load("700 12pt Cairo")]).catch(() => {});
+        await document.fonts.ready;
+      }
+      const pdf = new JsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+      for (let i = 0; i < doc.pagesHtml.length; i++) {
+        const root = document.createElement("div");
+        root.id = "hv-pdf-root";
+        root.style.cssText = "width:" + PG.w + "pt;height:" + PG.h + "pt;";
+        root.innerHTML = doc.pagesHtml[i];
+        holder.innerHTML = "";
+        holder.appendChild(root);
+        const canvas = await H2P().set({ html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 } }).from(root).toCanvas().get("canvas");
+        if (i > 0) pdf.addPage();
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, PG.w, PG.h);
+      }
+      return pdf.output("blob");
+    } finally {
+      holder.remove();
+      style.remove();
+    }
+  }
+
+  // iPhone: the share sheet (save to Files / print / send); elsewhere: a download
+  async function deliverPdf(blob, filename) {
+    try {
+      const file = new File([blob], filename, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        await navigator.share({ files: [file], title: filename });
+        return "shared";
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return "cancelled";   // the user closed the share sheet
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return "downloaded";
   }
 
   function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
@@ -301,7 +359,7 @@
     bar.style.cssText = "display:flex;gap:8px;align-items:center;padding:10px 12px;background:#14211f;color:#fff;flex-wrap:wrap;";
     const title = el("strong", null, "تسليم واستلام — " + v.date);
     title.style.cssText = "flex:1;min-width:140px;font-size:14px;";
-    const printBtn = el("button", null, "🖨 طباعة / حفظ PDF");
+    const printBtn = el("button", null, "📄 حفظ PDF");
     const closeBtn = el("button", null, "إغلاق");
     [printBtn, closeBtn].forEach(b => { b.type = "button"; b.style.cssText = "padding:8px 14px;border-radius:10px;border:0;font:inherit;font-weight:800;cursor:pointer;background:#fff;color:#14211f;"; });
     printBtn.style.background = "#f5b301";
@@ -325,7 +383,19 @@
     const onResize = () => fit();
     window.addEventListener("resize", onResize);
     closeBtn.addEventListener("click", () => { window.removeEventListener("resize", onResize); overlay.remove(); });
-    printBtn.addEventListener("click", () => { try { frame.contentWindow.focus(); frame.contentWindow.print(); } catch (e) { /* blocked */ } });
+    printBtn.addEventListener("click", async () => {
+      if (printBtn.disabled) return;
+      const label = printBtn.textContent;
+      printBtn.disabled = true; printBtn.textContent = "جارٍ إنشاء الملف…";
+      try {
+        const blob = await buildPdf(doc, "handover");
+        await deliverPdf(blob, "تسليم-واستلام-" + String(v.date).replace(/[^0-9-]/g, "") + ".pdf");
+      } catch (e) {
+        console.error("[handover] pdf", e);
+        const A = global.PharmacyApp;
+        if (A && A.flashHint) A.flashHint("تعذّر إنشاء الملف: " + (e && e.message || e)); else alert("تعذّر إنشاء الملف: " + (e && e.message || e));
+      } finally { printBtn.disabled = false; printBtn.textContent = label; }
+    });
   }
 
   function open() {
@@ -388,7 +458,7 @@
     $("hv-print").addEventListener("click", preview);
   }
 
-  const handover = { open, collect, documentHtml, load, PREP };
+  const handover = { open, collect, documentHtml, buildPdf, load, PREP };
   global.PharmacyHandover = handover;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
