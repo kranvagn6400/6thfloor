@@ -6012,17 +6012,10 @@
       const isAdmin = Auth && Auth.isAdmin && Auth.isAdmin();
       diagnosisInput.disabled = !(isAdmin || isDoctor);
     }
-    // Lab fields: same access control as diagnosis (doctors + admins)
-    document.querySelectorAll(".lab-input").forEach(el => {
-      const isDoctor = Auth && Auth.isDoctor && Auth.isDoctor();
-      const isAdmin = Auth && Auth.isAdmin && Auth.isAdmin();
-      el.disabled = !(isAdmin || isDoctor);
-    });
-    document.querySelectorAll(".lab-add-btn").forEach(btn => {
-      const isDoctor = Auth && Auth.isDoctor && Auth.isDoctor();
-      const isAdmin = Auth && Auth.isAdmin && Auth.isAdmin();
-      btn.hidden = !(isAdmin || isDoctor);
-    });
+    // Lab fields: admin + pharmacists (+ doctors) record results
+    const canLabs = !!(Auth && ((Auth.isAdmin && Auth.isAdmin()) || (Auth.isPharmacist && Auth.isPharmacist()) || (Auth.isDoctor && Auth.isDoctor())));
+    document.querySelectorAll(".lab-input").forEach(el => { el.disabled = !canLabs; });
+    document.querySelectorAll(".lab-add-btn").forEach(btn => { btn.hidden = !canLabs; });
   }
 
   // -------- Lightweight toast (no extra DOM) --------
