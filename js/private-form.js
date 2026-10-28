@@ -261,14 +261,17 @@
   }
 
   // draws every page (html2canvas) and hands each canvas to each(canvas, index)
-  async function renderPages(pages, each) {
+  // opts (optional): { w, h, css, rootId } — the page size in pt, its stylesheet and root id (default = the private form)
+  async function renderPages(pages, each, opts) {
+    opts = opts || {};
+    const W = opts.w || PG.w, H = opts.h || PG.h, rootId = opts.rootId || "pf-pdf-root";
     const H2P = global.html2pdf;
     if (!H2P) throw new Error("مكتبة PDF غير محمّلة — تحقق من الاتصال بالإنترنت");
     const style = document.createElement("style");
-    style.textContent = cssText("#pf-pdf-root");
+    style.textContent = opts.css || cssText("#pf-pdf-root");
     document.head.appendChild(style);
     const holder = document.createElement("div");
-    holder.style.cssText = "position:fixed;left:-10000px;top:0;width:" + PG.w + "pt;pointer-events:none;";
+    holder.style.cssText = "position:fixed;left:-10000px;top:0;width:" + W + "pt;pointer-events:none;";
     document.body.appendChild(holder);
     try {
       if (document.fonts && document.fonts.load) {
@@ -277,12 +280,14 @@
       }
       for (let i = 0; i < pages.length; i++) {
         const root = document.createElement("div");
-        root.id = "pf-pdf-root";
-        root.style.cssText = "width:" + PG.w + "pt;height:" + PG.h + "pt;";
+        root.id = rootId;
+        root.style.cssText = "width:" + W + "pt;height:" + H + "pt;";
         root.innerHTML = pages[i];
         holder.innerHTML = "";
         holder.appendChild(root);
-        const canvas = await H2P().set({ jsPDF: { unit: "pt", format: "a4", orientation: "landscape" }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 } }).from(root).toCanvas().get("canvas");
+        // a background picture must be decoded before the page is photographed
+        await Promise.all(Array.from(root.querySelectorAll("img")).map(im => (im.decode ? im.decode().catch(() => {}) : Promise.resolve())));
+        const canvas = await H2P().set({ jsPDF: { unit: "pt", format: [W, H], orientation: W > H ? "landscape" : "portrait" }, html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 } }).from(root).toCanvas().get("canvas");
         each(canvas, i);
       }
     } finally {
@@ -668,6 +673,29 @@
   }
 
   // «معاينة»: the pages exactly as they will print, in a viewer (zoom − / +, save from there too)
+  // a full-screen viewer of the page pictures: zoom − / +, close, and a save button that calls saveFn
+  function openViewer(urls, saveFn) {
+    ensureStyle();
+    const old = $("pf-preview");
+    if (old) old.remove();
+    const el = document.createElement("div");
+    el.id = "pf-preview";
+    el.innerHTML =
+      '<div class="pfv-bar"><button type="button" class="pfv-x" id="pfv-close" aria-label="إغلاق">✕</button><strong>معاينة الاستمارة' + (urls.length > 1 ? " (" + urls.length + " صفحات)" : "") + '</strong>' +
+      '<button type="button" class="pfv-z" id="pfv-out" aria-label="تصغير">−</button><button type="button" class="pfv-z" id="pfv-in" aria-label="تكبير">+</button>' +
+      '<button type="button" class="pfv-save" id="pfv-save">📄 حفظ PDF</button></div>' +
+      '<div class="pfv-body" id="pfv-body">' + urls.map(u => '<img alt="" src="' + u + '">').join("") + "</div>";
+    document.body.appendChild(el);
+    let zoom = 100;
+    const body = $("pfv-body");
+    const apply = () => { body.querySelectorAll("img").forEach(i => { i.style.width = zoom + "%"; }); };
+    $("pfv-in").addEventListener("click", () => { zoom = Math.min(300, zoom + 40); apply(); });
+    $("pfv-out").addEventListener("click", () => { zoom = Math.max(100, zoom - 40); apply(); });
+    const toast = $("pfe-toast"); if (toast) toast.hidden = true;
+    $("pfv-close").addEventListener("click", () => el.remove());
+    $("pfv-save").addEventListener("click", saveFn);
+  }
+
   async function showPreview(b) {
     if (!S || b.disabled) return;
     const f = formData();
@@ -684,24 +712,7 @@
         const blob = await new Promise(res => { try { c.toBlob(res, "image/jpeg", 0.9); } catch (e) { res(null); } });
         urls.push(blob ? URL.createObjectURL(blob) : c.toDataURL("image/jpeg", 0.9));
       }
-      const old = $("pf-preview");
-      if (old) old.remove();
-      const el = document.createElement("div");
-      el.id = "pf-preview";
-      el.innerHTML =
-        '<div class="pfv-bar"><button type="button" class="pfv-x" id="pfv-close" aria-label="إغلاق">✕</button><strong>معاينة الاستمارة' + (urls.length > 1 ? " (" + urls.length + " صفحات)" : "") + '</strong>' +
-        '<button type="button" class="pfv-z" id="pfv-out" aria-label="تصغير">−</button><button type="button" class="pfv-z" id="pfv-in" aria-label="تكبير">+</button>' +
-        '<button type="button" class="pfv-save" id="pfv-save">📄 حفظ PDF</button></div>' +
-        '<div class="pfv-body" id="pfv-body">' + urls.map(u => '<img alt="" src="' + u + '">').join("") + "</div>";
-      document.body.appendChild(el);
-      let zoom = 100;
-      const body = $("pfv-body");
-      const apply = () => { body.querySelectorAll("img").forEach(i => { i.style.width = zoom + "%"; }); };
-      $("pfv-in").addEventListener("click", () => { zoom = Math.min(300, zoom + 40); apply(); });
-      $("pfv-out").addEventListener("click", () => { zoom = Math.max(100, zoom - 40); apply(); });
-      const toast = $("pfe-toast"); if (toast) toast.hidden = true;
-      $("pfv-close").addEventListener("click", () => el.remove());
-      $("pfv-save").addEventListener("click", () => savePdf($("pfv-save")));
+      openViewer(urls, () => savePdf($("pfv-save")));
     } catch (err) {
       console.error("[private-form] preview", err);
       flash("تعذّرت المعاينة: " + (err && err.message || err));
@@ -716,7 +727,7 @@
     });
   }
 
-  global.PharmacyPrivateForm = { record, open, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice };
+  global.PharmacyPrivateForm = { record, open, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

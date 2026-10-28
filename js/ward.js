@@ -64,6 +64,14 @@
     const u = UNITS.find(x => x.id === r.unit);
     return r.title + " · " + u.name;
   }
+  // the unit's full name as written on forms and lists: «الوحدة الباطنية الأولى» / «الوحدة الباطنية الثالثة»
+  const UNIT_LONG = { "1": "الوحدة الباطنية الأولى", "3": "الوحدة الباطنية الثالثة" };
+  function unitLongName(unitId) { return UNIT_LONG[unitId] || ""; }
+  function roomTitleLong(roomId) {
+    const r = roomById(roomId);
+    if (!r) return "غرفة " + roomId;
+    return r.title + " · " + (UNIT_LONG[r.unit] || "");
+  }
   function unitOf(roomId) {
     const r = roomById(roomId);
     return r ? UNITS.find(u => u.id === r.unit) : null;
@@ -112,6 +120,8 @@
     bedKey,
     roomById,
     roomTitle,
+    roomTitleLong,
+    unitLongName,
     unitOf,
     roomGender,
     bedLabel,

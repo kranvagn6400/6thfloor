@@ -5608,7 +5608,7 @@
           <div class="discharged-row-date">${dateStr}</div>
         </div>
         <div class="discharged-row-meta">
-          <span>${r.roomNumber ? global.PharmacyWard.roomTitle(r.roomNumber) : "—"}${isPriv(r) ? "" : " · سرير " + (r.roomNumber && r.bedNumber ? global.PharmacyWard.bedLabel(r.roomNumber, r.bedNumber) : "—")}</span>
+          <span>${r.roomNumber ? global.PharmacyWard.roomTitleLong(r.roomNumber) : "—"}${isPriv(r) ? "" : " · سرير " + (r.roomNumber && r.bedNumber ? global.PharmacyWard.bedLabel(r.roomNumber, r.bedNumber) : "—")}</span>
           ${r.plateNumber ? `<span>· طبلة ${escapeHtml(r.plateNumber)}</span>` : ""}
           ${r.doctor ? `<span>· ${escapeHtml(r.doctor)}</span>` : ""}
           ${medCount ? `<span>· ${medCount} دواء</span>` : ""}
