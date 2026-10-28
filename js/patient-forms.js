@@ -456,7 +456,7 @@
       '<div class="pfe-scroll"><div class="pfe-wrap">' +
         '<div class="pfs-tabs">' + tabs + "</div>" +
         (FORMS[V.form].hint ? '<p class="pfe-hint" style="margin:0 2px 10px">' + esc(FORMS[V.form].hint) + "</p>" : "") +
-        '<div class="pfs-search"><input id="pfs-q" placeholder="ابحث باسم المريض أو رقم الطبلة" autocomplete="off" value="' + esc(V.q) + '"><button type="button" class="pfs-chip' + (V.all ? " is-on" : "") + '" id="pfs-all">كل المرضى</button></div>' +
+        '<div class="pfs-search"><input id="pfs-q" placeholder="ابحث باسم المريض أو رقم الطبلة" autocomplete="off" value="' + esc(V.q) + '"></div>' +
         '<div class="pfs-batch"><button type="button" class="pfs-print-all" id="pfs-print-all"></button><button type="button" class="pfs-all-done" id="pfs-all-done" hidden>تم طباعة الكل</button></div>' +
         '<div id="pfs-list"></div>' +
       "</div></div>";
@@ -464,7 +464,6 @@
     $("pfs-close").addEventListener("click", close);
     el.querySelectorAll(".pfs-tab").forEach(b => b.addEventListener("click", () => { V.form = b.dataset.f; drawList(); }));
     $("pfs-q").addEventListener("input", (e) => { V.q = e.target.value; fillList(); });
-    $("pfs-all").addEventListener("click", () => { V.all = !V.all; $("pfs-all").classList.toggle("is-on", V.all); fillList(); });
     $("pfs-print-all").addEventListener("click", () => printAll(V.form));
     $("pfs-all-done").addEventListener("click", () => printedAll(V.form));
   }
@@ -487,10 +486,10 @@
     const q = V.q.trim().toLowerCase();
     const rows = patients().filter(x => {
       const on = !!findMed(V.form, x.p);
-      if (!on && !V.all) return false;
+      if (!on) return false;
       // the meronem form: only the patients who deserve one now (first day, or the period ended and no new form yet —
       // a late one keeps showing on day 15, 16… until the new form is made)
-      if (V.form === "meronem" && !V.all) { const s = dueInfo("meronem", x.p).state; if (s !== "due" && s !== "late") return false; }
+      if (V.form === "meronem") { const s = dueInfo("meronem", x.p).state; if (s !== "due" && s !== "late") return false; }
       if (!q) return true;
       return (String(x.p.name || "").toLowerCase().indexOf(q) >= 0) || (String(x.p.plateNumber || "").indexOf(q) >= 0);
     });
@@ -500,7 +499,7 @@
       const canPrint = d.state === "due" || d.state === "late";
       return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
         (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") + "</div>";
-    }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "<br>اضغط «كل المرضى» لإصدار الاستمارة لمريض آخر.</div>";
+    }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "</div>";
     updateBatch();
     const list = $("pfs-list");
     list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
