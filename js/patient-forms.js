@@ -376,6 +376,7 @@
     const el = $("pf-editor"); if (el) el.remove();
     if (V && V.key && App()) { clearTimeout(saveTimer); App().savePatient(V.key); }
     V = null;
+    setTimeout(refreshAlert, 300);
   }
 
   function patients() {
@@ -623,14 +624,47 @@
     V.st.hist.push(entry);
     if (V.key && App()) App().savePatient(V.key);
     updateSum();
+    refreshAlert();
+  }
+
+  // ---- the header button waits for the pharmacist: a soft glow + a count while forms are due ----
+  // (albumin: everyone on it who has no form today; meronem: first day, or the period's last day / late). It goes quiet by itself
+  // when nothing is left to issue.
+  function pendingForms() {
+    let n = 0;
+    patients().forEach(x => {
+      Object.keys(FORMS).forEach(id => {
+        if (!findMed(id, x.p)) return;
+        const st = dueInfo(id, x.p).state;
+        if (st === "due" || st === "late") n++;
+      });
+    });
+    return n;
+  }
+  function refreshAlert() {
+    const btn = $("forms-btn");
+    if (!btn || !App() || !App().state) return;
+    let n = 0;
+    try { if (btn.offsetParent !== null) n = pendingForms(); } catch (e) { /* not ready yet */ }
+    btn.classList.toggle("is-alert", n > 0);
+    btn.title = n > 0 ? "استمارات المرضى — " + n + " مطلوبة" : "استمارات المرضى";
+    let b = $("forms-badge");
+    if (n > 0) {
+      if (!b) { b = document.createElement("span"); b.id = "forms-badge"; b.className = "notif-badge"; btn.appendChild(b); }
+      b.textContent = n > 99 ? "99+" : String(n);
+      b.hidden = false;
+    } else if (b) b.hidden = true;
   }
 
   function init() {
     const btn = $("forms-btn");
     if (btn) btn.addEventListener("click", openList);
+    setTimeout(refreshAlert, 4000);
+    setInterval(refreshAlert, 20000);
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshAlert(); });
   }
 
-  global.PharmacyPatientForms = { open: openList, words, dueInfo, FORMS, _dbg: { pageHtml, cssText, spaced, tbox } };
+  global.PharmacyPatientForms = { open: openList, words, dueInfo, FORMS, refreshAlert, pendingForms, _dbg: { pageHtml, cssText, spaced, tbox } };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);
