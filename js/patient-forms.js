@@ -207,7 +207,7 @@
     font-family: 'Helvetica Neue', Helvetica, 'Geeza Pro', 'GeezaPro', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #111; }
     ${S} .pg { position: relative; overflow: hidden; background: #fff; }
     ${S} .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 11pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #0b2a6b; }
+    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 12pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #0b2a6b; }
     ${S} .t.c { justify-content: center; text-align: center; }
     ${S} .t.l { direction: ltr; justify-content: flex-start; text-align: left; }
     ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #0b2a6b; }
@@ -223,8 +223,8 @@
   }
   // the chosen condition = its cell outlined (a tick would run over the printed text)
   const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
-  // the type size that fits the text in its box (about 0.46 em per character with the paper's own fonts, never above 11 pt, never below 7)
-  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(11, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
+  // the type size that fits the text in its box (about 0.46 em per character with the paper's own fonts, never above 12 pt, never below 7)
+  const sizeFor = (t, x0, x1) => Math.max(7, Math.min(12, ((x1 - x0) * K) / (Math.max(1, String(t).length) * 0.46)));
 
   // → the page's HTML (the picture + every value + the ticks)
   function pageHtml(form, vals, st) {
