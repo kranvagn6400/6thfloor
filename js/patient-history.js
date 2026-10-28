@@ -147,5 +147,5 @@
     });
   }
 
-  global.PharmacyPatientHistory = { init, reset, load, cutStay };
+  global.PharmacyPatientHistory = { init, reset, load, cutStay, fetchStay };
 })(window);

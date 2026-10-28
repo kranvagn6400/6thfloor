@@ -6025,6 +6025,9 @@
     // View-only sheet button: pharmacists (the admin + doctors have the print one)
     const viewSheetBtn = $("view-patient-sheet-btn");
     if (viewSheetBtn) viewSheetBtn.hidden = !(Auth && Auth.isPharmacist && Auth.isPharmacist());
+    // «استمارة خروج الخاص»: private-room patients, pharmacists + admin
+    const privFormBtn = $("private-form-btn");
+    if (privFormBtn) privFormBtn.hidden = !(Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist())) && global.PharmacyPrivateForm && global.PharmacyPrivateForm.isPrivateBed(state.currentBed && state.currentBed.key));
     // Pills form for this patient: admin + pharmacists (not doctors), and
     // not for 7th-floor hematology patients on a pharmacist account (never ordered)
     const pillsOneBtn = $("print-patient-pills-btn");

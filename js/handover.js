@@ -461,7 +461,7 @@
     $("hv-print").addEventListener("click", preview);
   }
 
-  const handover = { open, collect, documentHtml, buildPdf, load, PREP };
+  const handover = { open, collect, documentHtml, buildPdf, deliverPdf, load, PREP };
   global.PharmacyHandover = handover;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

@@ -191,7 +191,7 @@
             const freq = pm.frequency || (catalog ? catalog.defaultFrequency : "") || "";
             // Include the med id so buildChartTSV can look it up in
             // CHART_QTY_EXCEPTIONS (e.g. heparin-vial → always "1").
-            return Object.assign({ id: pm.id, name: name, freq: freq, form: source.form || pm.form || "" }, orderRank(source));
+            return Object.assign({ id: pm.id, name: name, freq: freq, form: source.form || pm.form || "", available: source.available !== false }, orderRank(source));
           })
           .filter(Boolean);
 
@@ -227,6 +227,7 @@
         out.push({
           name: p.name.trim(),
           id: p.plateNumber || "",   // رقم الطبلة — اختياري
+          key: key,
           meds: meds
         });
       });
@@ -291,6 +292,18 @@
     return !isNaN(n) && n > 0 ? n : 1;
   }
 
+  // the quantity (text) the chart receives for one collected medicine — extra Lasix with albumin included
+  function medQty(m) {
+    let q;
+    if (m.id && Object.prototype.hasOwnProperty.call(CHART_QTY_EXCEPTIONS, m.id)) q = CHART_QTY_EXCEPTIONS[m.id];
+    else q = isContainer(m.id, m.form) ? "1" : freqToDose(m.freq);
+    if (m.extraQty) {
+      const base = m.onlyExtra ? 0 : parseInt(q, 10);
+      q = String((isNaN(base) ? 0 : base) + m.extraQty);
+    }
+    return q;
+  }
+
   function buildChartTSV(state, supplyDistribution, unit) {
     const patients = collectPatientsFromApp(state, supplyDistribution, unit);
 
@@ -316,15 +329,7 @@
           // فلا يكون التكرار مساوياً لعدد القطع المطلوبة. إذا كان
           // مُعرّف الدواء موجوداً في CHART_QTY_EXCEPTIONS، نستخدم
           // القيمة المُحدّدة هناك بدلاً من freqToDose.
-          if (m.id && Object.prototype.hasOwnProperty.call(CHART_QTY_EXCEPTIONS, m.id)) {
-            doses[idx] = CHART_QTY_EXCEPTIONS[m.id];
-          } else {
-            doses[idx] = isContainer(m.id, m.form) ? "1" : freqToDose(m.freq);
-          }
-          if (m.extraQty) {
-            const base = m.onlyExtra ? 0 : parseInt(doses[idx], 10);
-            doses[idx] = String((isNaN(base) ? 0 : base) + m.extraQty);
-          }
+          doses[idx] = medQty(m);
         }
       }
       rows.push([p.name ?? "", p.id ?? "", ...doses].join("\t"));
@@ -366,6 +371,9 @@
         : null;
       const r = await sendTsv(tsv, entry && entry.id, onProgress, date, t.server);
       if (r.cancelled || !r.ok) return r;
+      if (t.server === "p" && global.PharmacyPrivateForm) {
+        try { global.PharmacyPrivateForm.record(collectPatientsFromApp(state, supplyDistribution, t.rooms), date); } catch (e) { console.warn("[private-form] record", e); }
+      }
       if (!first) first = r;
     }
     return first || { ok: false, message: "لا يوجد مرضى لإرسالهم" };
@@ -381,6 +389,7 @@
   global.PharmacyChartBridge = {
     sendChart,
     sendTsv,
+    medQty,
     ONE_CONTAINER_FORMS,
     SUPPLY_CHART_NAMES,
     ORDER_GROUPS, orderRank, compareOrder,
