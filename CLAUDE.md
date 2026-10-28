@@ -269,3 +269,4 @@ each role (pharmacist / doctor / admin) and confirm start-up finishes (search wo
 logout reaches the login screen.
 
 - Labs fold under «عرض التحاليل» for every role and pharmacists see all labs; pharmacists have discharge / died buttons (final diagnosis optional); the bed-delete button («تفريغ السرير وحذف المريض») is ADMIN only.
+- Albumin + Lasix: the albumin medicine card has «لازكس مرافق (أمبول)» (med.lasixExtra, 0-8). chart-bridge `lasixExtraOf` adds it to the patient's Lasix 20mg amp quantity in the chart TSV (or sends it alone when the patient has no Lasix) and in the review / order tally; the Lasix order itself is never changed. Needs the Lasix medicine to have a chart name.

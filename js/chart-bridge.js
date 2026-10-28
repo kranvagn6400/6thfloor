@@ -144,6 +144,19 @@
     return r.unit === unit && r.kind === "general";
   }
 
+  // Albumin sometimes needs Lasix ampoules with it (a few more than the patient's own Lasix order):
+  // med.lasixExtra on the albumin medicine = that many extra Lasix 20mg ampoules a day, added to the
+  // Lasix quantity sent to the chart (the Lasix order itself is never changed).
+  const LASIX_ID = "lasix-20mg-amp";
+  function isAlbuminMed(pm) { return !!(pm && /albumin/i.test(String(pm.id || ""))); }
+  function lasixExtraOf(patient) {
+    let n = 0;
+    ((patient && patient.medications) || []).forEach(pm => {
+      if (isAlbuminMed(pm)) n += parseInt(pm.lasixExtra, 10) || 0;
+    });
+    return n;
+  }
+
   function collectPatientsFromApp(state, supplyDistribution, unit) {
     const Ward = global.PharmacyWard;
     if (!Ward || !Ward.ROOMS || !state || !state.patients) return [];
@@ -181,6 +194,18 @@
             return Object.assign({ id: pm.id, name: name, freq: freq, form: source.form || pm.form || "" }, orderRank(source));
           })
           .filter(Boolean);
+
+        // Lasix that goes with albumin (see lasixExtraOf): added to the patient's Lasix, or sent alone
+        const lasixExtra = lasixExtraOf(p);
+        if (lasixExtra > 0) {
+          const own = meds.find(m => m.id === LASIX_ID);
+          if (own) own.extraQty = lasixExtra;
+          else {
+            const cat = (state.medications || []).find(m => m && m.id === LASIX_ID);
+            const nm = cat ? String(cat.nameChart || "").trim() : "";
+            if (nm) meds.push(Object.assign({ id: LASIX_ID, name: nm, freq: "", form: cat.form || "ampule", extraQty: lasixExtra, onlyExtra: true }, orderRank(cat)));
+          }
+        }
 
         // Inject distributed supplies as additional "meds" so the
         // جارت الجارت chart shows them with their frequencies.
@@ -296,6 +321,10 @@
           } else {
             doses[idx] = isContainer(m.id, m.form) ? "1" : freqToDose(m.freq);
           }
+          if (m.extraQty) {
+            const base = m.onlyExtra ? 0 : parseInt(doses[idx], 10);
+            doses[idx] = String((isNaN(base) ? 0 : base) + m.extraQty);
+          }
         }
       }
       rows.push([p.name ?? "", p.id ?? "", ...doses].join("\t"));
@@ -359,6 +388,8 @@
     collectPatientsFromApp,
     freqToDose,
     dailyQuantity,
+    lasixExtraOf,
+    LASIX_ID,
     buildChartTSV,
     CHART_URL,
     CHART_QTY_EXCEPTIONS

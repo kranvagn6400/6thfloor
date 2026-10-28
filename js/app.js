@@ -2741,7 +2741,7 @@
     });
     $("meds-list").addEventListener("change", (e) => {
       const t = e.target;
-      if (!t.dataset.medIndex || (t.dataset.field !== "frequency" && t.dataset.field !== "mode")) return;
+      if (!t.dataset.medIndex || (t.dataset.field !== "frequency" && t.dataset.field !== "mode" && t.dataset.field !== "lasixExtra")) return;
       if (!state.currentBed) return;
       const p = state.patients[state.currentBed.key];
       if (!p || !Array.isArray(p.medications)) return;
@@ -2752,7 +2752,10 @@
         if (!med.mode) med.mode = med.frequency.trim();
         med.frequency = "1×1";
       }
-      if (t.dataset.field === "mode") {
+      if (t.dataset.field === "lasixExtra") {
+        const n = parseInt(t.value, 10) || 0;
+        if (n > 0) med.lasixExtra = n; else delete med.lasixExtra;
+      } else if (t.dataset.field === "mode") {
         if (t.value) med.mode = t.value; else delete med.mode;
       } else {
         med.frequency = t.value;
@@ -3569,6 +3572,14 @@
             seen.add(pm.id);
           }
         });
+        // Lasix ampoules that go with this patient's albumin
+        const lasixExtra = global.PharmacyChartBridge.lasixExtraOf(p);
+        const lasixId = global.PharmacyChartBridge.LASIX_ID;
+        const lasixCat = lasixExtra > 0 ? medById[lasixId] : null;
+        if (lasixCat && !(chartOnly && !String(lasixCat.nameChart || "").trim())) {
+          if (!tally[lasixId]) tally[lasixId] = { catalog: lasixCat, total: 0, custom: false };
+          tally[lasixId].total += lasixExtra;
+        }
       });
 
       // Inject auto-distributed supplies as additional "patients" of

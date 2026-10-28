@@ -696,6 +696,18 @@
           h("div", { class: "med-alert level-" + a.level }, a.msg)))
       : null;
 
+    // Albumin: Lasix ampoules that go with it (added to the Lasix quantity sent to the chart)
+    let lasixField = null;
+    if (/albumin/i.test(String(med.id || ""))) {
+      const cur = parseInt(med.lasixExtra, 10) || 0;
+      const opts = [];
+      for (let i = 0; i <= 8; i++) opts.push(h("option", { value: String(i), selected: i === cur ? "selected" : undefined }, i === 0 ? "—" : String(i)));
+      lasixField = h("div", { class: "med-field" }, [
+        h("label", {}, "لازكس مرافق (أمبول)"),
+        h("select", { dir: "ltr", dataset: { medIndex: index, field: "lasixExtra" } }, opts)
+      ]);
+    }
+
     return h("div", { class: "med-card" + (worst ? " has-alert-" + worst : ""), dataset: { medIndex: index } }, [
       h("div", { class: "med-card-head" }, [
         nameBlock,
@@ -719,7 +731,8 @@
         h("div", { class: "med-field" }, [
           h("label", {}, "طريقة الإعطاء"),
           modeSelect
-        ])
+        ]),
+        lasixField
       ])
     ]);
   }
