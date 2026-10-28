@@ -184,8 +184,8 @@
   const thick = (y0, y1) => '<div class="k" style="left:' + pt(X0 - 1) + ";top:" + pt(y0 - 1) + ";width:" + pt(X1 - X0 + 2) + ";height:" + pt(y1 - y0 + 2) + '"></div>';
   const vline = (cls, x, y0, y1, w) => '<div class="' + cls + '" style="left:' + pt(x - (w || 0.75) / 2) + ";top:" + pt(y0) + ";width:" + pt(w || 0.75) + ";height:" + pt(y1 - y0) + '"></div>';
   const hseg = (x0, x1, y) => '<div class="l" style="left:' + pt(x0) + ";top:" + pt(y - 0.375) + ";width:" + pt(x1 - x0) + ';height:.75pt"></div>';
-  // the room as written on the form: its number inside the unit (7), or «خاص 2» for a private room — not the floor-wide id
-  function roomLabel(room) { return room.kind === "private" ? room.title : String(room.num); }
+  // the room as written on the form: its number inside the unit (7), or «2 خاص» for a private room — not the floor-wide id
+  function roomLabel(room) { return room.kind === "private" ? room.num + " خاص" : String(room.num); }
   const roomSize = (t) => (String(t).length > 12 ? 10 : 12);
   const fitSize = (txt, base) => (String(txt).length > 22 ? base - 3 : String(txt).length > 16 ? base - 1.5 : base);
 
