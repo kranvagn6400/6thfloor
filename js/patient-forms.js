@@ -99,9 +99,10 @@
       hint: "تُصدر في أول يوم، ثم في آخر يوم من مدة الصرف (اليوم 7 أو 14)",
       fields: [
         // auto = filled by the app, never typed (دائرة صحة and the hospital are fixed; the ward is the patient's unit; the rest comes from the card; no allergy)
-        F("health", "دائرة صحة", 612, 774, 244, "r", { auto: true }), F("hospital", "مستشفى", 355, 524, 244, "r", { auto: true }), F("ward", "الردهة", 100, 296, 244, "r", { auto: true }),
-        F("name", "اسم المريض", 608, 770, 278, "r", { auto: true, dy: -4 }), F("age", "العمر", 355, 555, 278, "r", { auto: true, dy: -4 }), F("weight", "الوزن", 100, 298, 278, "r", { auto: true, dy: -4 }),
-        F("date", "التاريخ", 612, 800, 314, "r", { auto: true, dy: -4 }), F("scr", "S.cr", 355, 543, 314, "r", { auto: true, dy: -4 }),
+        // each top value is CENTRED between the label's colon and the cell's left column line
+        F("health", "دائرة صحة", 608, 778, 244, "r", { auto: true, center: true }), F("hospital", "مستشفى", 352, 541, 244, "r", { auto: true, center: true }), F("ward", "الردهة", 96, 297, 244, "r", { auto: true, center: true }),
+        F("name", "اسم المريض", 608, 772, 278, "r", { auto: true, dy: -4, center: true }), F("age", "العمر", 352, 557, 278, "r", { auto: true, dy: -4, center: true }), F("weight", "الوزن", 96, 300, 278, "r", { auto: true, dy: -4, center: true }),
+        F("date", "التاريخ", 608, 802, 314, "r", { auto: true, dy: -4, center: true }), F("scr", "S.cr", 352, 545, 314, "r", { auto: true, dy: -4, center: true }),
         // the two typed fields are written in the MIDDLE of their cells
         F("dose", "الجرعة", 92, 688, 999, "r", { full: true, center: true, auto: true }), F("duration", "تحديد مدة الصرف", 92, 688, 1037, "r", { full: true, hidden: true, center: true })
       ]
