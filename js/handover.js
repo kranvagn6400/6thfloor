@@ -90,7 +90,7 @@
         if (kind) {
           const def = (Clin.CRITICAL_KINDS || []).find(c => c.kind === kind);
           out.others.push({
-            id: key + "|" + pm.id, key, name: p.name.trim(), room: room.id, bed: bed.number,
+            id: key + "|" + pm.id, key, name: p.name.trim(), room: roomLabel(room), bed: bed.number,
             label: def ? def.label : kind,
             medName: cat.nameEn || cat.nameTrade || pm.id,
             dose: String(pm.dose || cat.defaultDose || "").trim(),
@@ -98,7 +98,7 @@
           });
         }
       });
-      if (hasAlb) out.albumin.push({ key, name: p.name.trim(), room: room.id, bed: bed.number, qty: albQty });
+      if (hasAlb) out.albumin.push({ key, name: p.name.trim(), room: roomLabel(room), bed: bed.number, qty: albQty });
     }));
     return out;
   }
@@ -113,7 +113,7 @@
     $("hv-albumin").innerHTML = data.albumin.length
       ? data.albumin.map(r => {
           const st = saved.alb[r.key] || "";
-          return '<div class="hv-row" data-key="' + esc(r.key) + '"><strong>' + esc(r.name) + "</strong><span>غرفة " + esc(r.room) + "</span>" +
+          return '<div class="hv-row" data-key="' + esc(r.key) + '"><strong>' + esc(r.name) + "</strong><span>" + esc(r.room) + "</span>" +
             '<select class="hv-status" aria-label="استحقاق صرف الألبومين">' +
             '<option value=""' + (st === "" ? " selected" : "") + ">الكمية: " + (r.qty ? esc(r.qty) : "—") + "</option>" +
             '<option value="ni"' + (st === "ni" ? " selected" : "") + ">Not indicated</option>" +
@@ -129,7 +129,7 @@
           const prep = saved.prep[r.id] != null ? saved.prep[r.id] : defaultPrep(r.medName + " " + r.label);
           return '<div class="hv-item' + (on ? " is-on" : "") + '" data-id="' + esc(r.id) + '">' +
             '<label class="hv-pick"><input type="checkbox" class="hv-check"' + (on ? " checked" : "") + "> <strong>" + esc(r.name) + "</strong>" +
-            "<span>غرفة " + esc(r.room) + "</span><span>" + esc(r.label) + "</span></label>" +
+            "<span>" + esc(r.room) + "</span><span>" + esc(r.label) + "</span></label>" +
             '<div class="hv-meta" dir="ltr">' + esc([r.medName, r.dose, r.freq].filter(Boolean).join(" · ")) + "</div>" +
             '<label class="hv-lab hv-timelab">وقت التسليم <input class="hv-time" type="text" autocomplete="off" placeholder="مثال: 8 مساءً" value="' + esc(saved.time[r.id] || "") + '"></label>' +
             '<div class="hv-extra"' + (on ? "" : " hidden") + ">" +
@@ -184,6 +184,12 @@
   const thick = (y0, y1) => '<div class="k" style="left:' + pt(X0 - 1) + ";top:" + pt(y0 - 1) + ";width:" + pt(X1 - X0 + 2) + ";height:" + pt(y1 - y0 + 2) + '"></div>';
   const vline = (cls, x, y0, y1, w) => '<div class="' + cls + '" style="left:' + pt(x - (w || 0.75) / 2) + ";top:" + pt(y0) + ";width:" + pt(w || 0.75) + ";height:" + pt(y1 - y0) + '"></div>';
   const hseg = (x0, x1, y) => '<div class="l" style="left:' + pt(x0) + ";top:" + pt(y - 0.375) + ";width:" + pt(x1 - x0) + ';height:.75pt"></div>';
+  // the room as written on the form: the number inside its unit (not the floor-wide id), e.g. «غرفة 7 · الثالثة» / «خاص 2 · الأولى»
+  function roomLabel(room) {
+    const u = global.PharmacyWard.UNITS.find(x => x.id === room.unit);
+    return room.title + (u ? " · " + u.name.replace(/^الوحدةs+/, "") : "");
+  }
+  const roomSize = (t) => (String(t).length > 12 ? 10 : 12);
   const fitSize = (txt, base) => (String(txt).length > 22 ? base - 3 : String(txt).length > 16 ? base - 1.5 : base);
 
   // the ruled body of a table. `wide[i]` = a block id when row i is ONE wide cell (the
@@ -242,7 +248,7 @@
       const top = T1.top + i * ROW_H;
       const mid = r.status ? STATUS[r.status] : (r.qty ? String(r.qty) : "");
       h += box("", COL.name[0] + 1, COL.name[1] - 1, top, ROW_H, esc(r.name), fitSize(r.name, 12));
-      h += box("", COL.room[0] + 1, COL.room[1] - 1, top, ROW_H, esc(r.room));
+      h += box("", COL.room[0] + 1, COL.room[1] - 1, top, ROW_H, esc(r.room), roomSize(r.room));
       h += box("", COL.mid[0] + 1, COL.mid[1] - 1, top, ROW_H, esc(mid), r.status === "np" ? 11 : 12);   // the longest status is a little smaller so it fits the cell
       if (r.time) h += box("", COL.time[0] + 1, COL.time[1] - 1, top, ROW_H, esc(r.time), fitSize(r.time, 12));
     });
@@ -258,7 +264,7 @@
     oth.forEach(r => {
       const top = T2.top + row * ROW_H;
       h += box("", COL.name[0] + 1, COL.name[1] - 1, top, ROW_H, esc(r.name), fitSize(r.name, 12));
-      h += box("", COL.room[0] + 1, COL.room[1] - 1, top, ROW_H, esc(r.room));
+      h += box("", COL.room[0] + 1, COL.room[1] - 1, top, ROW_H, esc(r.room), roomSize(r.room));
       h += box("", COL.mid[0] + 1, COL.mid[1] - 1, top, ROW_H, esc(r.med), medSize(r.med));
       if (r.time) h += box("", COL.time[0] + 1, COL.time[1] - 1, top, ROW_H, esc(r.time), fitSize(r.time, 12));
       if (r.p) h += box("w", COL.time[0] + 1, COL.name[1] - 1, top + ROW_H, r.p * ROW_H, '<div class="wp">' + esc(r.prep) + "</div>", 12);
