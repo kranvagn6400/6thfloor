@@ -149,12 +149,38 @@
   const MAX_COURSE = 21;
   const durationsAfter = (end) => { const rem = MAX_COURSE - end; return rem >= 14 ? [7, 14] : rem >= 7 ? [7] : []; };
   // → { first: true } on day 1 with no form made yet, else { end, legacy } = the last day covered so far
-  function courseOf(p, day) {
-    const s = savedOf(p, "meronem", false), hist = (s && s.hist) || [];
+  function courseOf(p, day, ignoreToday) {
+    const s = savedOf(p, "meronem", false), hist = ((s && s.hist) || []).filter(h => !(ignoreToday && h.date === todayISO()));
     const last = hist[hist.length - 1];
     if (last) return { end: last.end || ((last.start || last.day || 1) + (last.dur || 7) - 1), legacy: false };
     if (day === 1) return { first: true };
     return { end: 14, legacy: true };
+  }
+
+  // the record of a form (what is kept in hist once it is printed): the day of the course, the period and the days it covers
+  function buildEntry(formId, p) {
+    const day = dayOf(findMed(formId, p), p) || 1;
+    if (formId === "albumin") return { date: todayISO(), day, dur: 1 };
+    const st = savedOf(p, formId, true);
+    const dur = parseInt(st.vals.durDays, 10) || 0;
+    const c = courseOf(p, day, true);
+    const start = c.first ? 1 : c.end + 1;               // a renewal continues right after the period that ended
+    return { date: todayISO(), day, dur, start, end: start + dur - 1 };
+  }
+  // «تم الطبع»: the form leaves the required list. It uses the file made today (pending); albumin has no period to choose, so it can be
+  // marked at once; meronem only when its file was made (or, in the editor, once a period is chosen). → { ok, why?, undo? }
+  function markPrinted(formId, p, allowBuild) {
+    const st = savedOf(p, formId, true);
+    let entry = st.pending && st.pending.date === todayISO() ? st.pending : null;
+    if (!entry) {
+      if (formId === "albumin" || allowBuild) entry = buildEntry(formId, p);
+      else return { ok: false, why: "أنشئ الاستمارة أولًا: افتحها واختر مدة الصرف ثم «حفظ PDF»" };
+    }
+    const prevHist = st.hist.slice(), prevPending = st.pending || null;
+    st.hist = st.hist.filter(h => h.date !== todayISO());
+    st.hist.push(entry);
+    delete st.pending;
+    return { ok: true, undo() { st.hist = prevHist; if (prevPending) st.pending = prevPending; else delete st.pending; } };
   }
 
   // → { state: "done" | "due" | "late" | "soon" | "none", text }
@@ -164,6 +190,8 @@
     const s = savedOf(p, formId, false), hist = (s && s.hist) || [];
     const day = dayOf(hit, p);
     if (hist.some(h => h.date === todayISO())) return { state: "done", text: "صُرفت اليوم ✓", day };
+    // the file was made today but «تم الطبع» is not pressed yet: the form is still required
+    if (s && s.pending && s.pending.date === todayISO()) return { state: "due", wait: true, text: "أُنشئ الملف — بانتظار الطبع", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
     const c = courseOf(p, day);
     if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
@@ -340,6 +368,11 @@
     #pf-editor .pfs-chip { height: 42px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--border, #dbe2e8); background: var(--surface, #fff); color: var(--text, #14211f); font: inherit; font-weight: 800; font-size: 13px; cursor: pointer; }
     #pf-editor .pfs-chip.is-on { background: var(--bg, #eef2f6); border-color: var(--fill, var(--primary, #1f6f9f)); }
     #pf-editor .pfs-pt { display: block; width: 100%; text-align: start; border: 1px solid var(--border, #dbe2e8); background: var(--surface, #fff); color: var(--text, #14211f); border-radius: 14px; padding: 12px; margin-bottom: 10px; font: inherit; cursor: pointer; }
+    #pf-editor .pfs-main { display: block; width: 100%; text-align: start; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; cursor: pointer; }
+    #pf-editor .pfs-done { display: block; width: 100%; margin-top: 10px; height: 42px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfs-done-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; background: #1b8a3a; color: #fff; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
+    #pf-editor .pfs-st.wait { background: #dbeafe; color: #1d4ed8; }
+    html[data-theme="dark"] #pf-editor .pfs-st.wait { background: #17304f; color: #9cc4ff; }
     #pf-editor .pfs-pt b { display: block; font-size: 15px; margin-bottom: 4px; }
     #pf-editor .pfs-pt span.m { display: block; font-size: 12px; color: var(--text-muted, #5c6b73); margin-bottom: 8px; }
     #pf-editor .pfs-st { display: inline-block; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; }
@@ -428,9 +461,38 @@
     });
     $("pfs-list").innerHTML = rows.length ? rows.map(x => {
       const d = dueInfo(V.form, x.p);
-      return '<button type="button" class="pfs-pt" data-key="' + esc(x.key) + '"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + d.state + '">' + esc(d.text) + "</span></button>";
+      // «تم الطبع» beside a form that needs printing: albumin any time, meronem once its file was made
+      const canPrint = (d.state === "due" || d.state === "late") && (V.form === "albumin" || d.wait);
+      return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
+        (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") + "</div>";
     }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "<br>اضغط «كل المرضى» لإصدار الاستمارة لمريض آخر.</div>";
-    $("pfs-list").querySelectorAll(".pfs-pt").forEach(b => b.addEventListener("click", () => openForm(V.form, b.dataset.key)));
+    const list = $("pfs-list");
+    list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
+    list.querySelectorAll(".pfs-done").forEach(b => b.addEventListener("click", () => printedFromList(b.closest(".pfs-pt").dataset.key)));
+  }
+  function printedFromList(key) {
+    const p = App().state.patients[key];
+    if (!p) return;
+    const form = V.form, res = markPrinted(form, p, false);
+    if (!res.ok) { flash(res.why); return; }
+    App().savePatient(key);
+    drawList();
+    refreshAlert();
+    undoToast("سُجّلت طباعة الاستمارة: " + String(p.name || "").trim(), () => { res.undo(); App().savePatient(key); if (V && V.view === "list") drawList(); refreshAlert(); });
+  }
+  // a short message with «تراجع»
+  function undoToast(msg, undo) {
+    const old = $("pfs-undo"); if (old) old.remove();
+    const t = document.createElement("div");
+    t.id = "pfs-undo";
+    t.style.cssText = "position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:100000;display:flex;align-items:center;gap:12px;justify-content:space-between;background:#1f2937;color:#fff;padding:12px 16px;border-radius:14px;font:700 14px/1.5 inherit;font-family:inherit;direction:rtl;box-shadow:0 8px 24px rgba(0,0,0,.35)";
+    const s = document.createElement("span"); s.textContent = msg;
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "تراجع";
+    b.style.cssText = "border:0;border-radius:10px;padding:8px 14px;background:#f5b301;color:#1f2937;font:inherit;font-weight:800;cursor:pointer";
+    b.addEventListener("click", () => { t.remove(); undo(); });
+    t.appendChild(s); t.appendChild(b);
+    document.body.appendChild(t);
+    setTimeout(() => { if (t.parentNode) t.remove(); }, 7000);
   }
 
   // ---- the form of one patient ----
@@ -533,6 +595,17 @@
     const dchips = $("pfs-dur");
     if (dchips) dchips.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b) return; setDur(+b.dataset.d); });
     $("pfs-pdf").addEventListener("click", () => savePdf($("pfs-pdf")));
+    $("pfs-sum").addEventListener("click", (e) => {
+      if (!e.target.closest("#pfs-printed")) return;
+      const key = V.key, p = V.p, form = V.form;
+      const hasFile = V.st.pending && V.st.pending.date === todayISO();
+      if (form === "meronem" && !hasFile && !checkDuration()) return;       // choose the period first
+      const res = markPrinted(form, p, true);
+      if (!res.ok) { flash(res.why); return; }
+      if (key) App().savePatient(key);
+      updateSum(); refreshAlert();
+      undoToast("سُجّلت طباعة الاستمارة", () => { res.undo(); if (key) App().savePatient(key); if (V && V.p === p) updateSum(); refreshAlert(); });
+    });
     $("pfs-preview").addEventListener("click", () => preview($("pfs-preview")));
   }
   // the dispensing periods the form may be made for now ([] = none: the 21-day limit is reached)
@@ -553,7 +626,8 @@
   function updateSum() {
     const el = $("pfs-sum"); if (!el) return;
     const d = dueInfo(V.form, V.p);
-    el.innerHTML = '<span class="pfs-st ' + d.state + '">' + esc(d.text) + "</span>";
+    el.innerHTML = '<span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span>" +
+      ((d.state === "due" || d.state === "late") ? '<button type="button" class="pfs-done-sm" id="pfs-printed">تم الطبع</button>' : "");
   }
 
   // the page(s) to print with the values as they are now
@@ -604,29 +678,20 @@
       // the form counts as issued only when the file was really saved / shared: closing the share sheet («إلغاء») does not
       const how = H && H.deliverPdf ? await H.deliverPdf(blob, name) : "downloaded";
       if (how === "cancelled") { flash("لم يُحفظ الملف — الاستمارة ما زالت مطلوبة"); return; }
-      issued();
+      makePending();
     } catch (err) {
       console.error("[patient-forms] pdf", err);
       flash("تعذّر إنشاء الملف: " + (err && err.message || err));
     } finally { if (b) { b.disabled = false; b.textContent = label; } }
   }
-  // the form is counted as issued today once its PDF was made (the next due day follows from the period)
-  function issued() {
+  // the file was saved / shared: the form now WAITS for the print — «تم الطبع» is what takes it off the required list
+  function makePending() {
     if (!V) return;
-    const day = dayOf(findMed(V.form, V.p), V.p) || 1;
-    const dur = parseInt(V.st.vals.durDays, 10) || 1;
-    const entry = { date: todayISO(), day, dur };
-    // saving the same day's form again replaces it (the period is worked out WITHOUT today's earlier entry)
-    V.st.hist = (V.st.hist || []).filter(h => h.date !== todayISO());
-    if (V.form === "meronem") {
-      const c = courseOf(V.p, dayOf(findMed("meronem", V.p), V.p));
-      entry.start = c.first ? 1 : c.end + 1;               // a renewal continues right after the period that ended
-      entry.end = entry.start + dur - 1;
-    }
-    V.st.hist.push(entry);
+    V.st.pending = buildEntry(V.form, V.p);
     if (V.key && App()) App().savePatient(V.key);
     updateSum();
     refreshAlert();
+    flash("حُفظ الملف — اضغط «تم الطبع» بعد الطباعة");
   }
 
   // ---- the header button waits for the pharmacist: a soft glow + a count while forms are due ----
