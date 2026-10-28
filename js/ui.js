@@ -672,16 +672,17 @@
     }
 
     const sci = scientificName(med);
-    // Antibiotic course day — tap to correct it (e.g. started before admission)
+    // Antibiotic / albumin course day — tap to correct it (e.g. started before admission)
     let dayChip = null;
-    if (Clinical && Clinical.isAntibiotic(med)) {
+    const isAlb = !!(Clinical && (Clinical.isAlbumin(med) || /albumin/i.test(String(med.id || ""))));
+    if (Clinical && (Clinical.isAntibiotic(med) || isAlb)) {
       const d = Clinical.abxDay(med, patient);
-      const tone = !d ? "" : d >= 14 ? " is-long" : d >= 7 ? " is-review" : "";
+      const tone = isAlb ? "" : !d ? "" : d >= 14 ? " is-long" : d >= 7 ? " is-review" : "";
       dayChip = h("button", {
         type: "button",
         class: "abx-day-chip" + tone,
         dataset: { medIndex: index, action: "abx-day" },
-        title: "يوم المضاد الحيوي — اضغط للتعديل"
+        title: (isAlb ? "يوم علاج الألبومين" : "يوم المضاد الحيوي") + " — اضغط للتعديل"
       }, [d ? "D" + d : "D?", h("span", { class: "abx-day-edit", "aria-hidden": "true" }, "✎")]);
     }
     const nameBlock = h("div", { class: "med-name-block" }, [

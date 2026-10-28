@@ -2682,14 +2682,14 @@
 
     // Meds list — delete & edit (event delegation)
     $("meds-list").addEventListener("click", (e) => {
-      // Antibiotic day chip → correct the course day
+      // Antibiotic / albumin day chip → correct the course day
       const dayBtn = e.target.closest('[data-action="abx-day"]');
       if (dayBtn && state.currentBed) {
         const p = state.patients[state.currentBed.key];
         const med = p && p.medications && p.medications[parseInt(dayBtn.dataset.medIndex, 10)];
         if (!med) return;
         const cur = Clinical.abxDay(med, p);
-        const answer = prompt(`اليوم الحالي لهذا المضاد؟ (1 = بدأ اليوم)`, cur ? String(cur) : "1");
+        const answer = prompt(Clinical.isAntibiotic(med) ? `اليوم الحالي لهذا المضاد؟ (1 = بدأ اليوم)` : `اليوم الحالي لهذا الدواء؟ (1 = بدأ اليوم)`, cur ? String(cur) : "1");
         if (answer === null) return;
         if (!Clinical.setAbxDay(med, answer)) { flashHint("أدخل رقماً بين 1 و 365"); return; }
         persistPatient(state.currentBed.key);
