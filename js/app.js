@@ -4037,7 +4037,7 @@
         else noDoubleError = true;
       }
       const when = sent && sent.at ? new Date(sent.at).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" }) : "";
-      showMedSummaryList(sent ? sent.dist : null, false, {
+      showMedSummaryList(sent ? sent.dist : null, true, {   // true = only what goes to the chart: no chart name → not in the order
         order: true,
         noDouble, noDoubleError,
         title: "الطلبية — " + flowUnitName(),

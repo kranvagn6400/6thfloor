@@ -486,7 +486,7 @@
     $("pfs-list").innerHTML = rows.length ? rows.map(x => {
       const d = dueInfo(V.form, x.p);
       // «تم الطبع» beside a form that needs printing: albumin any time, meronem once its file was made
-      const canPrint = (d.state === "due" || d.state === "late") && (V.form === "albumin" || d.wait);
+      const canPrint = d.state === "due" || d.state === "late";
       return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
         (canPrint ? '<button type="button" class="pfs-done">تم الطبع</button>' : "") + "</div>";
     }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "<br>اضغط «كل المرضى» لإصدار الاستمارة لمريض آخر.</div>";
@@ -495,13 +495,39 @@
     list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
     list.querySelectorAll(".pfs-done").forEach(b => b.addEventListener("click", () => printedFromList(b.closest(".pfs-pt").dataset.key)));
   }
-  function printedFromList(key) {
+  // asks which dispensing period (the allowed ones) — a small dialog; resolves 0 when cancelled
+  function pickDuration(allowed, name) {
+    return new Promise(resolve => {
+      const old = $("pfs-pick"); if (old) old.remove();
+      const o = document.createElement("div");
+      o.id = "pfs-pick";
+      o.style.cssText = "position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;direction:rtl;font-family:inherit";
+      o.innerHTML = '<div style="background:var(--surface,#fff);color:var(--text,#14211f);border-radius:18px;padding:18px;width:100%;max-width:340px;box-shadow:0 12px 36px rgba(0,0,0,.4)"><div style="font-weight:800;font-size:15px;margin-bottom:4px">مدة الصرف</div><div style="font-size:13px;color:var(--text-muted,#5c6b73);margin-bottom:14px">' + esc(name) + '</div><div class="pfs-pk" style="display:flex;gap:10px;flex-wrap:wrap">' +
+        allowed.map(n => '<button type="button" data-d="' + n + '" style="flex:1 1 120px;height:46px;border:0;border-radius:12px;background:var(--fill,var(--primary,#1f6f9f));color:#fff;font:inherit;font-weight:800;font-size:15px;cursor:pointer">' + esc(durText(n)) + "</button>").join("") +
+        '</div><button type="button" data-d="0" style="width:100%;margin-top:12px;height:42px;border:0;border-radius:12px;background:var(--bg,#eef2f6);color:inherit;font:inherit;font-weight:800;cursor:pointer">إلغاء</button></div>';
+      document.body.appendChild(o);
+      o.addEventListener("click", (e) => { const b = e.target.closest("button[data-d]"); if (!b && e.target !== o) return; o.remove(); resolve(b ? +b.dataset.d : 0); });
+    });
+  }
+  async function printedFromList(key) {
     const p = App().state.patients[key];
     if (!p) return;
-    const form = V.form, res = markPrinted(form, p, false);
+    const form = V.form, st = savedOf(p, form, true);
+    // meronem with no file made yet: the period is needed (a single allowed one is taken at once, else ask)
+    if (form === "meronem" && !(st.pending && st.pending.date === todayISO())) {
+      const allowed = allowedFor(p);
+      if (!allowed.length) { flash("لا يجوز تجديد استمارة الميرونيم: بلغ العلاج 21 يومًا"); return; }
+      let d = parseInt(st.vals.durDays, 10) || 0;
+      if (allowed.indexOf(d) < 0) {
+        d = allowed.length === 1 ? allowed[0] : await pickDuration(allowed, String(p.name || "").trim());
+        if (!d) return;
+        st.vals.durDays = String(d); st.vals.duration = durText(d);
+      }
+    }
+    const res = markPrinted(form, p, true);
     if (!res.ok) { flash(res.why); return; }
     App().savePatient(key);
-    drawList();
+    if (V && V.view === "list") drawList();
     refreshAlert();
     undoToast("سُجّلت طباعة الاستمارة: " + String(p.name || "").trim(), () => { res.undo(); App().savePatient(key); if (V && V.view === "list") drawList(); refreshAlert(); });
   }
