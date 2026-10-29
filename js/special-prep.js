@@ -135,38 +135,57 @@
 
   // ---- the drawings: every line is drawn in front of the user (stroke animation), then the labels fade in ----
   const P = (d, delay, cls) => '<path class="dr ' + (cls || "") + '" style="--d:' + delay + 's" pathLength="1" d="' + d + '"/>';
-  const TX = (x, y, t, delay, cls) => '<text class="fade ' + (cls || "") + '" style="--d:' + delay + 's" x="' + x + '" y="' + y + '" text-anchor="middle">' + esc(t) + "</text>";
-  const FILL = (d, delay, cls) => '<path class="fade ' + (cls || "") + '" style="--d:' + delay + 's" d="' + d + '"/>';
-  const DOT = (x, y, r, delay, cls) => '<circle class="fade ' + (cls || "") + '" style="--d:' + delay + 's" cx="' + x + '" cy="' + y + '" r="' + r + '"/>';
-  const BEAKER = "M108 36 L108 128 Q108 140 120 140 L180 140 Q192 140 192 128 L192 36";
-  const TICKS = (d0) => P("M108 60 L124 60", d0 + 0.2) + P("M108 80 L120 80", d0 + 0.3) + P("M108 100 L124 100", d0 + 0.4) + P("M108 120 L120 120", d0 + 0.5);
-  const BAR = (d0) => P("M140 134 L160 134 Q165 134 165 130 Q165 126 160 126 L140 126 Q135 126 135 130 Q135 134 140 134Z", d0, "acc");
-  const PLATE = (d0) => P("M92 144 L208 144 L208 158 Q208 162 204 162 L96 162 Q92 162 92 158Z", d0);
-  const WATER = (top, d0) => FILL("M109 " + top + " L191 " + top + " L191 128 Q191 139 180 139 L120 139 Q109 139 109 128Z", d0, "water");
+  // No writing inside the drawings: only shapes. Glass = outline, liquids / powder / bottles = colour.
+  const G = (d, delay, cls) => '<path class="fade ' + (cls || "") + '" style="--d:' + delay + 's" d="' + d + '"/>';
+  const BEAKER = "M96 46 L102 50 L102 140 Q102 152 114 152 L186 152 Q198 152 198 140 L198 50 L204 46";
+  const TICKS = (d0) => P("M102 70 L124 70", d0) + P("M102 90 L114 90", d0 + 0.1) + P("M102 110 L124 110", d0 + 0.2) + P("M102 130 L114 130", d0 + 0.3);
+  const SHINE = (d0) => P("M111 62 L111 126", d0, "hl");
+  const LIQ = (top, d0, dip) => G(dip
+    ? "M103 " + top + " L128 " + top + " Q150 " + (top + 30) + " 172 " + top + " L197 " + top + " L197 140 Q197 151 186 151 L114 151 Q103 151 103 140Z"
+    : "M103 " + top + " L197 " + top + " L197 140 Q197 151 186 151 L114 151 Q103 151 103 140Z", d0, "water");
+  const BAR = (d0) => '<g class="fade" style="--d:' + d0 + 's"><path class="barb" d="M134 148 L166 148 Q172 148 172 144 Q172 140 166 140 L134 140 Q128 140 128 144 Q128 148 134 148Z"/></g>';
+  const PLATE = (d0) => G("M72 154 L228 154 L228 180 Q228 186 222 186 L78 186 Q72 186 72 180Z", d0, "plate") + DOTC(205, 170, 7, d0 + 0.3, "knob") + DOTC(92, 170, 3.5, d0 + 0.4, "led");
+  const DOTC = (x, y, r, delay, cls) => '<circle class="fade ' + (cls || "") + '" style="--d:' + delay + 's" cx="' + x + '" cy="' + y + '" r="' + r + '"/>';
+  const SPARK = (x, y, d0) => P("M" + x + " " + (y - 9) + " L" + x + " " + (y + 9) + " M" + (x - 9) + " " + y + " L" + (x + 9) + " " + y, d0, "acc thin");
   const ART = {
-    beaker: () => P(BEAKER, 0) + TICKS(0.4) + BAR(1.2) + TX(150, 176, "Calibrated beaker + magnetic bar", 1.8, "cap"),
-    water: () => WATER(66, 1.4) + P(BEAKER, 0) + TICKS(0.3) + PLATE(0.8) + P("M128 80 Q150 70 172 80 Q150 92 130 100 Q150 112 170 112", 1.6, "acc") + BAR(1.3) +
-      TX(246, 84, "90 mL", 2, "big") + TX(246, 100, "Sterile water", 2.1, "cap") +
-      P("M62 50 A20 20 0 1 1 22 50 A20 20 0 1 1 62 50", 2.2, "bad") + P("M28 64 L56 36", 2.6, "bad") + P("M42 34 Q35 45 40 51 Q39 44 45 41 Q50 49 45 57 Q52 54 50 47 Q55 53 42 61 Q31 56 42 34Z", 2.4, "bad") +
-      TX(42, 90, "No heat!", 3, "bad-t"),
-    powder: () => WATER(84, 0.2) + P(BEAKER, 0) + TICKS(0.3) + BAR(0.9) +
-      P("M112 8 L188 8 L176 28 Q150 38 124 28Z", 1.2) + DOT(150, 46, 3, 1.9, "pw") + DOT(143, 58, 3, 2.1, "pw") + DOT(157, 66, 3, 2.3, "pw") + DOT(148, 78, 3, 2.5, "pw") +
-      TX(246, 44, "17 g", 2.6, "big") + TX(246, 60, "Disodium phosphate", 2.7, "cap"),
-    acid: () => WATER(84, 0.2) + P(BEAKER, 0) + TICKS(0.3) + BAR(0.9) +
-      P("M136 4 L164 4 L164 14 L170 20 L170 52 Q170 58 164 58 L136 58 Q130 58 130 52 L130 20 L136 14Z", 1.2) + FILL("M132 34 L168 34 L168 52 Q168 56 164 56 L136 56 Q132 56 132 52Z", 1.8, "acid") +
-      DOT(150, 70, 3.5, 2.3, "drop") + DOT(150, 82, 3.5, 2.6, "drop") +
-      TX(246, 44, "3.4 mL", 2.8, "big") + TX(246, 60, "Phosphoric acid 85%", 2.9, "cap"),
-    clear: () => WATER(60, 0.2) + P(BEAKER, 0) + TICKS(0.3) + BAR(0.9) + P("M130 80 Q150 72 170 80 Q150 90 134 100", 1.3, "acc") +
-      P("M212 40 L222 50 M224 36 L224 48 M236 44 L228 52", 1.8, "acc") + P("M218 78 L231 92 L255 62", 2.2, "ok") + TX(236, 116, "Clear", 2.8, "cap"),
-    bottle: () => FILL("M120 70 L120 150 Q120 160 130 160 L170 160 Q180 160 180 150 L180 70 Q180 56 165 52 L165 36 L135 36 L135 52 Q120 56 120 70Z", 0.2, "dark") +
-      P("M120 70 L120 150 Q120 160 130 160 L170 160 Q180 160 180 150 L180 70 Q180 56 165 52 L165 36 L135 36 L135 52 Q120 56 120 70Z", 0) +
-      FILL("M131 86 L169 86 L169 132 L131 132Z", 1.2, "lbl") + P("M137 98 L163 98 M137 108 L163 108 M137 118 L154 118", 1.6, "lblline") +
-      TX(246, 70, "7 days", 2.2, "big") + TX(246, 88, "Room temp", 2.3, "cap") + TX(246, 102, "Protect from light", 2.4, "cap") +
-      TX(56, 100, "Dark", 2.0, "cap") + TX(56, 114, "container", 2.1, "cap")
+    // 1) the stirring bar goes into an empty graduated beaker
+    beaker: () => P(BEAKER, 0) + TICKS(0.5) + SHINE(1.0) + BAR(1.3) +
+      P("M150 8 L150 34 M139 24 L150 36 L161 24", 1.7, "acc"),
+    // 2) sterile water poured in, the beaker stands on the stirrer plate (switched on, NO heat)
+    water: () => PLATE(0) + LIQ(70, 1.2, true) + P(BEAKER, 0.4) + TICKS(0.8) + SHINE(1.4) + BAR(1.3) +
+      '<g transform="translate(86 26) rotate(125)">' + P("M-9 0 L9 0 L9 12 L22 26 L22 62 Q22 70 14 70 L-14 70 Q-22 70 -22 62 L-22 26 L-9 12Z", 1.6) +
+      G("M-20 36 L20 36 L20 62 Q20 68 14 68 L-14 68 Q-20 68 -20 62Z", 2.0, "water") + "</g>" +
+      P("M97 40 Q112 46 122 66", 2.4, "stream") +
+      P("M118 124 Q150 108 182 124 M174 114 L184 125 L170 128", 2.7, "acc") +
+      P("M268 50 A22 22 0 1 1 224 50 A22 22 0 1 1 268 50", 3.0, "bad") + P("M230 66 L262 34", 3.3, "bad") +
+      P("M246 34 Q238 46 243 52 Q242 45 248 42 Q254 50 249 58 Q257 54 255 47 Q260 55 246 63 Q232 57 246 34Z", 3.1, "bad"),
+    // 3) the white powder is added gradually while it stirs
+    powder: () => PLATE(0) + LIQ(86, 0.6, true) + P(BEAKER, 0.2) + TICKS(0.6) + SHINE(1.0) + BAR(0.9) +
+      '<g transform="translate(150 24) rotate(-28)">' + G("M-30 0 Q-30 18 0 18 Q30 18 30 0Z", 1.3, "powderfill") + P("M-30 0 Q-30 18 0 18 Q30 18 30 0", 1.2) + P("M28 2 L76 -14", 1.5) + "</g>" +
+      DOTC(132, 54, 3.4, 2.0, "pw") + DOTC(140, 64, 3.4, 2.2, "pw") + DOTC(129, 72, 3.4, 2.4, "pw") + DOTC(146, 76, 3.4, 2.6, "pw") + DOTC(136, 82, 3, 2.8, "pw") +
+      P("M118 128 Q150 112 182 128 M174 118 L184 129 L170 132", 2.9, "acc"),
+    // 4) the acid, measured in a syringe, drops in
+    acid: () => PLATE(0) + LIQ(86, 0.6, true) + P(BEAKER, 0.2) + TICKS(0.6) + SHINE(1.0) + BAR(0.9) +
+      G("M141 26 L159 26 L159 56 L141 56Z", 1.6, "acid") +
+      P("M140 8 L160 8 L160 56 L156 56 L156 66 L144 66 L144 56 L140 56Z", 1.2) + P("M133 8 L167 8", 1.4) + P("M140 2 L160 2 M150 2 L150 22", 1.5) + G("M141 20 L159 20 L159 27 L141 27Z", 1.7, "rubber") +
+      P("M160 32 L167 32 M160 40 L167 40 M160 48 L167 48", 1.9, "thin") +
+      '<path class="fade drop" style="--d:2.4s" d="M150 70 Q145 78 150 82 Q155 78 150 70Z"/><path class="fade drop" style="--d:2.7s" d="M150 76 Q146 82 150 86 Q154 82 150 76Z" transform="translate(0 6)"/>',
+    // 5) stir until completely clear
+    clear: () => PLATE(0) + LIQ(66, 0.6, true) + P(BEAKER, 0.2) + TICKS(0.6) + SHINE(1.0) + BAR(0.9) +
+      P("M118 124 Q150 108 182 124 M174 114 L184 125 L170 128", 1.4, "acc") +
+      SPARK(84, 70, 1.8) + SPARK(216, 90, 2.0) + SPARK(76, 112, 2.2) + SPARK(226, 50, 2.4) +
+      P("M262 40 A22 22 0 1 1 218 40 A22 22 0 1 1 262 40", 2.6, "ok") + P("M228 41 L236 50 L252 31", 3.0, "ok"),
+    // 6) poured through a funnel into a dark (amber) bottle, then labelled
+    bottle: () => G("M185 140 L185 184 Q185 192 193 192 L237 192 Q245 192 245 184 L245 140 Q245 128 232 126 L232 116 L198 116 L198 126 Q185 128 185 140Z", 0.2, "amber") +
+      P("M185 140 L185 184 Q185 192 193 192 L237 192 Q245 192 245 184 L245 140 Q245 128 232 126 L232 116 L198 116 L198 126 Q185 128 185 140Z", 0) +
+      P("M190 84 L240 84 L224 114 L206 114Z", 0.8) +
+      '<g transform="translate(192 74) rotate(55) scale(0.6) translate(-198 -46)">' + LIQ(70, 1.4, false) + P(BEAKER, 1.0) + TICKS(1.3) + "</g>" +
+      P("M193 77 Q206 88 212 112", 2.2, "stream") +
+      G("M193 146 L237 146 L237 182 L193 182Z", 2.8, "lbl") + P("M200 156 L230 156 M200 165 L230 165 M200 174 L220 174", 3.1, "lblline")
   };
   function artSvg(name) {
     const f = ART[name];
-    return '<svg class="sp-svg" viewBox="0 0 300 184" role="img" aria-hidden="true">' + (f ? f() : "") + "</svg>";
+    return '<svg class="sp-svg" viewBox="0 0 300 200" role="img" aria-hidden="true">' + (f ? f() : "") + "</svg>";
   }
   function stepperHtml(d) {
     const i = Math.min(stepIdx, d.stepper.length - 1), st = d.stepper[i], last = i === d.stepper.length - 1;

@@ -2623,3 +2623,21 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .sp-nav .sp-prev { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
 .sp-nav button:disabled { opacity: .4; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .sp-svg .dr { animation: none; stroke-dashoffset: 0; } .sp-svg .fade { animation: none; opacity: 1; } }
+
+/* Special prep drawings, round 2: no writing, bolder and colourful */
+.sp-svg .dr { stroke-width: 3; }
+.sp-svg .dr.thin { stroke-width: 2; }
+.sp-svg .dr.hl { stroke: #fff; stroke-opacity: .55; stroke-width: 4; }
+.sp-svg .dr.stream { stroke: #3d9bd6; stroke-width: 4; }
+.sp-svg .water { fill: rgba(61, 155, 214, .42); }
+.sp-svg .plate { fill: #8d98a0; }
+.sp-svg .knob { fill: #d7dde0; stroke: #5b666d; stroke-width: 1.5; }
+.sp-svg .led { fill: #23b45a; }
+.sp-svg .barb { fill: #fff; stroke: #4a5560; stroke-width: 2; }
+.sp-svg .powderfill { fill: #fff; }
+.sp-svg .pw { fill: #fff; stroke: #4a5560; stroke-width: 1.4; }
+.sp-svg .acid { fill: rgba(240, 190, 30, .8); }
+.sp-svg .rubber { fill: #3a3f44; }
+.sp-svg .drop { fill: #e0a800; }
+.sp-svg .amber { fill: #a8601f; fill-opacity: .9; }
+.sp-svg .lbl { fill: #fff; stroke: #4a5560; stroke-width: 1.5; }
