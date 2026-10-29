@@ -37,24 +37,23 @@
     // ---- Joulie's oral solution ----
     jBar: () => clip("dpIn", BEAKER_IN) + beaker() + '<g class="dp-dropin"><rect class="bar" x="134" y="140" width="32" height="8" rx="4"/></g>' + arrowDown(150, 8, 34),
     jWater: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water dp-rise") + swirl(70) + beaker() + bar() +
-      tilting(112, 34, "dp-tilt", "water") + stream("M112 36 Q118 52 122 92") + noHeat(),
+      tilting(90, 30, "dp-tilt", "water") + stream("M90 32 Q104 40 118 92") + noHeat(),
     jPowder: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud dp-cloudin") + swirl(76) + beaker() + bar() +
-      '<g transform="translate(168 30)"><g class="dp-tip"><path class="powder" d="M-30 0 Q-30 18 0 18 Q30 18 30 0Z"/><path class="ln" d="M-30 0 Q-30 18 0 18 Q30 18 30 0 M28 2 L74 -14"/></g></g>' +
-      dots([[146, 50, 0], [154, 52, 0.35], [142, 56, 0.7], [158, 54, 1.05], [150, 50, 1.4], [138, 52, 1.75]], "pw dp-fall"),
+      '<g transform="translate(150 2)"><g class="dp-tip"><path class="powder" d="M-30 0 Q-30 18 0 18 Q30 18 30 0Z"/><path class="ln" d="M-30 0 Q-30 18 0 18 Q30 18 30 0 M28 2 L60 -8"/></g></g>' +
+      dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall"),
     jAcid: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud") + swirl(76) + beaker() + bar() +
-      '<path class="acid" d="M141 26 L159 26 L159 56 L141 56Z"/><path class="ln" d="M140 8 L160 8 L160 56 L156 56 L156 66 L144 66 L144 56 L140 56Z M133 8 L167 8"/>' +
-      '<g class="dp-plunge"><path class="ln" d="M140 -2 L160 -2 M150 -2 L150 20"/><rect class="rubber" x="141" y="18" width="18" height="7"/></g>' +
-      '<path class="ln thin" d="M160 34 L167 34 M160 42 L167 42 M160 50 L167 50"/>' +
-      '<path class="drop dp-drip" style="--d:0s" d="M150 68 Q145 76 150 80 Q155 76 150 68Z"/><path class="drop dp-drip" style="--d:.8s" d="M150 68 Q145 76 150 80 Q155 76 150 68Z"/>',
+      '<path class="acid" d="M144 38 L156 38 L156 56 L151.5 68 L148.5 68 L144 56Z"/><path class="ln glass" d="M143 26 L157 26 L157 56 L152 70 L148 70 L143 56Z"/>' +
+      '<path class="rubber dp-squeeze" d="M141 27 L141 14 Q141 0 150 0 Q159 0 159 14 L159 27Z"/>' +
+      '<path class="drop dp-drip" style="--d:0s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/><path class="drop dp-drip" style="--d:.8s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/>',
     jClear: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water") + liquid("dpIn", 70, "cloud dp-clearing") + swirl(70) + beaker() + bar() +
       sparkle(80, 70, 2.4) + sparkle(220, 96, 2.7) + sparkle(74, 116, 3.0) +
       '<circle class="ok dp-popin2" cx="246" cy="44" r="22"/><path class="ok dp-check" pathLength="1" d="M235 45 L243 54 L259 34"/>',
     jBottle: () => clip("dpAm", "M186 140 L186 184 Q186 191 193 191 L237 191 Q244 191 244 184 L244 140 Q244 129 232 127 L232 118 L198 118 L198 127 Q186 129 186 140Z") +
-      '<g clip-path="url(#dpAm)"><rect class="ambfill dp-rise" x="180" y="128" width="70" height="66"/></g>' +
       '<path class="amber" d="M185 140 L185 184 Q185 192 193 192 L237 192 Q245 192 245 184 L245 140 Q245 128 232 126 L232 116 L198 116 L198 126 Q185 128 185 140Z"/>' +
+      '<g clip-path="url(#dpAm)"><rect class="ambfill dp-rise" x="180" y="128" width="70" height="66"/></g>' +
       '<path class="ln" d="M190 86 L240 86 L224 114 L206 114Z"/>' +
-      '<g transform="translate(206 76)"><g class="dp-tiltB"><path class="water" d="M-2 2 L-48 2 L-48 24 L-2 24Z"/><path class="ln glass" d="M2 -2 L0 0 L0 54 Q0 62 -8 62 L-42 62 Q-50 62 -50 54 L-50 0 L-52 -2"/></g></g>' +
-      stream("M206 78 Q212 92 214 112") + label(193, 146, 44, 36),
+      '<g transform="translate(196 70)"><g class="dp-tiltB"><rect class="water dp-drain" x="-48" y="2" width="46" height="58"/><path class="ln glass" d="M2 -2 L0 0 L0 54 Q0 62 -8 62 L-42 62 Q-50 62 -50 54 L-50 0 L-52 -2"/></g></g>' +
+      stream("M196 72 Q208 86 214 112") + label(193, 146, 44, 36),
 
     // ---- Magic solution ----
     mMix: () => clip("dpJ", JAR_IN) + liquid("dpJ", 112, "mix dp-rise", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
@@ -174,9 +173,10 @@
 
   function renderStep() {
     const n = cur.steps.length, st = cur.steps[idx];
-    $("dp-stage").innerHTML = scene(st.scene);           // a fresh SVG restarts every animation
+    $("dp-art").innerHTML = scene(st.scene);           // a fresh SVG restarts every animation
     $("dp-num").textContent = (idx + 1) + " / " + n;
     $("dp-step").textContent = st.text;
+    const tx = $("dp-text"); tx.classList.remove("dp-textin"); void tx.offsetWidth; tx.classList.add("dp-textin");
     const segs = $("dp-segs");
     segs.innerHTML = cur.steps.map((x, k) => '<button type="button" class="dp-seg' + (k < idx ? " is-done" : k === idx ? " is-on" : "") + '" data-k="' + k + '" aria-label="الخطوة ' + (k + 1) + '"><i style="animation-duration:' + STEP_MS + 'ms"></i></button>').join("");
     ended = false;
@@ -214,7 +214,7 @@
     stopTimer(); playing = false; cur = null;
     $("dp-player").hidden = true;
     $("dp-menu").hidden = false;
-    $("dp-stage").innerHTML = "";
+    $("dp-art").innerHTML = "";
   }
 
   function togglePlay() {
