@@ -32,10 +32,10 @@
   <link rel="apple-touch-icon" sizes="192x192" href="img/icon-192.png?v=20261028a" />
   <link rel="apple-touch-icon" sizes="512x512" href="img/icon-512.png?v=20261028a" />
   <link rel="stylesheet" href="css/styles.css?v=20261008o" />
-  <link rel="stylesheet" href="css/theme.css?v=412" />
-  <link rel="stylesheet" href="css/palettes.css?v=412" />
-  <link rel="stylesheet" href="css/ornaments.css?v=412" />
-  <link rel="stylesheet" href="css/occasions.css?v=412" />
+  <link rel="stylesheet" href="css/theme.css?v=413" />
+  <link rel="stylesheet" href="css/palettes.css?v=413" />
+  <link rel="stylesheet" href="css/ornaments.css?v=413" />
+  <link rel="stylesheet" href="css/occasions.css?v=413" />
   <style>
     /* Pre-paint auth gate: hide the wrong screen before JS loads to
        prevent a flash of unauthenticated content (1-2s where the
@@ -718,6 +718,21 @@
         </button>
       </section>
 
+      <!-- ----- Special drug preparation (pharmacists + admin; special-prep.js) ----- -->
+      <section class="view view-prep" id="view-prep" data-view="prep" hidden>
+        <button class="back-btn" id="prep-back-btn" type="button" aria-label="رجوع">
+          <span class="back-arrow">›</span>
+          <span>رجوع</span>
+        </button>
+        <div class="section-title">
+          <h2>تحضير الأدوية الخاصة</h2>
+          <p>اضغط على الدواء لتظهر خطوات تحضيره</p>
+        </div>
+        <input type="search" id="sp-search" class="ward-search-input" placeholder="ابحث عن دواء…" autocomplete="off" spellcheck="false" />
+        <p class="sp-review" id="sp-review"></p>
+        <div id="sp-list"></div>
+      </section>
+
       <!-- ----- Drug interactions (everyone: doctors, pharmacists, admin) ----- -->
       <section class="view view-interactions" id="view-interactions" data-view="interactions" hidden>
         <button class="back-btn" id="interactions-back-btn" type="button" aria-label="رجوع">
@@ -1270,6 +1285,11 @@
             <span class="settings-row-label">توفر الأدوية</span>
             <span class="settings-row-arrow">›</span>
           </button>
+          <button class="settings-row" id="settings-prep-btn" type="button">
+            <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M17 5h14v6l8 22a8 8 0 0 1-7.5 11h-15A8 8 0 0 1 9 33l8-22z" class="f-bg s-em3" stroke-width="2.4" stroke-linejoin="round"/><path d="M12 30h24l2 5a6 6 0 0 1-5.6 8H15.6A6 6 0 0 1 10 35z" class="f-em"/><circle cx="20" cy="36" r="2.2" class="f-au"/><circle cx="28" cy="33" r="1.8" class="f-au"/></svg></span>
+            <span class="settings-row-label">تحضير الأدوية الخاصة</span>
+            <span class="settings-row-arrow">›</span>
+          </button>
           <button class="settings-row" id="settings-discharged-btn" type="button">
             <span class="settings-row-icon ico-tile"><svg class="ico" width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><circle cx="22" cy="16" r="8" class="f-em"/><path d="M7 41a15 12 0 0 1 30 0z" class="f-em2"/><circle cx="36" cy="34" r="9" class="f-white s-au3" stroke-width="2"/><path d="M36 29.5V34l3 2" fill="none" class="s-au3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
             <span class="settings-row-label">المرضى السابقون</span>
@@ -1582,57 +1602,58 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- App scripts. Freshness comes from the service worker (network-first,
        revalidating); the cache is the offline fallback. Bump ?v= on deploy. -->
-  <script src="js/medications.js?v=412"></script>
-  <script src="js/ward.js?v=412"></script>
-  <script src="js/patient-merge.js?v=412"></script>
-  <script src="js/specialists.js?v=412"></script>
-  <script src="js/specialists-admin.js?v=412"></script>
-  <script src="js/storage.js?v=412"></script>
-  <script src="js/supabase-config.js?v=412"></script>
-  <script src="js/supabase-client.js?v=412"></script>
-  <script src="js/supabase-sync.js?v=412"></script>
-  <script src="js/auth.js?v=412"></script>
-  <script src="js/clinical.js?v=412"></script>
-  <script src="js/ddinter.js?v=412"></script>
-  <script src="js/ddinter-data.js?v=412"></script>
-  <script src="js/boarders.js?v=412"></script>
-  <script src="js/ui.js?v=412"></script>
-  <script src="js/chart-image.js?v=412"></script>
-  <script src="js/chart-bridge.js?v=412"></script>
-  <script src="js/pills-form.js?v=412"></script>
-  <script src="js/print-sheets.js?v=412"></script>
-  <script src="js/patient-search.js?v=412"></script>
-  <script src="js/patient-history.js?v=412"></script>
-  <script src="js/monthly-report.js?v=412"></script>
-  <script src="js/bed-drag.js?v=412"></script>
-  <script src="js/archive-sync.js?v=412"></script>
-  <script src="js/med-availability.js?v=412"></script>
-  <script src="js/chart-merge.js?v=412"></script>
-  <script src="js/chart-sync.js?v=412"></script>
-  <script src="js/palettes.js?v=412"></script>
-  <script src="js/ornaments.js?v=412"></script>
-  <script src="js/neon.js?v=412"></script>
-  <script src="js/greetings.js?v=412"></script>
-  <script src="js/presence.js?v=412"></script>
-  <script src="js/occasions.js?v=412"></script>
-  <script src="js/handover.js?v=412"></script>
-  <script src="js/private-form.js?v=412"></script>
-  <script src="js/patient-forms.js?v=412"></script>
-  <script src="js/duty-roster.js?v=412"></script>
-  <script src="js/chart-names.js?v=412"></script>
-  <script src="js/chart-send-log.js?v=412"></script>
-  <script src="js/tarbeet.js?v=412"></script>
-  <script src="js/pills-page.js?v=412"></script>
-  <script src="js/tv-alerts.js?v=412"></script>
-  <script src="js/daily-quotes.js?v=412"></script>
-  <script src="js/app.js?v=412"></script>
+  <script src="js/medications.js?v=413"></script>
+  <script src="js/ward.js?v=413"></script>
+  <script src="js/patient-merge.js?v=413"></script>
+  <script src="js/specialists.js?v=413"></script>
+  <script src="js/specialists-admin.js?v=413"></script>
+  <script src="js/storage.js?v=413"></script>
+  <script src="js/supabase-config.js?v=413"></script>
+  <script src="js/supabase-client.js?v=413"></script>
+  <script src="js/supabase-sync.js?v=413"></script>
+  <script src="js/auth.js?v=413"></script>
+  <script src="js/clinical.js?v=413"></script>
+  <script src="js/ddinter.js?v=413"></script>
+  <script src="js/ddinter-data.js?v=413"></script>
+  <script src="js/boarders.js?v=413"></script>
+  <script src="js/ui.js?v=413"></script>
+  <script src="js/chart-image.js?v=413"></script>
+  <script src="js/chart-bridge.js?v=413"></script>
+  <script src="js/pills-form.js?v=413"></script>
+  <script src="js/print-sheets.js?v=413"></script>
+  <script src="js/patient-search.js?v=413"></script>
+  <script src="js/patient-history.js?v=413"></script>
+  <script src="js/monthly-report.js?v=413"></script>
+  <script src="js/bed-drag.js?v=413"></script>
+  <script src="js/archive-sync.js?v=413"></script>
+  <script src="js/med-availability.js?v=413"></script>
+  <script src="js/special-prep.js?v=413"></script>
+  <script src="js/chart-merge.js?v=413"></script>
+  <script src="js/chart-sync.js?v=413"></script>
+  <script src="js/palettes.js?v=413"></script>
+  <script src="js/ornaments.js?v=413"></script>
+  <script src="js/neon.js?v=413"></script>
+  <script src="js/greetings.js?v=413"></script>
+  <script src="js/presence.js?v=413"></script>
+  <script src="js/occasions.js?v=413"></script>
+  <script src="js/handover.js?v=413"></script>
+  <script src="js/private-form.js?v=413"></script>
+  <script src="js/patient-forms.js?v=413"></script>
+  <script src="js/duty-roster.js?v=413"></script>
+  <script src="js/chart-names.js?v=413"></script>
+  <script src="js/chart-send-log.js?v=413"></script>
+  <script src="js/tarbeet.js?v=413"></script>
+  <script src="js/pills-page.js?v=413"></script>
+  <script src="js/tv-alerts.js?v=413"></script>
+  <script src="js/daily-quotes.js?v=413"></script>
+  <script src="js/app.js?v=413"></script>
 
   <!-- ===== PWA: register service worker for offline support ===== -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker
-          .register('sw.js?v=412', { scope: './' })
+          .register('sw.js?v=413', { scope: './' })
           .then(function (reg) { console.log('[SW] registered', reg.scope); })
           .catch(function (err) { console.warn('[SW] registration failed', err); });
       });

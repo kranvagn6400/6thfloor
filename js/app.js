@@ -745,6 +745,8 @@
     // Medication availability list: editable by pharmacists + admin
     const availBtn = $("settings-availability-btn");
     if (availBtn) availBtn.hidden = !isOrderingRole;
+    const prepBtn = $("settings-prep-btn");
+    if (prepBtn) prepBtn.hidden = !isOrderingRole;
     const sendlogBtn = $("settings-sendlog-btn");
     if (sendlogBtn) sendlogBtn.hidden = !isOrderingRole;
 
