@@ -13,11 +13,14 @@
   // ---------------- drawing pieces (viewBox 300 × 200, shapes only — the only writing is the weight on the balance) ----------------
   const BEAKER = "M96 46 L102 50 L102 140 Q102 152 114 152 L186 152 Q198 152 198 140 L198 50 L204 46";
   const BEAKER_IN = "M103 30 L197 30 L197 140 Q197 151 186 151 L114 151 Q103 151 103 140Z";
-  const JAR = "M130 70 L190 70 L190 80 Q206 86 206 102 L206 162 Q206 172 196 172 L124 172 Q114 172 114 162 L114 102 Q114 86 130 80Z";
-  const JAR_IN = "M131 60 L189 60 L189 81 Q205 87 205 102 L205 162 Q205 171 196 171 L124 171 Q115 171 115 162 L115 102 Q115 87 131 81Z";
+  const JAR = "M138 96 L182 96 L182 104 Q194 109 194 121 L194 164 Q194 172 186 172 L134 172 Q126 172 126 164 L126 121 Q126 109 138 104Z";
+  const JAR_IN = "M139 86 L181 86 L181 105 Q193 110 193 121 L193 164 Q193 171 186 171 L134 171 Q127 171 127 164 L127 121 Q127 110 139 105Z";
+  // the same jar drawn with the right corner of its mouth at (0, 0), to be tilted around it when it pours
+  const JAR_L = "M-44 0 L0 0 L0 8 Q12 13 12 25 L12 68 Q12 76 4 76 L-48 76 Q-56 76 -56 68 L-56 25 Q-56 13 -44 8Z";
+  const JAR_L_IN = "M-43 -10 L-1 -10 L-1 9 Q11 14 11 25 L11 68 Q11 75 4 75 L-48 75 Q-55 75 -55 68 L-55 25 Q-55 14 -43 9Z";
   // a bottle drawn with its mouth at (0, 0) and the body below it — tilted around the mouth by the dp-tilt classes
   const BOTTLE = "M-7 0 L7 0 L7 10 L19 22 L19 58 Q19 64 13 64 L-13 64 Q-19 64 -19 58 L-19 22 L-7 10Z";
-  const BOTTLE_FILL = "M-6 4 L6 4 L6 10 L18 22 L18 36 L-18 36 L-18 22 L-6 10Z";   // the liquid sits at the mouth when poured
+  const BOTTLE_IN = "M-6 1 L6 1 L6 10.5 L18 22.5 L18 58 Q18 63 13 63 L-13 63 Q-18 63 -18 58 L-18 22.5 L-6 10.5Z";
 
   const clip = (id, d) => '<clipPath id="' + id + '"><path d="' + d + '"/></clipPath>';
   const liquid = (clipId, top, cls, bottom) => '<g clip-path="url(#' + clipId + ')"><rect class="' + cls + '" x="96" y="' + top + '" width="116" height="' + ((bottom || 156) - top) + '"/></g>';
@@ -26,7 +29,8 @@
   const plate = () => '<path class="plate" d="M72 154 L228 154 L228 180 Q228 186 222 186 L78 186 Q72 186 72 180Z"/><circle class="knob" cx="205" cy="170" r="7"/><circle class="led dp-blink" cx="92" cy="170" r="3.5"/>';
   const swirl = (top) => '<g clip-path="url(#dpIn)"><ellipse class="swirl dp-swirl" cx="150" cy="' + (top + 26) + '" rx="32" ry="6"/><ellipse class="swirl dp-swirl" cx="150" cy="' + (top + 52) + '" rx="22" ry="5"/></g>';
   const noHeat = () => '<g class="dp-popin"><circle class="bad" cx="252" cy="46" r="22"/><path class="badfill" d="M252 30 Q243 42 248 49 Q247 42 253 39 Q259 47 254 55 Q262 51 260 44 Q265 52 251 60 Q237 54 252 30Z"/><path class="bad" d="M236 62 L268 30"/></g>';
-  const tilting = (x, y, cls, fillCls, flip) => '<g transform="translate(' + x + " " + y + ")" + (flip ? " scale(-1 1)" : "") + '"><g class="' + cls + '"><path class="' + fillCls + '" d="' + BOTTLE_FILL + '"/><path class="ln glass" d="' + BOTTLE + '"/></g></g>';
+  const tilting = (x, y, cls, fillCls, flip, k) => '<g transform="translate(' + x + " " + y + ") scale(" + (flip ? -(k || 1) : (k || 1)) + " " + (k || 1) + ')"><g class="' + cls + '">' +
+    '<g clip-path="url(#dpBtl)"><rect class="' + fillCls + '" x="-20" y="0" width="40" height="64"/></g><path class="ln glass" d="' + BOTTLE + '"/></g></g>';
   const stream = (d, cls) => '<path class="stream ' + (cls || "dp-stream") + '" d="' + d + '"/>';
   const sparkle = (x, y, delay) => '<path class="spark dp-pop" style="--d:' + delay + 's" d="M' + x + " " + (y - 9) + " L" + x + " " + (y + 9) + " M" + (x - 9) + " " + y + " L" + (x + 9) + " " + y + '"/>';
   const dots = (pts, cls) => pts.map((p) => '<circle class="' + cls + '" style="--d:' + p[2] + 's" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (p[3] || 3.2) + '"/>').join("");
@@ -46,7 +50,7 @@
   const SCENES = {
     // ---- Joulie's oral solution ----
     jBar: () => clip("dpIn", BEAKER_IN) + beaker() + '<g class="dp-dropin"><rect class="bar" x="134" y="140" width="32" height="8" rx="4"/></g>' + arrowDown(150, 8, 34),
-    jWater: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water dp-rise") + swirl(70) + beaker() + bar() +
+    jWater: () => clip("dpIn", BEAKER_IN) + clip("dpBtl", BOTTLE_IN) + plate() + liquid("dpIn", 70, "water dp-rise") + swirl(70) + beaker() + bar() +
       tilting(90, 30, "dp-tilt", "water dp-drainB") + stream("M90 32 Q104 40 118 92") + noHeat(),
     jWeighP: () => balance(["0.0", "4.3", "8.5", "12.8", "17.0"]) + '<path class="boat" d="M112 140 L188 140 L180 128 L120 128Z"/><path class="powder dp-grow" d="M124 129 Q150 98 176 129Z"/>' +
       '<g transform="translate(150 44)">' + SPOON + "</g>" + dots([[132, 90, 0], [140, 92, 0.3], [128, 94, 0.6], [146, 94, 0.9]], "pw dp-fall3"),
@@ -70,35 +74,30 @@
       stream("M196 72 Q208 86 214 112") + label(193, 146, 44, 36),
 
     // ---- Magic solution ----
-    mMix: () => clip("dpJ", JAR_IN) + liquid("dpJ", 112, "mix dp-rise", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
-      tilting(124, 50, "dp-tiltL", "dexa dp-drainL") + tilting(196, 50, "dp-tiltR", "dph dp-drainR", true) +
-      stream("M124 52 Q128 72 134 106", "dp-streamL") + stream("M196 52 Q192 72 186 106", "dp-streamR"),
-    mNys: () => clip("dpJ", JAR_IN) + liquid("dpJ", 112, "mix", 176) + liquid("dpJ", 94, "nys dp-riseTop", 112) + '<path class="ln glass" d="' + JAR + '"/>' +
-      tilting(124, 50, "dp-tiltL", "nys dp-drainL") + tilting(196, 50, "dp-tiltL2", "nys dp-drainL", true) +
-      stream("M124 52 Q128 70 134 92", "dp-streamL") + stream("M196 52 Q192 70 186 92", "dp-streamL"),
-    mCaps: () => clip("dpJ", JAR_IN) + liquid("dpJ", 94, "magic", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
+    mMix: () => clip("dpJ", JAR_IN) + clip("dpBtl", BOTTLE_IN) + liquid("dpJ", 150, "dexa dp-mRiseL", 176) + liquid("dpJ", 128, "dph dp-mRiseR", 150) +
+      stream("M146 78 Q150 104 152 150", "dp-mStrL st-dexa") + stream("M174 78 Q170 100 168 128", "dp-mStrR st-dph") + '<path class="ln glass" d="' + JAR + '"/>' +
+      tilting(146, 76, "dp-mBotL", "dexa dp-mDrL", false, .85) + tilting(174, 76, "dp-mBotR", "dph dp-mDrR", true, .85),
+    mNys: () => clip("dpJ", JAR_IN) + clip("dpBtl", BOTTLE_IN) + liquid("dpJ", 128, "mix", 176) + liquid("dpJ", 110, "nys dp-mRiseL", 128) +
+      stream("M146 78 Q150 96 152 128", "dp-mStrL st-nys") + stream("M174 78 Q170 96 168 128", "dp-mStrL st-nys") + '<path class="ln glass" d="' + JAR + '"/>' +
+      tilting(146, 76, "dp-mBotL", "nys dp-mDrL", false, .85) + tilting(174, 76, "dp-mBotL", "nys dp-mDrL", true, .85),
+    mCaps: () => clip("dpJ", JAR_IN) + liquid("dpJ", 110, "magic", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
       capsule(40, 30) + capsule(80, 30) + capsule(220, 30) + capsule(260, 30) + capsule(40, 60, "dp-fade") +
       '<g transform="translate(160 36)"><g class="dp-openA"><path class="capA" d="M0 -6 L-10 -6 Q-16 -6 -16 0 Q-16 6 -10 6 L0 6Z"/></g><g class="dp-openB"><path class="capB" d="M0 -6 L10 -6 Q16 -6 16 0 Q16 6 10 6 L0 6Z"/></g></g>' +
       dots([[158, 46, 0.9, 2.6], [162, 46, 1.2, 2.6], [156, 48, 1.5, 2.6], [164, 48, 1.8, 2.6], [160, 46, 2.1, 2.6]], "tetra dp-fall2"),
-    mFill: () => clip("dpB1", "M183 132 L183 178 Q183 183 188 183 L212 183 Q217 183 217 178 L217 132 Q217 126 209 125 L209 118 L191 118 L191 125 Q183 126 183 132Z") +
-      '<g clip-path="url(#dpB1)"><rect class="magic dp-rise" x="180" y="128" width="40" height="58"/></g>' +
-      '<path class="ln glass" d="M182 132 L182 178 Q182 184 188 184 L212 184 Q218 184 218 178 L218 132 Q218 125 210 124 L210 116 L190 116 L190 124 Q182 125 182 132Z"/>' +
-      '<path class="magic" d="M233 140 L233 178 Q233 183 238 183 L262 183 Q267 183 267 178 L267 140Z"/>' +
-      '<path class="ln glass" d="M232 132 L232 178 Q232 184 238 184 L262 184 Q268 184 268 178 L268 132 Q268 125 260 124 L260 116 L240 116 L240 124 Q232 125 232 132Z"/>' +
-      '<g transform="translate(196 96) scale(1.35)"><g class="dp-tiltB"><path class="magic dp-drainB" d="' + BOTTLE_FILL + '"/><path class="ln glass" d="' + BOTTLE + '"/></g></g>' +
-      stream("M197 98 Q200 108 200 128"),
+    // the mixing jar pours (and empties) into a new bottle; a second new bottle is already filled
+    mFill: () => clip("dpB1", "M206 132 L206 178 Q206 183 211 183 L235 183 Q240 183 240 178 L240 132 Q240 126 232 125 L232 118 L214 118 L214 125 Q206 126 206 132Z") + clip("dpJL", JAR_L_IN) +
+      '<g clip-path="url(#dpB1)"><rect class="magic dp-fRise" x="203" y="116" width="40" height="70"/></g>' +
+      '<path class="ln glass" d="M205 132 L205 178 Q205 184 211 184 L235 184 Q241 184 241 178 L241 132 Q241 125 233 124 L233 116 L213 116 L213 124 Q205 125 205 132Z"/>' +
+      '<path class="magic" d="M256 140 L256 178 Q256 183 261 183 L285 183 Q290 183 290 178 L290 140Z"/>' +
+      '<path class="ln glass" d="M255 132 L255 178 Q255 184 261 184 L285 184 Q291 184 291 178 L291 132 Q291 125 283 124 L283 116 L263 116 L263 124 Q255 125 255 132Z"/>' +
+      stream("M200 98 Q212 104 223 122", "dp-fStr st-magic") +
+      '<g transform="translate(200 96) scale(.8)"><g class="dp-fJar"><g clip-path="url(#dpJL)"><rect class="magic dp-fDr" x="-58" y="14" width="72" height="64"/></g><path class="ln glass" d="' + JAR_L + '"/></g></g>',
     mLabel: () => '<g class="dp-shake">' + clip("dpB2", "M121 82 L121 168 Q121 175 128 175 L172 175 Q179 175 179 168 L179 82 Q179 72 166 70 L166 58 L134 58 L134 70 Q121 72 121 82Z") +
       '<g clip-path="url(#dpB2)"><rect class="magic" x="116" y="84" width="70" height="96"/>' + dots([[134, 168, 0], [146, 170, .2], [158, 167, .4], [168, 170, .6], [140, 163, .3], [162, 162, .5]], "sed dp-float") + "</g>" +
       '<rect class="cap" x="132" y="46" width="36" height="13" rx="3"/>' +
       '<path class="ln glass" d="M120 82 L120 168 Q120 176 128 176 L172 176 Q180 176 180 168 L180 82 Q180 71 166 69 L166 58 L134 58 L134 69 Q120 71 120 82Z"/>' +
       label(126, 96, 48, 38) + "</g>" +
-      '<path class="acc dp-waveL" d="M96 92 Q86 112 96 132"/><path class="acc dp-waveR" d="M204 92 Q214 112 204 132"/>',
-    mGargle: () => '<circle class="skin" cx="122" cy="98" r="48"/><path class="skin" d="M100 140 L100 192 L146 192 L146 140Z"/>' +
-      '<circle class="eye" cx="138" cy="80" r="4.5"/><path class="ln" d="M126 70 Q137 64 148 70"/>' +
-      '<ellipse class="mouth" cx="160" cy="112" rx="11" ry="8"/>' +
-      dots([[164, 100, 0, 4], [172, 96, .5, 3], [158, 94, 1, 3.5], [168, 102, 1.5, 2.6]], "bub dp-bubble") +
-      '<path class="swallow dp-flow" d="M156 120 Q146 132 141 150 L138 176"/>' +
-      '<path class="acc dp-flowHead" d="M129 172 L138 185 L147 172"/>'
+      '<path class="acc dp-waveL" d="M96 92 Q86 112 96 132"/><path class="acc dp-waveR" d="M204 92 Q214 112 204 132"/>'
   };
   function scene(name) {
     const f = SCENES[name];
@@ -131,12 +130,11 @@
         { scene: "mNys", text: "أضف إليهما زجاجتي النيستاتين (Nystatin)." },
         { scene: "mCaps", text: "افتح كبسولات التتراسيكلين (Tetracycline) الستة وأضف محتواها إلى الخليط." },
         { scene: "mFill", text: "عبّئ الخليط في زجاجات جديدة." },
-        { scene: "mLabel", text: "اكتب على الزجاجة المحضّرة: اسم المريض، وتاريخ التحضير، وتاريخ الإتلاف، وعبارة «رجّ جيدًا قبل الاستعمال» لأن المواد الفعالة ترسب في قعر الزجاجة." },
-        { scene: "mGargle", text: "ثقّف المريض بأن يتغرغر بالمحلول ثم يبلعه." }
+        { scene: "mLabel", text: "اكتب على الزجاجة المحضّرة: اسم المريض، وتاريخ التحضير، وتاريخ الإتلاف، وعبارة «رجّ جيدًا قبل الاستعمال» لأن المواد الفعالة ترسب في قعر الزجاجة." }
       ],
       info: [
         { title: "المكونات", items: ["Dexamethasone (الدكسون): زجاجة كاملة", "Diphenhydramine (الارمين): زجاجة كاملة", "Nystatin (محلول نيستاتين): زجاجتان كاملتان", "Tetracycline (تيتراسيكلين): 6 كبسولات"] },
-        { title: "طريقة الإعطاء", items: ["أربع مرات في اليوم."] }
+        { title: "طريقة الاستخدام", items: ["ثقّف المريض بأن يتغرغر بالمحلول ثم يبلعه.", "أربع مرات في اليوم."] }
       ]
     }
   ];

@@ -2616,6 +2616,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .swirl { fill: none; stroke: #fff; stroke-opacity: .8; stroke-width: 2.2; stroke-dasharray: 10 6; }
 .dp-svg .stream { fill: none; stroke: #3d9bd6; stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 7 5; }
 .dp-svg .stream.acidst { stroke: #c9d2d8; }
+.dp-svg .stream.st-dexa { stroke: #e07aa8; }
+.dp-svg .stream.st-dph { stroke: #9b7fd1; }
+.dp-svg .stream.st-nys { stroke: #e8b923; }
+.dp-svg .stream.st-magic { stroke: #d9a066; }
 .dp-svg .plate { fill: #8d98a0; }
 .dp-svg .knob { fill: #d7dde0; stroke: #5b666d; stroke-width: 1.5; }
 .dp-svg .led { fill: #23b45a; }
@@ -2660,6 +2664,35 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
 @keyframes dpLcdStep { 0%, 99% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes dpLcdLast { from { opacity: 1; } to { opacity: 1; } }
+/* Magic: one-shot pours (5.4 s: the left bottle, then the right one; the jar rises with each and stops) */
+.dp-svg .dp-mBotL, .dp-svg .dp-mBotR { transform: rotate(120deg); }
+.dp-svg .dp-mBotL { animation: dpMBotL 5.4s ease-in-out both; }
+.dp-svg .dp-mBotR { animation: dpMBotR 5.4s ease-in-out both; }
+.dp-svg .dp-mStrL { animation: dpMStrL 5.4s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-mStrR { animation: dpMStrR 5.4s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-mDrL, .dp-svg .dp-mDrR, .dp-svg .dp-fDr { transform-box: fill-box; transform-origin: center top; transform: scaleY(.5); }
+.dp-svg .dp-mDrL { animation: dpMDrL 5.4s ease-in-out both; }
+.dp-svg .dp-mDrR { animation: dpMDrR 5.4s ease-in-out both; }
+.dp-svg .dp-mRiseL, .dp-svg .dp-mRiseR, .dp-svg .dp-fRise { transform-box: fill-box; transform-origin: bottom; }
+.dp-svg .dp-mRiseL { animation: dpMRiseL 5.4s ease-in-out both; }
+.dp-svg .dp-mRiseR { animation: dpMRiseR 5.4s ease-in-out both; }
+@keyframes dpMBotL { 0% { transform: rotate(90deg); opacity: 0; } 5% { opacity: 1; } 15%, 41% { transform: rotate(120deg); } 48% { transform: rotate(90deg); opacity: 1; } 55%, 100% { transform: rotate(90deg); opacity: 0; } }
+@keyframes dpMBotR { 0%, 44% { transform: rotate(90deg); opacity: 0; } 50% { opacity: 1; } 59%, 85% { transform: rotate(120deg); } 92% { transform: rotate(90deg); opacity: 1; } 100% { transform: rotate(90deg); opacity: 0; } }
+@keyframes dpMStrL { 0%, 15% { opacity: 0; } 17%, 39% { opacity: 1; } 41%, 100% { opacity: 0; } }
+@keyframes dpMStrR { 0%, 59% { opacity: 0; } 61%, 83% { opacity: 1; } 85%, 100% { opacity: 0; } }
+@keyframes dpMDrL { 0%, 15% { transform: scaleY(1); } 41%, 100% { transform: scaleY(.04); } }
+@keyframes dpMDrR { 0%, 59% { transform: scaleY(1); } 85%, 100% { transform: scaleY(.04); } }
+@keyframes dpMRiseL { 0%, 16% { transform: scaleY(0); } 41%, 100% { transform: scaleY(1); } }
+@keyframes dpMRiseR { 0%, 60% { transform: scaleY(0); } 85%, 100% { transform: scaleY(1); } }
+/* Magic, filling the new bottles: the jar tilts in, pours, empties and goes (4.5 s, once) */
+.dp-svg .dp-fJar { transform: rotate(105deg); animation: dpFJar 4.5s ease-in-out both; }
+.dp-svg .dp-fStr { animation: dpFStr 4.5s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-fDr { animation: dpFDr 4.5s ease-in-out both; }
+.dp-svg .dp-fRise { animation: dpFRise 4.5s ease-in-out both; }
+@keyframes dpFJar { 0% { transform: rotate(70deg); opacity: 0; } 8% { opacity: 1; } 20%, 75% { transform: rotate(105deg); } 86% { transform: rotate(70deg); opacity: 1; } 96%, 100% { transform: rotate(70deg); opacity: 0; } }
+@keyframes dpFStr { 0%, 20% { opacity: 0; } 22%, 73% { opacity: 1; } 75%, 100% { opacity: 0; } }
+@keyframes dpFDr { 0%, 20% { transform: scaleY(1); } 75%, 100% { transform: scaleY(.04); } }
+@keyframes dpFRise { 0%, 22% { transform: scaleY(0); } 76%, 100% { transform: scaleY(1); } }
 .dp-svg .swallow { fill: none; stroke: #c9772e; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 8 7; }
 
 /* the motion (the static look = the meaningful frame, so reduced motion still shows each step) */
