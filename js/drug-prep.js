@@ -21,6 +21,9 @@
   // a bottle drawn with its mouth at (0, 0) and the body below it — tilted around the mouth by the dp-tilt classes
   const BOTTLE = "M-7 0 L7 0 L7 10 L19 22 L19 58 Q19 64 13 64 L-13 64 Q-19 64 -19 58 L-19 22 L-7 10Z";
   const BOTTLE_IN = "M-6 1 L6 1 L6 10.5 L18 22.5 L18 58 Q18 63 13 63 L-13 63 Q-18 63 -18 58 L-18 22.5 L-6 10.5Z";
+  // the nystatin bottle: small and round, a wide mouth and no neck (unlike the syrup bottles)
+  const NYS_BTL = "M-11 0 L11 0 Q17 2 17 12 L17 30 Q17 44 3 44 L-3 44 Q-17 44 -17 30 L-17 12 Q-17 2 -11 0Z";
+  const NYS_IN = "M-10 1 L10 1 Q16 3 16 12 L16 30 Q16 43 3 43 L-3 43 Q-16 43 -16 30 L-16 12 Q-16 3 -10 1Z";
 
   const clip = (id, d) => '<clipPath id="' + id + '"><path d="' + d + '"/></clipPath>';
   const liquid = (clipId, top, cls, bottom) => '<g clip-path="url(#' + clipId + ')"><rect class="' + cls + '" x="96" y="' + top + '" width="116" height="' + ((bottom || 156) - top) + '"/></g>';
@@ -29,8 +32,8 @@
   const plate = () => '<path class="plate" d="M72 154 L228 154 L228 180 Q228 186 222 186 L78 186 Q72 186 72 180Z"/><circle class="knob" cx="205" cy="170" r="7"/><circle class="led dp-blink" cx="92" cy="170" r="3.5"/>';
   const swirl = (top) => '<g clip-path="url(#dpIn)"><ellipse class="swirl dp-swirl" cx="150" cy="' + (top + 26) + '" rx="32" ry="6"/><ellipse class="swirl dp-swirl" cx="150" cy="' + (top + 52) + '" rx="22" ry="5"/></g>';
   const noHeat = () => '<g class="dp-popin"><circle class="bad" cx="252" cy="46" r="22"/><path class="badfill" d="M252 30 Q243 42 248 49 Q247 42 253 39 Q259 47 254 55 Q262 51 260 44 Q265 52 251 60 Q237 54 252 30Z"/><path class="bad" d="M236 62 L268 30"/></g>';
-  const tilting = (x, y, cls, fillCls, flip, k) => '<g transform="translate(' + x + " " + y + ") scale(" + (flip ? -(k || 1) : (k || 1)) + " " + (k || 1) + ')"><g class="' + cls + '">' +
-    '<g clip-path="url(#dpBtl)"><rect class="' + fillCls + '" x="-20" y="0" width="40" height="64"/></g><path class="ln glass" d="' + BOTTLE + '"/></g></g>';
+  const tilting = (x, y, cls, fillCls, flip, k, round) => '<g transform="translate(' + x + " " + y + ") scale(" + (flip ? -(k || 1) : (k || 1)) + " " + (k || 1) + ')"><g class="' + cls + '">' +
+    '<g clip-path="url(#' + (round ? "dpNy" : "dpBtl") + ')"><rect class="' + fillCls + '" x="-20" y="0" width="40" height="64"/></g><path class="ln glass" d="' + (round ? NYS_BTL : BOTTLE) + '"/></g></g>';
   const stream = (d, cls) => '<path class="stream ' + (cls || "dp-stream") + '" d="' + d + '"/>';
   const sparkle = (x, y, delay) => '<path class="spark dp-pop" style="--d:' + delay + 's" d="M' + x + " " + (y - 9) + " L" + x + " " + (y + 9) + " M" + (x - 9) + " " + y + " L" + (x + 9) + " " + y + '"/>';
   const dots = (pts, cls) => pts.map((p) => '<circle class="' + cls + '" style="--d:' + p[2] + 's" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (p[3] || 3.2) + '"/>').join("");
@@ -77,9 +80,9 @@
     mMix: () => clip("dpJ", JAR_IN) + clip("dpBtl", BOTTLE_IN) + liquid("dpJ", 150, "dexa dp-mRiseL", 176) + liquid("dpJ", 128, "dph dp-mRiseR", 150) +
       stream("M146 78 Q150 104 152 150", "dp-mStrL st-dexa") + stream("M174 78 Q170 100 168 128", "dp-mStrR st-dph") + '<path class="ln glass" d="' + JAR + '"/>' +
       tilting(146, 76, "dp-mBotL", "dexa dp-mDrL", false, .85) + tilting(174, 76, "dp-mBotR", "dph dp-mDrR", true, .85),
-    mNys: () => clip("dpJ", JAR_IN) + clip("dpBtl", BOTTLE_IN) + liquid("dpJ", 128, "mix", 176) + liquid("dpJ", 110, "nys dp-mRiseL", 128) +
-      stream("M146 78 Q150 96 152 128", "dp-mStrL st-nys") + stream("M174 78 Q170 96 168 128", "dp-mStrL st-nys") + '<path class="ln glass" d="' + JAR + '"/>' +
-      tilting(146, 76, "dp-mBotL", "nys dp-mDrL", false, .85) + tilting(174, 76, "dp-mBotL", "nys dp-mDrL", true, .85),
+    mNys: () => clip("dpJ", JAR_IN) + clip("dpNy", NYS_IN) + liquid("dpJ", 128, "mix", 176) + liquid("dpJ", 110, "nys dp-mRiseL", 128) +
+      stream("M146 82 Q150 98 152 128", "dp-mStrL st-nys") + stream("M174 82 Q170 98 168 128", "dp-mStrL st-nys") + '<path class="ln glass" d="' + JAR + '"/>' +
+      tilting(146, 80, "dp-mBotL", "nys dp-mDrL", false, .85, true) + tilting(174, 80, "dp-mBotL", "nys dp-mDrL", true, .85, true),
     mCaps: () => clip("dpJ", JAR_IN) + liquid("dpJ", 110, "magic", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
       [284, 242, 200, 120, 78, 36].map((x, k) => '<g style="--c:' + (k * 0.85) + 's">' +
         '<g transform="translate(' + x + ' 22)"><g class="dp-capGo" style="--dx:' + (160 - x) + 'px">' +
