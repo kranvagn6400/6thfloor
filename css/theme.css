@@ -2597,8 +2597,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-stage { margin-bottom: 10px; border-radius: 16px; background: var(--bg); border: 1px solid var(--border); padding: 8px; }
 .dp-svg { display: block; width: 100%; height: auto; max-height: 260px; overflow: visible; }
 .dp-text { margin: 6px 2px 0; padding: 8px 2px 2px; min-height: 3.4em; border-top: 1px dashed var(--border); font-size: 15px; font-weight: 700; line-height: 1.75; color: var(--text); }
-.dp-textin { animation: dpTextIn .5s ease-out both; }
-@keyframes dpTextIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.dp-ghost { color: transparent; }
 .dp-num { display: inline-block; margin-inline-end: 8px; padding: 1px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--primary-soft); color: var(--text); direction: ltr; }
 .dp-ctrl { display: flex; gap: 8px; }
 .dp-ctrl button { flex: 1; height: 46px; border: 1px solid var(--border); border-radius: 12px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; background: var(--bg); color: var(--text); }
@@ -2677,6 +2676,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .dp-fall { animation: dpFall 1.8s ease-in infinite; animation-delay: var(--d, 0s); }
 .dp-svg .dp-fall2 { animation: dpFall2 1.5s ease-in infinite; animation-delay: var(--d, 0s); }
 .dp-svg .dp-squeeze { transform-box: fill-box; transform-origin: center bottom; animation: dpSqueeze 1.6s ease-in-out infinite; }
+.dp-svg .dp-drainB, .dp-svg .dp-drainL, .dp-svg .dp-drainR { transform-box: fill-box; transform-origin: center top; transform: scaleY(.5); }
+.dp-svg .dp-drainB { animation: dpDrainB 4.5s ease-in-out infinite; }
+.dp-svg .dp-drainL { animation: dpDrainL 4.5s ease-in-out infinite; }
+.dp-svg .dp-drainR { animation: dpDrainR 4.5s ease-in-out infinite; }
 .dp-svg .dp-drain { transform-box: fill-box; transform-origin: right center; transform: scaleX(.5); animation: dpDrain 4.5s ease-in-out infinite; }
 .dp-svg .dp-drip { animation: dpDrip 1.6s ease-in infinite; animation-delay: var(--d, 0s); }
 .dp-svg .dp-slide { animation: dpSlide 4.5s ease-out infinite; }
@@ -2695,10 +2698,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpSpin { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.2); } }
 @keyframes dpDash { to { stroke-dashoffset: -32; } }
 @keyframes dpBlink { 50% { opacity: .25; } }
-@keyframes dpTilt { 0% { transform: rotate(50deg); } 15%, 75% { transform: rotate(115deg); } 90%, 100% { transform: rotate(50deg); } }
+@keyframes dpTilt { 0% { transform: rotate(50deg); opacity: 0; } 6% { opacity: 1; } 15%, 75% { transform: rotate(115deg); } 90% { transform: rotate(50deg); opacity: 1; } 98%, 100% { transform: rotate(50deg); opacity: 0; } }
 @keyframes dpTiltB { 0% { transform: rotate(20deg); opacity: 0; } 6% { opacity: 1; } 15%, 75% { transform: rotate(100deg); } 90% { transform: rotate(20deg); opacity: 1; } 98%, 100% { transform: rotate(20deg); opacity: 0; } }
-@keyframes dpTiltL { 0% { transform: rotate(40deg); } 8%, 40% { transform: rotate(110deg); } 48%, 100% { transform: rotate(40deg); } }
-@keyframes dpTiltR { 0%, 50% { transform: rotate(40deg); } 58%, 90% { transform: rotate(110deg); } 98%, 100% { transform: rotate(40deg); } }
+@keyframes dpTiltL { 0% { transform: rotate(40deg); opacity: 0; } 4% { opacity: 1; } 8%, 40% { transform: rotate(110deg); } 48% { transform: rotate(40deg); opacity: 1; } 56%, 100% { transform: rotate(40deg); opacity: 0; } }
+@keyframes dpTiltR { 0% { transform: rotate(40deg); opacity: 0; } 4%, 50% { transform: rotate(40deg); opacity: 1; } 58%, 90% { transform: rotate(110deg); } 96% { transform: rotate(40deg); opacity: 1; } 100% { transform: rotate(40deg); opacity: 0; } }
 @keyframes dpStream { 0%, 14% { opacity: 0; } 18%, 72% { opacity: 1; } 76%, 100% { opacity: 0; } }
 @keyframes dpStreamL { 0%, 8% { opacity: 0; } 11%, 38% { opacity: 1; } 41%, 100% { opacity: 0; } }
 @keyframes dpStreamR { 0%, 58% { opacity: 0; } 61%, 88% { opacity: 1; } 91%, 100% { opacity: 0; } }
@@ -2710,6 +2713,9 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpFall { 0% { transform: translateY(0); opacity: 0; } 10%, 80% { opacity: 1; } 100% { transform: translateY(42px); opacity: 0; } }
 @keyframes dpFall2 { 0% { transform: translateY(0); opacity: 0; } 10%, 80% { opacity: 1; } 100% { transform: translateY(58px); opacity: 0; } }
 @keyframes dpSqueeze { 0%, 55%, 100% { transform: none; } 20%, 35% { transform: scale(.72, .9); } }
+@keyframes dpDrainB { 0%, 15% { transform: scaleY(1); } 75%, 100% { transform: scaleY(.06); } }
+@keyframes dpDrainL { 0%, 8% { transform: scaleY(1); } 40%, 100% { transform: scaleY(.06); } }
+@keyframes dpDrainR { 0%, 58% { transform: scaleY(1); } 90%, 100% { transform: scaleY(.06); } }
 @keyframes dpDrain { 0%, 15% { transform: scaleX(1); } 75%, 100% { transform: scaleX(.08); } }
 @keyframes dpDrip { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(22px); opacity: 0; } }
 @keyframes dpSlide { 0%, 62% { transform: translateX(46px); opacity: 0; } 80%, 100% { transform: translateX(0); opacity: 1; } }
@@ -2722,7 +2728,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpBob { from { transform: translateY(0); } to { transform: translateY(8px); } }
 @keyframes dpBubble { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-34px); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
-  .dp-svg *, .dp-seg.is-on i, .dp-textin { animation: none !important; }
+  .dp-svg *, .dp-seg.is-on i { animation: none !important; }
   .dp-seg.is-on i { width: 100%; }
 }
 

@@ -1,11 +1,14 @@
 /* drug-prep.js — «تحضير الأدوية الخاصة» (settings page; the super admin only for now).
    A button per medicine; a press plays its preparation as animated scenes, one per step (auto-advance,
-   pause / previous / next). The recipes are the ward's own (given by the user) — never add a recipe or an
+   pause / previous / next); the step text is typed in while the scene plays. The recipes are the ward's own (given by the user) — never add a recipe or an
    amount that the user did not give. prefers-reduced-motion: no animation and no auto-advance. */
 (function (global) {
   "use strict";
 
-  const STEP_MS = 6500;
+  const STEP_MS = 6500;      // the shortest step
+  const TYPE_MS = 45;        // one letter of the step text
+  const READ_MS = 3500;      // time left to read once the text is typed
+  const stepMs = (st) => Math.max(STEP_MS, Array.from(st.text).length * TYPE_MS + READ_MS);
   const $ = (id) => document.getElementById(id);
   const reduced = () => !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
@@ -37,7 +40,7 @@
     // ---- Joulie's oral solution ----
     jBar: () => clip("dpIn", BEAKER_IN) + beaker() + '<g class="dp-dropin"><rect class="bar" x="134" y="140" width="32" height="8" rx="4"/></g>' + arrowDown(150, 8, 34),
     jWater: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water dp-rise") + swirl(70) + beaker() + bar() +
-      tilting(90, 30, "dp-tilt", "water") + stream("M90 32 Q104 40 118 92") + noHeat(),
+      tilting(90, 30, "dp-tilt", "water dp-drainB") + stream("M90 32 Q104 40 118 92") + noHeat(),
     jPowder: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud dp-cloudin") + swirl(76) + beaker() + bar() +
       '<g transform="translate(150 2)"><g class="dp-tip"><path class="powder" d="M-30 0 Q-30 18 0 18 Q30 18 30 0Z"/><path class="ln" d="M-30 0 Q-30 18 0 18 Q30 18 30 0 M28 2 L60 -8"/></g></g>' +
       dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall"),
@@ -57,10 +60,10 @@
 
     // ---- Magic solution ----
     mMix: () => clip("dpJ", JAR_IN) + liquid("dpJ", 112, "mix dp-rise", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
-      tilting(124, 50, "dp-tiltL", "dexa") + tilting(196, 50, "dp-tiltR", "dph", true) +
+      tilting(124, 50, "dp-tiltL", "dexa dp-drainL") + tilting(196, 50, "dp-tiltR", "dph dp-drainR", true) +
       stream("M124 52 Q128 72 134 106", "dp-streamL") + stream("M196 52 Q192 72 186 106", "dp-streamR"),
     mNys: () => clip("dpJ", JAR_IN) + liquid("dpJ", 112, "mix", 176) + liquid("dpJ", 94, "nys dp-riseTop", 112) + '<path class="ln glass" d="' + JAR + '"/>' +
-      tilting(124, 50, "dp-tiltL", "nys") + tilting(196, 50, "dp-tiltL2", "nys", true) +
+      tilting(124, 50, "dp-tiltL", "nys dp-drainL") + tilting(196, 50, "dp-tiltL2", "nys dp-drainL", true) +
       stream("M124 52 Q128 70 134 92", "dp-streamL") + stream("M196 52 Q192 70 186 92", "dp-streamL"),
     mCaps: () => clip("dpJ", JAR_IN) + liquid("dpJ", 94, "magic", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
       capsule(40, 30) + capsule(80, 30) + capsule(220, 30) + capsule(260, 30) + capsule(40, 60, "dp-fade") +
@@ -71,7 +74,7 @@
       '<path class="ln glass" d="M182 132 L182 178 Q182 184 188 184 L212 184 Q218 184 218 178 L218 132 Q218 125 210 124 L210 116 L190 116 L190 124 Q182 125 182 132Z"/>' +
       '<path class="magic" d="M233 140 L233 178 Q233 183 238 183 L262 183 Q267 183 267 178 L267 140Z"/>' +
       '<path class="ln glass" d="M232 132 L232 178 Q232 184 238 184 L262 184 Q268 184 268 178 L268 132 Q268 125 260 124 L260 116 L240 116 L240 124 Q232 125 232 132Z"/>' +
-      '<g transform="translate(196 96) scale(1.35)"><g class="dp-tiltB"><path class="magic" d="' + BOTTLE_FILL + '"/><path class="ln glass" d="' + BOTTLE + '"/></g></g>' +
+      '<g transform="translate(196 96) scale(1.35)"><g class="dp-tiltB"><path class="magic dp-drainB" d="' + BOTTLE_FILL + '"/><path class="ln glass" d="' + BOTTLE + '"/></g></g>' +
       stream("M197 98 Q200 108 200 128"),
     mLabel: () => '<g class="dp-shake">' + clip("dpB2", "M121 82 L121 168 Q121 175 128 175 L172 175 Q179 175 179 168 L179 82 Q179 72 166 70 L166 58 L134 58 L134 70 Q121 72 121 82Z") +
       '<g clip-path="url(#dpB2)"><rect class="magic" x="116" y="84" width="70" height="96"/>' + dots([[134, 168, 0], [146, 170, .2], [158, 167, .4], [168, 170, .6], [140, 163, .3], [162, 162, .5]], "sed dp-float") + "</g>" +
@@ -134,7 +137,19 @@
   const ICON_AGAIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M4 3v5h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   // ---------------- player ----------------
-  let cur = null, idx = 0, playing = false, ended = false, timer = 0, t0 = 0, remain = STEP_MS;
+  let cur = null, idx = 0, playing = false, ended = false, timer = 0, t0 = 0, remain = STEP_MS, typeTimer = 0;
+
+  function typeText(text) {
+    clearInterval(typeTimer);
+    const el = $("dp-step"), chars = Array.from(text);
+    if (reduced()) { el.textContent = text; return; }
+    el.innerHTML = '<span class="dp-typed"></span><span class="dp-ghost" aria-hidden="true"></span>';
+    const typed = el.firstChild, ghost = el.lastChild;
+    let n = 0;
+    const draw = () => { typed.textContent = chars.slice(0, n).join(""); ghost.textContent = chars.slice(n).join(""); };
+    draw();
+    typeTimer = setInterval(() => { n++; draw(); if (n >= chars.length) clearInterval(typeTimer); }, TYPE_MS);
+  }
 
   function renderMenu() {
     const grid = $("dp-grid");
@@ -175,12 +190,12 @@
     const n = cur.steps.length, st = cur.steps[idx];
     $("dp-art").innerHTML = scene(st.scene);           // a fresh SVG restarts every animation
     $("dp-num").textContent = (idx + 1) + " / " + n;
-    $("dp-step").textContent = st.text;
-    const tx = $("dp-text"); tx.classList.remove("dp-textin"); void tx.offsetWidth; tx.classList.add("dp-textin");
+    $("dp-text").setAttribute("aria-label", st.text);
+    typeText(st.text);
     const segs = $("dp-segs");
-    segs.innerHTML = cur.steps.map((x, k) => '<button type="button" class="dp-seg' + (k < idx ? " is-done" : k === idx ? " is-on" : "") + '" data-k="' + k + '" aria-label="الخطوة ' + (k + 1) + '"><i style="animation-duration:' + STEP_MS + 'ms"></i></button>').join("");
+    segs.innerHTML = cur.steps.map((x, k) => '<button type="button" class="dp-seg' + (k < idx ? " is-done" : k === idx ? " is-on" : "") + '" data-k="' + k + '" aria-label="الخطوة ' + (k + 1) + '"><i style="animation-duration:' + stepMs(x) + 'ms"></i></button>').join("");
     ended = false;
-    if (playing) schedule(STEP_MS); else { stopTimer(); remain = STEP_MS; }
+    if (playing) schedule(stepMs(st)); else { stopTimer(); remain = stepMs(st); }
     updateControls();
   }
 
@@ -211,7 +226,7 @@
   }
 
   function toMenu() {
-    stopTimer(); playing = false; cur = null;
+    stopTimer(); clearInterval(typeTimer); playing = false; cur = null;
     $("dp-player").hidden = true;
     $("dp-menu").hidden = false;
     $("dp-art").innerHTML = "";
