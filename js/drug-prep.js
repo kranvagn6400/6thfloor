@@ -81,17 +81,19 @@
       stream("M146 78 Q150 96 152 128", "dp-mStrL st-nys") + stream("M174 78 Q170 96 168 128", "dp-mStrL st-nys") + '<path class="ln glass" d="' + JAR + '"/>' +
       tilting(146, 76, "dp-mBotL", "nys dp-mDrL", false, .85) + tilting(174, 76, "dp-mBotL", "nys dp-mDrL", true, .85),
     mCaps: () => clip("dpJ", JAR_IN) + liquid("dpJ", 110, "magic", 176) + '<path class="ln glass" d="' + JAR + '"/>' +
-      capsule(40, 30) + capsule(80, 30) + capsule(220, 30) + capsule(260, 30) + capsule(40, 60, "dp-fade") +
-      '<g transform="translate(160 36)"><g class="dp-openA"><path class="capA" d="M0 -6 L-10 -6 Q-16 -6 -16 0 Q-16 6 -10 6 L0 6Z"/></g><g class="dp-openB"><path class="capB" d="M0 -6 L10 -6 Q16 -6 16 0 Q16 6 10 6 L0 6Z"/></g></g>' +
-      dots([[158, 46, 0.9, 2.6], [162, 46, 1.2, 2.6], [156, 48, 1.5, 2.6], [164, 48, 1.8, 2.6], [160, 46, 2.1, 2.6]], "tetra dp-fall2"),
-    // the mixing jar pours (and empties) into a new bottle; a second new bottle is already filled
-    mFill: () => clip("dpB1", "M206 132 L206 178 Q206 183 211 183 L235 183 Q240 183 240 178 L240 132 Q240 126 232 125 L232 118 L214 118 L214 125 Q206 126 206 132Z") + clip("dpJL", JAR_L_IN) +
-      '<g clip-path="url(#dpB1)"><rect class="magic dp-fRise" x="203" y="116" width="40" height="70"/></g>' +
+      [284, 242, 200, 120, 78, 36].map((x, k) => '<g style="--c:' + (k * 0.85) + 's">' +
+        '<g transform="translate(' + x + ' 22)"><g class="dp-capGo" style="--dx:' + (160 - x) + 'px">' +
+        '<path class="capA dp-capA" d="M0 -6 L-10 -6 Q-16 -6 -16 0 Q-16 6 -10 6 L0 6Z"/><path class="capB dp-capB" d="M0 -6 L10 -6 Q16 -6 16 0 Q16 6 10 6 L0 6Z"/></g></g>' +
+        dots([[157, 60, 0, 2.6], [163, 60, 0.12, 2.6], [160, 62, 0.24, 2.6]], "tetra dp-capDust") + "</g>").join(""),
+    // the mixing jar fills the first new bottle, moves over the second one and fills it too, and ends empty
+    mFill: () => clip("dpB1", "M206 132 L206 178 Q206 183 211 183 L235 183 Q240 183 240 178 L240 132 Q240 126 232 125 L232 118 L214 118 L214 125 Q206 126 206 132Z") +
+      clip("dpB2n", "M256 132 L256 178 Q256 183 261 183 L285 183 Q290 183 290 178 L290 132 Q290 126 282 125 L282 118 L264 118 L264 125 Q256 126 256 132Z") + clip("dpJL", JAR_L_IN) +
+      '<g clip-path="url(#dpB1)"><rect class="magic dp-fRise1" x="203" y="132" width="40" height="54"/></g>' +
+      '<g clip-path="url(#dpB2n)"><rect class="magic dp-fRise2" x="253" y="132" width="40" height="54"/></g>' +
       '<path class="ln glass" d="M205 132 L205 178 Q205 184 211 184 L235 184 Q241 184 241 178 L241 132 Q241 125 233 124 L233 116 L213 116 L213 124 Q205 125 205 132Z"/>' +
-      '<path class="magic" d="M256 140 L256 178 Q256 183 261 183 L285 183 Q290 183 290 178 L290 140Z"/>' +
       '<path class="ln glass" d="M255 132 L255 178 Q255 184 261 184 L285 184 Q291 184 291 178 L291 132 Q291 125 283 124 L283 116 L263 116 L263 124 Q255 125 255 132Z"/>' +
-      stream("M200 98 Q212 104 223 122", "dp-fStr st-magic") +
-      '<g transform="translate(200 96) scale(.8)"><g class="dp-fJar"><g clip-path="url(#dpJL)"><rect class="magic dp-fDr" x="-58" y="14" width="72" height="64"/></g><path class="ln glass" d="' + JAR_L + '"/></g></g>',
+      stream("M200 98 Q212 104 223 128", "dp-fStr1 st-magic") + stream("M250 98 Q262 104 273 128", "dp-fStr2 st-magic") +
+      '<g transform="translate(200 96)"><g class="dp-fMove"><g transform="scale(.8)"><g class="dp-fJar"><g clip-path="url(#dpJL)"><rect class="magic dp-fDr" x="-58" y="14" width="72" height="64"/></g><path class="ln glass" d="' + JAR_L + '"/></g></g></g></g>',
     mLabel: () => '<g class="dp-shake">' + clip("dpB2", "M121 82 L121 168 Q121 175 128 175 L172 175 Q179 175 179 168 L179 82 Q179 72 166 70 L166 58 L134 58 L134 70 Q121 72 121 82Z") +
       '<g clip-path="url(#dpB2)"><rect class="magic" x="116" y="84" width="70" height="96"/>' + dots([[134, 168, 0], [146, 170, .2], [158, 167, .4], [168, 170, .6], [140, 163, .3], [162, 162, .5]], "sed dp-float") + "</g>" +
       '<rect class="cap" x="132" y="46" width="36" height="13" rx="3"/>' +

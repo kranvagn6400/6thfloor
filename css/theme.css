@@ -2684,15 +2684,31 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpMDrR { 0%, 59% { transform: scaleY(1); } 85%, 100% { transform: scaleY(.04); } }
 @keyframes dpMRiseL { 0%, 16% { transform: scaleY(0); } 41%, 100% { transform: scaleY(1); } }
 @keyframes dpMRiseR { 0%, 60% { transform: scaleY(0); } 85%, 100% { transform: scaleY(1); } }
-/* Magic, filling the new bottles: the jar tilts in, pours, empties and goes (4.5 s, once) */
-.dp-svg .dp-fJar { transform: rotate(105deg); animation: dpFJar 4.5s ease-in-out both; }
-.dp-svg .dp-fStr { animation: dpFStr 4.5s linear both, dpDash .5s linear infinite; }
-.dp-svg .dp-fDr { animation: dpFDr 4.5s ease-in-out both; }
-.dp-svg .dp-fRise { animation: dpFRise 4.5s ease-in-out both; }
-@keyframes dpFJar { 0% { transform: rotate(70deg); opacity: 0; } 8% { opacity: 1; } 20%, 75% { transform: rotate(105deg); } 86% { transform: rotate(70deg); opacity: 1; } 96%, 100% { transform: rotate(70deg); opacity: 0; } }
-@keyframes dpFStr { 0%, 20% { opacity: 0; } 22%, 73% { opacity: 1; } 75%, 100% { opacity: 0; } }
-@keyframes dpFDr { 0%, 20% { transform: scaleY(1); } 75%, 100% { transform: scaleY(.04); } }
-@keyframes dpFRise { 0%, 22% { transform: scaleY(0); } 76%, 100% { transform: scaleY(1); } }
+/* Magic, filling the new bottles (6 s, once): the jar pours into the first bottle, moves over the second, pours, ends empty and goes */
+.dp-svg .dp-fRise1, .dp-svg .dp-fRise2 { transform-box: fill-box; transform-origin: bottom; }
+.dp-svg .dp-fJar { transform: rotate(105deg); animation: dpFJar 6s ease-in-out both; }
+.dp-svg .dp-fMove { animation: dpFMove 6s ease-in-out both; }
+.dp-svg .dp-fStr1 { animation: dpFStr1 6s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-fStr2 { animation: dpFStr2 6s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-fDr { animation: dpFDr 6s ease-in-out both; }
+.dp-svg .dp-fRise1 { animation: dpFRise1 6s ease-in-out both; }
+.dp-svg .dp-fRise2 { animation: dpFRise2 6s ease-in-out both; }
+@keyframes dpFJar { 0% { transform: rotate(70deg); opacity: 0; } 5% { opacity: 1; } 13%, 38% { transform: rotate(105deg); } 45%, 57% { transform: rotate(70deg); } 63%, 85% { transform: rotate(105deg); } 92% { transform: rotate(70deg); opacity: 1; } 98%, 100% { transform: rotate(70deg); opacity: 0; } }
+@keyframes dpFMove { 0%, 46% { transform: translate(0, 0); } 55%, 100% { transform: translate(50px, 0); } }
+@keyframes dpFStr1 { 0%, 13% { opacity: 0; } 15%, 37% { opacity: 1; } 39%, 100% { opacity: 0; } }
+@keyframes dpFStr2 { 0%, 63% { opacity: 0; } 65%, 84% { opacity: 1; } 86%, 100% { opacity: 0; } }
+@keyframes dpFDr { 0%, 13% { transform: scaleY(1); } 38%, 57% { transform: scaleY(.5); } 85%, 100% { transform: scaleY(0); } }
+@keyframes dpFRise1 { 0%, 15% { transform: scaleY(0); } 38%, 100% { transform: scaleY(1); } }
+@keyframes dpFRise2 { 0%, 65% { transform: scaleY(0); } 85%, 100% { transform: scaleY(1); } }
+/* Magic, the capsules: each (1.5 s, --d apart) slides over the jar, splits open, and its powder falls after it opened */
+.dp-svg .dp-capGo { animation: dpCapGo 1.5s ease-in-out var(--c, 0s) both; }
+.dp-svg .dp-capA { animation: dpCapA 1.5s ease-in-out var(--c, 0s) both; }
+.dp-svg .dp-capB { animation: dpCapB 1.5s ease-in-out var(--c, 0s) both; }
+.dp-svg .dp-capDust { opacity: 0; animation: dpCapDust .9s ease-in calc(var(--c, 0s) + var(--d, 0s) + .75s) both; }
+@keyframes dpCapGo { 0% { transform: translate(0, 0); } 35%, 100% { transform: translate(var(--dx, 0), 34px); } }
+@keyframes dpCapA { 0%, 42% { transform: translate(0, 0); opacity: 1; } 62% { transform: translate(-11px, -3px) rotate(-25deg); opacity: 1; } 100% { transform: translate(-11px, -3px) rotate(-25deg); opacity: 0; } }
+@keyframes dpCapB { 0%, 42% { transform: translate(0, 0); opacity: 1; } 62% { transform: translate(11px, -3px) rotate(25deg); opacity: 1; } 100% { transform: translate(11px, -3px) rotate(25deg); opacity: 0; } }
+@keyframes dpCapDust { 0% { transform: translateY(0); opacity: 0; } 10%, 80% { opacity: 1; } 100% { transform: translateY(46px); opacity: 0; } }
 .dp-svg .swallow { fill: none; stroke: #c9772e; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 8 7; }
 
 /* the motion (the static look = the meaningful frame, so reduced motion still shows each step) */
