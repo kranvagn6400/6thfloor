@@ -746,7 +746,8 @@
     const availBtn = $("settings-availability-btn");
     if (availBtn) availBtn.hidden = !isOrderingRole;
     const prepBtn = $("settings-prep-btn");
-    if (prepBtn) prepBtn.hidden = !isOrderingRole;
+    // «تحضير الأدوية الخاصة»: for the super admin only until it is finished (then everyone but doctors: isOrderingRole)
+    if (prepBtn) prepBtn.hidden = !(Auth && Auth.isSuperAdmin && Auth.isSuperAdmin());
     const sendlogBtn = $("settings-sendlog-btn");
     if (sendlogBtn) sendlogBtn.hidden = !isOrderingRole;
 

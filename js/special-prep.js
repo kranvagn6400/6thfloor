@@ -141,6 +141,8 @@
   }
 
   function open() {
+    const A = global.PharmacyAuth;
+    if (!(A && A.isSuperAdmin && A.isSuperAdmin())) return;      // hidden from everyone else for now
     openId = "";
     if ($("sp-search")) $("sp-search").value = "";
     render();
