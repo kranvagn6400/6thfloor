@@ -2583,6 +2583,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-tname { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dp-tname b { font-size: 15px; font-weight: 800; text-align: start; }
 .dp-tname small { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.dp-tmeta { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
+.dp-tmeta .dp-tcount { margin-top: 0; }
+.dp-tdraft { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--warning-soft); color: var(--text); }
+.dp-draft { margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; line-height: 1.6; background: var(--warning-soft); color: var(--text); }
 .dp-tcount { align-self: flex-start; margin-top: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--primary-soft); color: var(--text); }
 .dp-ptitle { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 10px; }
 .dp-ptitle b { font-size: 18px; font-weight: 800; text-align: start; }
@@ -2709,6 +2713,84 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpCapA { 0%, 42% { transform: translate(0, 0); opacity: 1; } 62% { transform: translate(-11px, -3px) rotate(-25deg); opacity: 1; } 100% { transform: translate(-11px, -3px) rotate(-25deg); opacity: 0; } }
 @keyframes dpCapB { 0%, 42% { transform: translate(0, 0); opacity: 1; } 62% { transform: translate(11px, -3px) rotate(25deg); opacity: 1; } 100% { transform: translate(11px, -3px) rotate(25deg); opacity: 0; } }
 @keyframes dpCapDust { 0% { transform: translateY(0); opacity: 0; } 10%, 80% { opacity: 1; } 100% { transform: translateY(46px); opacity: 0; } }
+/* the vial / bag medicines */
+.dp-svg .vcap { stroke: #5b666d; stroke-width: 1.5; }
+.dp-svg .vpow { fill: #fff; stroke: #c9d0d4; stroke-width: 1; }
+.dp-svg .clear { fill: rgba(190, 222, 242, .6); }
+.dp-svg .amph { fill: rgba(240, 190, 40, .78); }
+.dp-svg .tige { fill: rgba(240, 138, 36, .78); }
+.dp-svg .mtx { fill: rgba(242, 200, 40, .82); }
+.dp-svg .lact { fill: rgba(222, 186, 90, .8); }
+.dp-svg .filt { fill: #fff; stroke: #4a5560; stroke-width: 2.4; }
+.dp-svg .bagt { fill: #333; font: 800 9px system-ui, sans-serif; }
+.dp-svg .cover { fill: rgba(120, 70, 20, .55); stroke: #6d3c12; stroke-width: 2; }
+.dp-svg .drop2 { fill: #3d9bd6; }
+.dp-svg .tube { fill: none; stroke: #9aa6ad; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 8 5; }
+.dp-svg .cann { stroke: #4a5560; stroke-width: 4; stroke-linecap: round; }
+.dp-svg .tape { fill: #fff; stroke: #b0b8bd; }
+.dp-svg .clockf { fill: #fff; stroke: var(--text); stroke-width: 3; }
+.dp-svg .hand { stroke: #d92d2d; stroke-width: 3.4; stroke-linecap: round; }
+.dp-svg .lens { fill: rgba(255, 255, 255, .35); stroke: var(--text); stroke-width: 3.4; }
+.dp-svg .maskc { fill: #9fd3ec; stroke: #4a7f99; stroke-width: 2; }
+.dp-svg .gown { fill: #b9a6e6; stroke: #6a55a8; stroke-width: 2; stroke-linejoin: round; }
+.dp-svg .glove { fill: #7fb3e0; stroke: #3f74a3; stroke-width: 2; stroke-linejoin: round; }
+.dp-svg .bin { fill: #8e5ac8; stroke: #5a3586; stroke-width: 2; stroke-linejoin: round; }
+.dp-svg .binlid { fill: #6c3fa3; }
+.dp-svg .warnTri { fill: #f6d04d; stroke: #333; stroke-width: 1.5; stroke-linejoin: round; }
+.dp-svg .snow { fill: none; stroke: #5bb4e5; stroke-width: 3.4; stroke-linecap: round; }
+.dp-svg .thermb { fill: #e5484d; }
+.dp-svg .thermr { fill: #e5484d; }
+.dp-svg .orbit { fill: none; stroke: var(--primary); stroke-width: 2.6; stroke-dasharray: 10 6; }
+.dp-svg .cath { stroke: #c2c9cd; stroke-width: 6; stroke-linecap: round; }
+.dp-svg .balloon { fill: rgba(255, 255, 255, .8); stroke: #8f9aa2; stroke-width: 2; }
+.dp-svg .pill { fill: #fff; stroke: #5b666d; stroke-width: 2; }
+.dp-svg .pill2 { fill: #f28fb0; stroke: #a8506d; stroke-width: 2; }
+.dp-svg .sun { fill: #f2b705; }
+.dp-svg .sunray { stroke: #f2b705; stroke-width: 3; stroke-linecap: round; }
+.dp-svg .bart { fill: var(--text); font: 800 9px system-ui, sans-serif; }
+.dp-svg rect.bar { fill: var(--primary); stroke: none; }
+.dp-svg .stream.st-lact { stroke: #d9b45a; }
+.dp-svg .dp-lInj, .dp-svg .dp-lDraw, .dp-svg .dp-vRise, .dp-svg .dp-vDrop, .dp-svg .dp-thermo, .dp-svg .dp-bar { transform-box: fill-box; transform-origin: bottom; }
+.dp-svg .dp-shakeV, .dp-svg .dp-swirlV, .dp-svg .dp-invert, .dp-svg .dp-balloon { transform-box: fill-box; transform-origin: center; }
+.dp-svg .dp-pInj { animation: dpPInj 2.4s ease-in-out .3s both; }
+.dp-svg .dp-lInj { animation: dpLInj 2.4s ease-in-out .3s both; }
+.dp-svg .dp-pDraw { animation: dpPDraw 2.4s ease-in-out .3s both; }
+.dp-svg .dp-lDraw { animation: dpLDraw 2.4s ease-in-out .3s both; }
+.dp-svg .dp-vRise { animation: dpLDraw 2.4s ease-in-out .3s both; }
+.dp-svg .dp-vDrop { animation: dpVDrop 2.4s ease-in-out .3s both; }
+.dp-svg .dp-tintIn { animation: dpTintIn 1.6s ease-in-out 1.4s both; }
+.dp-svg .dp-injStr { animation: dpInjStr 3s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-shakeV { animation: dpShakeV .26s ease-in-out 12 alternate; }
+.dp-svg .dp-swirlV { animation: dpSwirlV 1s ease-in-out 4 alternate; }
+.dp-svg .dp-dissolve { animation: dpDissolve 2.6s ease-in .3s both; }
+.dp-svg .dp-invert { animation: dpInvert 3s ease-in-out 2; }
+.dp-svg .dp-hand { animation: dpHand 4s linear infinite; }
+.dp-svg .dp-drop { animation: dpDropF 1s ease-in infinite; }
+.dp-svg .dp-flowT { animation: dpDash 1s linear infinite; }
+.dp-svg .dp-scan { animation: dpScan 1.6s ease-in-out infinite alternate; }
+.dp-svg .dp-binfall { animation: dpBinFall 1.4s ease-in var(--d, 0s) both; }
+.dp-svg .dp-thermo { animation: dpThermo 2.6s ease-out .3s both; }
+.dp-svg .dp-fadeOut { animation: dpFadeOut 2.6s ease-out .3s both; }
+.dp-svg .dp-balloon { animation: dpPop 1s ease-out 1s both; }
+.dp-svg .dp-bar { animation: dpGrow .5s ease-out var(--d, 0s) both; }
+.dp-svg .dp-bart { animation: dpLcdLast .3s calc(var(--d, 0s) + .4s) both; opacity: 0; }
+@keyframes dpPInj { from { transform: translateY(0); } to { transform: translateY(29px); } }
+@keyframes dpLInj { from { transform: scaleY(1); } to { transform: scaleY(0); } }
+@keyframes dpPDraw { from { transform: translateY(29px); } to { transform: translateY(0); } }
+@keyframes dpLDraw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes dpVDrop { from { transform: scaleY(1); } to { transform: scaleY(.55); } }
+@keyframes dpTintIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dpInjStr { 0%, 10% { opacity: 0; } 13%, 88% { opacity: 1; } 92%, 100% { opacity: 0; } }
+@keyframes dpShakeV { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+@keyframes dpSwirlV { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@keyframes dpDissolve { from { opacity: 1; } to { opacity: 0; } }
+@keyframes dpInvert { 0% { transform: rotate(0); } 45%, 55% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
+@keyframes dpHand { to { transform: rotate(360deg); } }
+@keyframes dpDropF { 0% { transform: translateY(0); opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(11px); opacity: 0; } }
+@keyframes dpScan { from { transform: translate(-44px, -12px); } to { transform: translate(0, 0); } }
+@keyframes dpBinFall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(100px); opacity: 0; } }
+@keyframes dpThermo { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
+@keyframes dpFadeOut { from { opacity: 1; } to { opacity: .15; } }
 .dp-svg .swallow { fill: none; stroke: #c9772e; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 8 7; }
 
 /* the motion (the static look = the meaningful frame, so reduced motion still shows each step) */
