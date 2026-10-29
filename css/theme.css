@@ -2589,3 +2589,37 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .sp-notes { margin: 10px 0 0; padding: 8px 22px 8px 10px; border-radius: 10px; background: var(--warning-soft); font-size: 13px; font-weight: 700; line-height: 1.6; color: var(--text); }
 .sp-missing { margin: 8px 0; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 700; background: var(--warning-soft); color: var(--text); }
 .sp-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Special prep: the step-by-step drawings (drawn in front of the user) */
+.sp-stepper { margin: 4px 0 8px; }
+.sp-prog { display: flex; gap: 6px; justify-content: center; margin: 4px 0 8px; }
+.sp-dot { width: 26px; height: 6px; padding: 0; border: 0; border-radius: 4px; background: var(--border-strong, var(--border)); cursor: pointer; }
+.sp-dot.is-done { background: color-mix(in srgb, var(--primary) 55%, var(--surface)); }
+.sp-dot.is-on { background: var(--primary); }
+.sp-art { border-radius: 12px; background: var(--bg); border: 1px solid var(--border); padding: 6px; }
+.sp-svg { display: block; width: 100%; height: auto; max-height: 230px; }
+.sp-svg text { font-family: inherit; fill: var(--text); font-size: 11px; font-weight: 700; }
+.sp-svg text.big { font-size: 17px; font-weight: 800; fill: var(--primary); }
+.sp-svg text.cap { font-size: 10px; font-weight: 600; fill: var(--text-muted); }
+.sp-svg text.bad-t { font-size: 11px; font-weight: 800; fill: #d92d2d; }
+.sp-svg .dr { fill: none; stroke: var(--text); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: spDraw 1s ease forwards; animation-delay: var(--d, 0s); }
+.sp-svg .dr.acc { stroke: var(--primary); }
+.sp-svg .dr.bad { stroke: #d92d2d; }
+.sp-svg .dr.ok { stroke: #1b8a3a; stroke-width: 3.4; }
+.sp-svg .dr.lblline { stroke: var(--text-muted); stroke-width: 2; }
+.sp-svg .fade { opacity: 0; animation: spFade .7s ease forwards; animation-delay: var(--d, 0s); }
+.sp-svg .water { fill: color-mix(in srgb, var(--primary) 28%, transparent); }
+.sp-svg .pw { fill: var(--text); }
+.sp-svg .acid { fill: color-mix(in srgb, #e0a800 45%, transparent); }
+.sp-svg .drop { fill: #e0a800; }
+.sp-svg .dark { fill: #3a2a1c; }
+.sp-svg .lbl { fill: #fff; }
+@keyframes spDraw { to { stroke-dashoffset: 0; } }
+@keyframes spFade { to { opacity: 1; } }
+.sp-stext { margin: 10px 0 8px; font-size: 14px; font-weight: 700; line-height: 1.7; color: var(--text); }
+.sp-num { display: inline-block; margin-inline-end: 8px; padding: 1px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--primary-soft); color: var(--text); }
+.sp-nav { display: flex; gap: 8px; }
+.sp-nav button { flex: 1; height: 44px; border: 0; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; background: var(--fill, var(--primary)); color: #fff; }
+.sp-nav .sp-prev { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+.sp-nav button:disabled { opacity: .4; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .sp-svg .dr { animation: none; stroke-dashoffset: 0; } .sp-svg .fade { animation: none; opacity: 1; } }
