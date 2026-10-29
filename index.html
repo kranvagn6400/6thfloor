@@ -32,10 +32,10 @@
   <link rel="apple-touch-icon" sizes="192x192" href="img/icon-192.png?v=20261028a" />
   <link rel="apple-touch-icon" sizes="512x512" href="img/icon-512.png?v=20261028a" />
   <link rel="stylesheet" href="css/styles.css?v=20261008o" />
-  <link rel="stylesheet" href="css/theme.css?v=418" />
-  <link rel="stylesheet" href="css/palettes.css?v=418" />
-  <link rel="stylesheet" href="css/ornaments.css?v=418" />
-  <link rel="stylesheet" href="css/occasions.css?v=418" />
+  <link rel="stylesheet" href="css/theme.css?v=419" />
+  <link rel="stylesheet" href="css/palettes.css?v=419" />
+  <link rel="stylesheet" href="css/ornaments.css?v=419" />
+  <link rel="stylesheet" href="css/occasions.css?v=419" />
   <style>
     /* Pre-paint auth gate: hide the wrong screen before JS loads to
        prevent a flash of unauthenticated content (1-2s where the
@@ -718,19 +718,31 @@
         </button>
       </section>
 
-      <!-- ----- Special drug preparation (pharmacists + admin; special-prep.js) ----- -->
+      <!-- ----- Special drug preparation (super admin for now; drug-prep.js) ----- -->
       <section class="view view-prep" id="view-prep" data-view="prep" hidden>
         <button class="back-btn" id="prep-back-btn" type="button" aria-label="رجوع">
           <span class="back-arrow">›</span>
           <span>رجوع</span>
         </button>
-        <div class="section-title">
-          <h2>تحضير الأدوية الخاصة</h2>
-          <p>اضغط على الدواء لتظهر خطوات تحضيره</p>
+        <div id="dp-menu">
+          <div class="section-title">
+            <h2>تحضير الأدوية الخاصة</h2>
+            <p>اضغط على الدواء لتشاهد طريقة تحضيره خطوة بخطوة</p>
+          </div>
+          <div class="dp-grid" id="dp-grid"></div>
         </div>
-        <input type="search" id="sp-search" class="ward-search-input" placeholder="ابحث عن دواء…" autocomplete="off" spellcheck="false" />
-        <p class="sp-review" id="sp-review"></p>
-        <div id="sp-list"></div>
+        <div class="dp-player" id="dp-player" hidden>
+          <div class="dp-ptitle"><b dir="ltr" id="dp-name"></b><small id="dp-ar"></small></div>
+          <div class="dp-segs" id="dp-segs"></div>
+          <div class="dp-stage" id="dp-stage"></div>
+          <div class="dp-text" aria-live="polite"><span class="dp-num" id="dp-num"></span><span id="dp-step"></span></div>
+          <div class="dp-ctrl">
+            <button type="button" class="dp-prev" id="dp-prev">السابق</button>
+            <button type="button" class="dp-play" id="dp-play" aria-label="إيقاف مؤقت">❚❚</button>
+            <button type="button" class="dp-next" id="dp-next">التالي</button>
+          </div>
+          <div id="dp-info"></div>
+        </div>
       </section>
 
       <!-- ----- Drug interactions (everyone: doctors, pharmacists, admin) ----- -->
@@ -1602,58 +1614,58 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <!-- App scripts. Freshness comes from the service worker (network-first,
        revalidating); the cache is the offline fallback. Bump ?v= on deploy. -->
-  <script src="js/medications.js?v=418"></script>
-  <script src="js/ward.js?v=418"></script>
-  <script src="js/patient-merge.js?v=418"></script>
-  <script src="js/specialists.js?v=418"></script>
-  <script src="js/specialists-admin.js?v=418"></script>
-  <script src="js/storage.js?v=418"></script>
-  <script src="js/supabase-config.js?v=418"></script>
-  <script src="js/supabase-client.js?v=418"></script>
-  <script src="js/supabase-sync.js?v=418"></script>
-  <script src="js/auth.js?v=418"></script>
-  <script src="js/clinical.js?v=418"></script>
-  <script src="js/ddinter.js?v=418"></script>
-  <script src="js/ddinter-data.js?v=418"></script>
-  <script src="js/boarders.js?v=418"></script>
-  <script src="js/ui.js?v=418"></script>
-  <script src="js/chart-image.js?v=418"></script>
-  <script src="js/chart-bridge.js?v=418"></script>
-  <script src="js/pills-form.js?v=418"></script>
-  <script src="js/print-sheets.js?v=418"></script>
-  <script src="js/patient-search.js?v=418"></script>
-  <script src="js/patient-history.js?v=418"></script>
-  <script src="js/monthly-report.js?v=418"></script>
-  <script src="js/bed-drag.js?v=418"></script>
-  <script src="js/archive-sync.js?v=418"></script>
-  <script src="js/med-availability.js?v=418"></script>
-  <script src="js/special-prep.js?v=418"></script>
-  <script src="js/chart-merge.js?v=418"></script>
-  <script src="js/chart-sync.js?v=418"></script>
-  <script src="js/palettes.js?v=418"></script>
-  <script src="js/ornaments.js?v=418"></script>
-  <script src="js/neon.js?v=418"></script>
-  <script src="js/greetings.js?v=418"></script>
-  <script src="js/presence.js?v=418"></script>
-  <script src="js/occasions.js?v=418"></script>
-  <script src="js/handover.js?v=418"></script>
-  <script src="js/private-form.js?v=418"></script>
-  <script src="js/patient-forms.js?v=418"></script>
-  <script src="js/duty-roster.js?v=418"></script>
-  <script src="js/chart-names.js?v=418"></script>
-  <script src="js/chart-send-log.js?v=418"></script>
-  <script src="js/tarbeet.js?v=418"></script>
-  <script src="js/pills-page.js?v=418"></script>
-  <script src="js/tv-alerts.js?v=418"></script>
-  <script src="js/daily-quotes.js?v=418"></script>
-  <script src="js/app.js?v=418"></script>
+  <script src="js/medications.js?v=419"></script>
+  <script src="js/ward.js?v=419"></script>
+  <script src="js/patient-merge.js?v=419"></script>
+  <script src="js/specialists.js?v=419"></script>
+  <script src="js/specialists-admin.js?v=419"></script>
+  <script src="js/storage.js?v=419"></script>
+  <script src="js/supabase-config.js?v=419"></script>
+  <script src="js/supabase-client.js?v=419"></script>
+  <script src="js/supabase-sync.js?v=419"></script>
+  <script src="js/auth.js?v=419"></script>
+  <script src="js/clinical.js?v=419"></script>
+  <script src="js/ddinter.js?v=419"></script>
+  <script src="js/ddinter-data.js?v=419"></script>
+  <script src="js/boarders.js?v=419"></script>
+  <script src="js/ui.js?v=419"></script>
+  <script src="js/chart-image.js?v=419"></script>
+  <script src="js/chart-bridge.js?v=419"></script>
+  <script src="js/pills-form.js?v=419"></script>
+  <script src="js/print-sheets.js?v=419"></script>
+  <script src="js/patient-search.js?v=419"></script>
+  <script src="js/patient-history.js?v=419"></script>
+  <script src="js/monthly-report.js?v=419"></script>
+  <script src="js/bed-drag.js?v=419"></script>
+  <script src="js/archive-sync.js?v=419"></script>
+  <script src="js/med-availability.js?v=419"></script>
+  <script src="js/drug-prep.js?v=419"></script>
+  <script src="js/chart-merge.js?v=419"></script>
+  <script src="js/chart-sync.js?v=419"></script>
+  <script src="js/palettes.js?v=419"></script>
+  <script src="js/ornaments.js?v=419"></script>
+  <script src="js/neon.js?v=419"></script>
+  <script src="js/greetings.js?v=419"></script>
+  <script src="js/presence.js?v=419"></script>
+  <script src="js/occasions.js?v=419"></script>
+  <script src="js/handover.js?v=419"></script>
+  <script src="js/private-form.js?v=419"></script>
+  <script src="js/patient-forms.js?v=419"></script>
+  <script src="js/duty-roster.js?v=419"></script>
+  <script src="js/chart-names.js?v=419"></script>
+  <script src="js/chart-send-log.js?v=419"></script>
+  <script src="js/tarbeet.js?v=419"></script>
+  <script src="js/pills-page.js?v=419"></script>
+  <script src="js/tv-alerts.js?v=419"></script>
+  <script src="js/daily-quotes.js?v=419"></script>
+  <script src="js/app.js?v=419"></script>
 
   <!-- ===== PWA: register service worker for offline support ===== -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
         navigator.serviceWorker
-          .register('sw.js?v=418', { scope: './' })
+          .register('sw.js?v=419', { scope: './' })
           .then(function (reg) { console.log('[SW] registered', reg.scope); })
           .catch(function (err) { console.warn('[SW] registration failed', err); });
       });
