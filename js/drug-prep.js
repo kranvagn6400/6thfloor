@@ -6,7 +6,7 @@
 (function (global) {
   "use strict";
 
-  const TYPE_MS = 45;        // one letter of the step text
+  const TYPE_MS = 28;        // one letter of the step text
   const $ = (id) => document.getElementById(id);
   const reduced = () => !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
@@ -55,7 +55,10 @@
     jPowder: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud dp-cloudin") + swirl(76) + beaker() + bar() +
       '<g transform="translate(150 2)">' + SPOON + "</g>" +
       dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall"),
-    jAcid: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud") + swirl(76) + beaker() + bar() + dropper(0, "dp-drip"),
+    jAcid: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud") + swirl(76) + beaker() + bar() +
+      // the small beaker it was weighed in is poured into the graduated beaker (and empties)
+      '<g transform="translate(128 40) scale(.85)"><g class="dp-tiltS"><rect class="acid dp-drain" x="-40" y="2" width="38" height="36"/><path class="ln glass" d="M2 -2 L0 0 L0 36 Q0 40 -4 40 L-38 40 Q-42 40 -42 36 L-42 0 L-44 -2"/></g></g>' +
+      stream("M128 42 Q132 58 134 80", "dp-stream acidst"),
     jClear: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water") + liquid("dpIn", 70, "cloud dp-clearing") + swirl(70) + beaker() + bar() +
       sparkle(80, 70, 2.4) + sparkle(220, 96, 2.7) + sparkle(74, 116, 3.0) +
       '<circle class="ok dp-popin2" cx="246" cy="44" r="22"/><path class="ok dp-check" pathLength="1" d="M235 45 L243 54 L259 34"/>',
@@ -112,7 +115,7 @@
         { scene: "jWeighP", text: "زِن 17 غرامًا من مسحوق الدايهايدروس دايصوديوم فوسفيت باستخدام الميزان." },
         { scene: "jPowder", text: "أضف الـ 17 غرامًا من المسحوق تدريجيًا إلى الكأس." },
         { scene: "jWeighA", text: "زِن 5.7 غرامًا (3.4 مل) من محلول حمض الفسفوريك باستخدام الميزان والقطّارة." },
-        { scene: "jAcid", text: "أضف الـ 3.4 مل من محلول حمض الفسفوريك إلى الكأس باستخدام القطّارة." },
+        { scene: "jAcid", text: "اسكب الـ 3.4 مل من محلول حمض الفسفوريك من الكأس الصغير الذي وُزن فيه إلى الكأس المدرّج." },
         { scene: "jClear", text: "اترك الخليط ليتجانس ويذوب بشكل كامل حتى ترى محلولًا صافيًا بدون رواسب." },
         { scene: "jBottle", text: "عبّئ المحلول المتجانس في قارورات زجاجية داكنة لحفظه من الضوء." }
       ],

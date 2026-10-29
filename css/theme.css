@@ -2615,6 +2615,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .cloud { fill: rgba(255, 255, 255, .55); }
 .dp-svg .swirl { fill: none; stroke: #fff; stroke-opacity: .8; stroke-width: 2.2; stroke-dasharray: 10 6; }
 .dp-svg .stream { fill: none; stroke: #3d9bd6; stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: 7 5; }
+.dp-svg .stream.acidst { stroke: #c9d2d8; }
 .dp-svg .plate { fill: #8d98a0; }
 .dp-svg .knob { fill: #d7dde0; stroke: #5b666d; stroke-width: 1.5; }
 .dp-svg .led { fill: #23b45a; }
@@ -2671,6 +2672,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .dp-blink { animation: dpBlink 1.2s ease-in-out infinite; }
 .dp-svg .dp-tilt { transform: rotate(115deg); animation: dpTilt 4.5s ease-in-out infinite; }
 .dp-svg .dp-tiltB { transform: rotate(100deg); animation: dpTiltB 4.5s ease-in-out infinite; }
+.dp-svg .dp-tiltS { transform: rotate(105deg); animation: dpTiltS 4.5s ease-in-out infinite; }
 .dp-svg .dp-tiltL, .dp-svg .dp-tiltL2 { transform: rotate(110deg); animation: dpTiltL 4.5s ease-in-out infinite; }
 .dp-svg .dp-tiltR { transform: rotate(110deg); animation: dpTiltR 4.5s ease-in-out infinite; }
 .dp-svg .dp-stream { animation: dpStream 4.5s linear infinite, dpDash .5s linear infinite; }
@@ -2708,6 +2710,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpDash { to { stroke-dashoffset: -32; } }
 @keyframes dpBlink { 50% { opacity: .25; } }
 @keyframes dpTilt { 0% { transform: rotate(50deg); opacity: 0; } 6% { opacity: 1; } 15%, 75% { transform: rotate(115deg); } 90% { transform: rotate(50deg); opacity: 1; } 98%, 100% { transform: rotate(50deg); opacity: 0; } }
+@keyframes dpTiltS { 0% { transform: rotate(85deg); opacity: 0; } 6% { opacity: 1; } 15%, 75% { transform: rotate(105deg); } 90% { transform: rotate(85deg); opacity: 1; } 98%, 100% { transform: rotate(85deg); opacity: 0; } }
 @keyframes dpTiltB { 0% { transform: rotate(20deg); opacity: 0; } 6% { opacity: 1; } 15%, 75% { transform: rotate(100deg); } 90% { transform: rotate(20deg); opacity: 1; } 98%, 100% { transform: rotate(20deg); opacity: 0; } }
 @keyframes dpTiltL { 0% { transform: rotate(40deg); opacity: 0; } 4% { opacity: 1; } 8%, 40% { transform: rotate(110deg); } 48% { transform: rotate(40deg); opacity: 1; } 56%, 100% { transform: rotate(40deg); opacity: 0; } }
 @keyframes dpTiltR { 0% { transform: rotate(40deg); opacity: 0; } 4%, 50% { transform: rotate(40deg); opacity: 1; } 58%, 90% { transform: rotate(110deg); } 96% { transform: rotate(40deg); opacity: 1; } 100% { transform: rotate(40deg); opacity: 0; } }
