@@ -12,7 +12,7 @@
   const $ = (id) => document.getElementById(id);
   const reduced = () => !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
-  // ---------------- drawing pieces (viewBox 300 × 200, shapes only — no writing inside the drawings) ----------------
+  // ---------------- drawing pieces (viewBox 300 × 200, shapes only — the only writing is the weight on the balance) ----------------
   const BEAKER = "M96 46 L102 50 L102 140 Q102 152 114 152 L186 152 Q198 152 198 140 L198 50 L204 46";
   const BEAKER_IN = "M103 30 L197 30 L197 140 Q197 151 186 151 L114 151 Q103 151 103 140Z";
   const JAR = "M130 70 L190 70 L190 80 Q206 86 206 102 L206 162 Q206 172 196 172 L124 172 Q114 172 114 162 L114 102 Q114 86 130 80Z";
@@ -34,6 +34,10 @@
   const dots = (pts, cls) => pts.map((p) => '<circle class="' + cls + '" style="--d:' + p[2] + 's" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (p[3] || 3.2) + '"/>').join("");
   const capsule = (x, y, cls) => '<g transform="translate(' + x + " " + y + ')"' + (cls ? ' class="' + cls + '"' : "") + '><path class="capA" d="M0 -6 L-10 -6 Q-16 -6 -16 0 Q-16 6 -10 6 L0 6Z"/><path class="capB" d="M0 -6 L10 -6 Q16 -6 16 0 Q16 6 10 6 L0 6Z"/></g>';
   const label = (x, y, w, h) => '<g class="dp-slide"><rect class="lbl" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3"/><path class="lblline" d="M' + (x + 7) + " " + (y + 10) + " L" + (x + w - 7) + " " + (y + 10) + " M" + (x + 7) + " " + (y + 19) + " L" + (x + w - 7) + " " + (y + 19) + " M" + (x + 7) + " " + (y + 28) + " L" + (x + w - 17) + " " + (y + 28) + '"/></g>';
+  // the digital balance beside the stirrer: what was weighed on its pan, the weight on its screen
+  const balance = (grams, load) => '<path class="scaleb" d="M8 160 L68 160 L70 184 Q70 188 66 188 L10 188 Q6 188 6 184Z"/><path class="scalep" d="M34 156 L42 156 L42 160 L34 160Z M12 150 L64 150 L62 156 L14 156Z"/>' +
+    (load === "powder" ? '<path class="powder" d="M18 150 Q38 128 58 150Z"/>' : '<path class="acid" d="M27 133 L49 133 L49 148 L27 148Z"/><path class="ln thin" d="M25 126 L25 148 Q25 150 27 150 L49 150 Q51 150 51 148 L51 126"/>') +
+    '<rect class="lcd" x="16" y="166" width="44" height="15" rx="2"/><text class="lcdt dp-blink" x="38" y="177.5" text-anchor="middle" direction="ltr">' + grams + "</text>";
   const arrowDown = (x, y1, y2) => '<path class="acc dp-bob" d="M' + x + " " + y1 + " L" + x + " " + y2 + " M" + (x - 10) + " " + (y2 - 11) + " L" + x + " " + (y2 + 1) + " L" + (x + 10) + " " + (y2 - 11) + '"/>';
 
   const SCENES = {
@@ -43,11 +47,11 @@
       tilting(90, 30, "dp-tilt", "water dp-drainB") + stream("M90 32 Q104 40 118 92") + noHeat(),
     jPowder: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud dp-cloudin") + swirl(76) + beaker() + bar() +
       '<g transform="translate(150 2)"><g class="dp-tip"><path class="powder" d="M-30 0 Q-30 18 0 18 Q30 18 30 0Z"/><path class="ln" d="M-30 0 Q-30 18 0 18 Q30 18 30 0 M28 2 L60 -8"/></g></g>' +
-      dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall"),
+      dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall") + balance("17.0 g", "powder"),
     jAcid: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud") + swirl(76) + beaker() + bar() +
       '<path class="acid" d="M144 38 L156 38 L156 56 L151.5 68 L148.5 68 L144 56Z"/><path class="ln glass" d="M143 26 L157 26 L157 56 L152 70 L148 70 L143 56Z"/>' +
       '<path class="rubber dp-squeeze" d="M141 27 L141 14 Q141 0 150 0 Q159 0 159 14 L159 27Z"/>' +
-      '<path class="drop dp-drip" style="--d:0s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/><path class="drop dp-drip" style="--d:.8s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/>',
+      '<path class="drop dp-drip" style="--d:0s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/><path class="drop dp-drip" style="--d:.8s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/>' + balance("5.7 g", "acid"),
     jClear: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water") + liquid("dpIn", 70, "cloud dp-clearing") + swirl(70) + beaker() + bar() +
       sparkle(80, 70, 2.4) + sparkle(220, 96, 2.7) + sparkle(74, 116, 3.0) +
       '<circle class="ok dp-popin2" cx="246" cy="44" r="22"/><path class="ok dp-check" pathLength="1" d="M235 45 L243 54 L259 34"/>',

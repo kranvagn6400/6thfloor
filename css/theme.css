@@ -2650,6 +2650,10 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .eye { fill: #333; }
 .dp-svg .mouth { fill: #7a2e2e; }
 .dp-svg .bub { fill: rgba(222, 170, 110, .55); stroke: #c9772e; stroke-width: 1.4; }
+.dp-svg .scaleb { fill: #c9d1d6; stroke: #5b666d; stroke-width: 2; stroke-linejoin: round; }
+.dp-svg .scalep { fill: #eef1f3; stroke: #5b666d; stroke-width: 1.6; stroke-linejoin: round; }
+.dp-svg .lcd { fill: #1f2a30; }
+.dp-svg .lcdt { fill: #6ef0a0; font: 800 10px ui-monospace, Menlo, Consolas, monospace; }
 .dp-svg .swallow { fill: none; stroke: #c9772e; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 8 7; }
 
 /* the motion (the static look = the meaningful frame, so reduced motion still shows each step) */
