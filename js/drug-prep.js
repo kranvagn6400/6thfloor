@@ -1,14 +1,12 @@
 /* drug-prep.js — «تحضير الأدوية الخاصة» (settings page; the super admin only for now).
-   A button per medicine; a press plays its preparation as animated scenes, one per step (auto-advance,
-   pause / previous / next); the step text is typed in while the scene plays. The recipes are the ward's own (given by the user) — never add a recipe or an
-   amount that the user did not give. prefers-reduced-motion: no animation and no auto-advance. */
+   A button per medicine; a press shows its preparation as animated scenes, one per step, moved through with
+   previous / next only (no auto-play — the user asked); the step text is typed in while the scene plays. The recipes
+   are the ward's own (given by the user) — never add a recipe or an amount that the user did not give.
+   prefers-reduced-motion: no animation, the text shown at once. */
 (function (global) {
   "use strict";
 
-  const STEP_MS = 6500;      // the shortest step
   const TYPE_MS = 45;        // one letter of the step text
-  const READ_MS = 3500;      // time left to read once the text is typed
-  const stepMs = (st) => Math.max(STEP_MS, Array.from(st.text).length * TYPE_MS + READ_MS);
   const $ = (id) => document.getElementById(id);
   const reduced = () => !!(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
@@ -34,10 +32,15 @@
   const dots = (pts, cls) => pts.map((p) => '<circle class="' + cls + '" style="--d:' + p[2] + 's" cx="' + p[0] + '" cy="' + p[1] + '" r="' + (p[3] || 3.2) + '"/>').join("");
   const capsule = (x, y, cls) => '<g transform="translate(' + x + " " + y + ')"' + (cls ? ' class="' + cls + '"' : "") + '><path class="capA" d="M0 -6 L-10 -6 Q-16 -6 -16 0 Q-16 6 -10 6 L0 6Z"/><path class="capB" d="M0 -6 L10 -6 Q16 -6 16 0 Q16 6 10 6 L0 6Z"/></g>';
   const label = (x, y, w, h) => '<g class="dp-slide"><rect class="lbl" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3"/><path class="lblline" d="M' + (x + 7) + " " + (y + 10) + " L" + (x + w - 7) + " " + (y + 10) + " M" + (x + 7) + " " + (y + 19) + " L" + (x + w - 7) + " " + (y + 19) + " M" + (x + 7) + " " + (y + 28) + " L" + (x + w - 17) + " " + (y + 28) + '"/></g>';
-  // the digital balance beside the stirrer: what was weighed on its pan, the weight on its screen
-  const balance = (grams, load) => '<path class="scaleb" d="M8 160 L68 160 L70 184 Q70 188 66 188 L10 188 Q6 188 6 184Z"/><path class="scalep" d="M34 156 L42 156 L42 160 L34 160Z M12 150 L64 150 L62 156 L14 156Z"/>' +
-    (load === "powder" ? '<path class="powder" d="M18 150 Q38 128 58 150Z"/>' : '<path class="acid" d="M27 133 L49 133 L49 148 L27 148Z"/><path class="ln thin" d="M25 126 L25 148 Q25 150 27 150 L49 150 Q51 150 51 148 L51 126"/>') +
-    '<rect class="lcd" x="16" y="166" width="44" height="15" rx="2"/><text class="lcdt dp-blink" x="38" y="177.5" text-anchor="middle" direction="ltr">' + grams + "</text>";
+  // the electronic balance (weighing steps): the screen counts up to the weight while the pan is loaded
+  const balance = (readings) => '<path class="scaleb" d="M88 156 L212 156 L216 186 Q216 192 210 192 L90 192 Q84 192 84 186Z"/>' +
+    '<path class="scalep" d="M144 148 L156 148 L156 156 L144 156Z M100 140 L200 140 L196 148 L104 148Z"/><rect class="lcd" x="122" y="164" width="56" height="19" rx="3"/>' +
+    readings.map((r, k) => '<text class="lcdt ' + (k === readings.length - 1 ? "dp-lcdlast" : "dp-lcdstep") + '" style="--d:' + (k * 0.6) + 's" x="150" y="177.5" text-anchor="middle" direction="ltr">' + r + " g</text>").join("");
+  // the dropper: rubber bulb + glass tube with the clear acid; dy moves it down
+  const dropper = (dy, dripCls) => '<g transform="translate(0 ' + dy + ')"><path class="acid" d="M144 38 L156 38 L156 56 L151.5 68 L148.5 68 L144 56Z"/><path class="ln glass" d="M143 26 L157 26 L157 56 L152 70 L148 70 L143 56Z"/>' +
+    '<path class="rubber dp-squeeze" d="M141 27 L141 14 Q141 0 150 0 Q159 0 159 14 L159 27Z"/>' +
+    '<path class="drop ' + dripCls + '" style="--d:0s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/><path class="drop ' + dripCls + '" style="--d:.8s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/></g>';
+  const SPOON = '<g class="dp-tip"><path class="powder" d="M-30 0 Q-30 18 0 18 Q30 18 30 0Z"/><path class="ln" d="M-30 0 Q-30 18 0 18 Q30 18 30 0 M28 2 L60 -8"/></g>';
   const arrowDown = (x, y1, y2) => '<path class="acc dp-bob" d="M' + x + " " + y1 + " L" + x + " " + y2 + " M" + (x - 10) + " " + (y2 - 11) + " L" + x + " " + (y2 + 1) + " L" + (x + 10) + " " + (y2 - 11) + '"/>';
 
   const SCENES = {
@@ -45,13 +48,14 @@
     jBar: () => clip("dpIn", BEAKER_IN) + beaker() + '<g class="dp-dropin"><rect class="bar" x="134" y="140" width="32" height="8" rx="4"/></g>' + arrowDown(150, 8, 34),
     jWater: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water dp-rise") + swirl(70) + beaker() + bar() +
       tilting(90, 30, "dp-tilt", "water dp-drainB") + stream("M90 32 Q104 40 118 92") + noHeat(),
+    jWeighP: () => balance(["0.0", "4.3", "8.5", "12.8", "17.0"]) + '<path class="boat" d="M112 140 L188 140 L180 128 L120 128Z"/><path class="powder dp-grow" d="M124 129 Q150 98 176 129Z"/>' +
+      '<g transform="translate(150 44)">' + SPOON + "</g>" + dots([[132, 90, 0], [140, 92, 0.3], [128, 94, 0.6], [146, 94, 0.9]], "pw dp-fall3"),
+    jWeighA: () => balance(["0.0", "1.4", "2.9", "4.3", "5.7"]) + clip("dpSb", "M129 100 L171 100 L171 136 Q171 139 168 139 L132 139 Q129 139 129 136Z") +
+      '<g clip-path="url(#dpSb)"><rect class="acid dp-grow" x="126" y="112" width="48" height="30"/></g><path class="ln thin" d="M128 100 L128 136 Q128 140 132 140 L168 140 Q172 140 172 136 L172 100"/>' + dropper(18, "dp-drip2"),
     jPowder: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud dp-cloudin") + swirl(76) + beaker() + bar() +
-      '<g transform="translate(150 2)"><g class="dp-tip"><path class="powder" d="M-30 0 Q-30 18 0 18 Q30 18 30 0Z"/><path class="ln" d="M-30 0 Q-30 18 0 18 Q30 18 30 0 M28 2 L60 -8"/></g></g>' +
-      dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall") + balance("17.0 g", "powder"),
-    jAcid: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud") + swirl(76) + beaker() + bar() +
-      '<path class="acid" d="M144 38 L156 38 L156 56 L151.5 68 L148.5 68 L144 56Z"/><path class="ln glass" d="M143 26 L157 26 L157 56 L152 70 L148 70 L143 56Z"/>' +
-      '<path class="rubber dp-squeeze" d="M141 27 L141 14 Q141 0 150 0 Q159 0 159 14 L159 27Z"/>' +
-      '<path class="drop dp-drip" style="--d:0s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/><path class="drop dp-drip" style="--d:.8s" d="M150 72 Q145 80 150 84 Q155 80 150 72Z"/>' + balance("5.7 g", "acid"),
+      '<g transform="translate(150 2)">' + SPOON + "</g>" +
+      dots([[140, 46, 0], [148, 48, 0.35], [136, 50, 0.7], [152, 50, 1.05], [144, 46, 1.4], [132, 48, 1.75]], "pw dp-fall"),
+    jAcid: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 76, "water") + liquid("dpIn", 76, "cloud") + swirl(76) + beaker() + bar() + dropper(0, "dp-drip"),
     jClear: () => clip("dpIn", BEAKER_IN) + plate() + liquid("dpIn", 70, "water") + liquid("dpIn", 70, "cloud dp-clearing") + swirl(70) + beaker() + bar() +
       sparkle(80, 70, 2.4) + sparkle(220, 96, 2.7) + sparkle(74, 116, 3.0) +
       '<circle class="ok dp-popin2" cx="246" cy="44" r="22"/><path class="ok dp-check" pathLength="1" d="M235 45 L243 54 L259 34"/>',
@@ -105,12 +109,15 @@
       steps: [
         { scene: "jBar", text: "ضع قضيب التحريك المغناطيسي في الكأس المدرّج." },
         { scene: "jWater", text: "أضف 90 مل من الماء المعقّم للحقن، ثم ضع الكأس على جهاز الخلط وشغّل التدوير المغناطيسي لتتكوّن دوّامة مائية داخل الكأس، ولا تستخدم الحرارة." },
-        { scene: "jPowder", text: "أضف تدريجيًا 17 غرامًا من مسحوق الدايهايدروس دايصوديوم فوسفيت بعد وزنها باستخدام الميزان." },
-        { scene: "jAcid", text: "أضف 3.4 مل من محلول حمض الفسفوريك (5.7g) باستخدام القطّارة بعد وزنها." },
+        { scene: "jWeighP", text: "زِن 17 غرامًا من مسحوق الدايهايدروس دايصوديوم فوسفيت باستخدام الميزان." },
+        { scene: "jPowder", text: "أضف الـ 17 غرامًا من المسحوق تدريجيًا إلى الكأس." },
+        { scene: "jWeighA", text: "زِن 5.7 غرامًا (3.4 مل) من محلول حمض الفسفوريك باستخدام الميزان والقطّارة." },
+        { scene: "jAcid", text: "أضف الـ 3.4 مل من محلول حمض الفسفوريك إلى الكأس باستخدام القطّارة." },
         { scene: "jClear", text: "اترك الخليط ليتجانس ويذوب بشكل كامل حتى ترى محلولًا صافيًا بدون رواسب." },
         { scene: "jBottle", text: "عبّئ المحلول المتجانس في قارورات زجاجية داكنة لحفظه من الضوء." }
       ],
       info: [
+        { title: "المكونات", items: ["الماء المعقّم للحقن (Sterile water for injection): 90 مل", "مسحوق الدايهايدروس دايصوديوم فوسفيت (Dihydrous Disodium phosphate): 17 غرامًا", "محلول حمض الفسفوريك 85% (Phosphoric acid): 3.4 مل = 5.7 غرامًا"] },
         { title: "الثبات والحفظ", items: ["مدة الثبات: 7 أيام.", "الحفظ: في درجة حرارة الغرفة، وبعيدًا عن الضوء."] }
       ]
     },
@@ -135,12 +142,9 @@
     blue: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M12 8h24M14 8v30a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4V8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M15 24h18v14a3 3 0 0 1-3 3H18a3 3 0 0 1-3-3z" fill="#3d9bd6" opacity=".75"/></svg>',
     pink: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M19 5h10v7l6 6v22a4 4 0 0 1-4 4H17a4 4 0 0 1-4-4V18l6-6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M14.5 26h19v14a2.5 2.5 0 0 1-2.5 2.5H17a2.5 2.5 0 0 1-2.5-2.5z" fill="#e07aa8" opacity=".8"/></svg>'
   };
-  const ICON_PAUSE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z" fill="currentColor"/></svg>';
-  const ICON_PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>';
-  const ICON_AGAIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M4 3v5h5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   // ---------------- player ----------------
-  let cur = null, idx = 0, playing = false, ended = false, timer = 0, t0 = 0, remain = STEP_MS, typeTimer = 0;
+  let cur = null, idx = 0, typeTimer = 0;
 
   function typeText(text) {
     clearInterval(typeTimer);
@@ -169,26 +173,6 @@
     });
   }
 
-  function stopTimer() { clearTimeout(timer); timer = 0; }
-  function schedule(ms) {
-    stopTimer(); t0 = Date.now(); remain = ms;
-    timer = setTimeout(() => {
-      const view = $("view-prep");
-      if (!view || view.hidden) { stopTimer(); playing = false; return; }
-      if (idx < cur.steps.length - 1) { idx++; renderStep(); }
-      else { playing = false; ended = true; updateControls(); }
-    }, ms);
-  }
-
-  function updateControls() {
-    const n = cur.steps.length, play = $("dp-play");
-    $("dp-prev").disabled = idx === 0;
-    $("dp-next").disabled = idx === n - 1;
-    play.innerHTML = ended ? ICON_AGAIN : playing ? ICON_PAUSE : ICON_PLAY;
-    play.setAttribute("aria-label", ended ? "إعادة من البداية" : playing ? "إيقاف مؤقت" : "تشغيل");
-    $("dp-player").classList.toggle("dp-paused", !playing);
-  }
-
   function renderStep() {
     const n = cur.steps.length, st = cur.steps[idx];
     $("dp-art").innerHTML = scene(st.scene);           // a fresh SVG restarts every animation
@@ -196,10 +180,9 @@
     $("dp-text").setAttribute("aria-label", st.text);
     typeText(st.text);
     const segs = $("dp-segs");
-    segs.innerHTML = cur.steps.map((x, k) => '<button type="button" class="dp-seg' + (k < idx ? " is-done" : k === idx ? " is-on" : "") + '" data-k="' + k + '" aria-label="الخطوة ' + (k + 1) + '"><i style="animation-duration:' + stepMs(x) + 'ms"></i></button>').join("");
-    ended = false;
-    if (playing) schedule(stepMs(st)); else { stopTimer(); remain = stepMs(st); }
-    updateControls();
+    segs.innerHTML = cur.steps.map((x, k) => '<button type="button" class="dp-seg' + (k < idx ? " is-done" : k === idx ? " is-on" : "") + '" data-k="' + k + '" aria-label="الخطوة ' + (k + 1) + '"><i></i></button>').join("");
+    $("dp-prev").disabled = idx === 0;
+    $("dp-next").disabled = idx === n - 1;
   }
 
   function renderInfo() {
@@ -223,23 +206,16 @@
     $("dp-ar").textContent = cur.ar;
     $("dp-menu").hidden = true;
     $("dp-player").hidden = false;
-    idx = 0; playing = !reduced();
+    idx = 0;
     renderInfo(); renderStep();
     global.PharmacyUI.setScrollY && global.PharmacyUI.setScrollY(0);
   }
 
   function toMenu() {
-    stopTimer(); clearInterval(typeTimer); playing = false; cur = null;
+    clearInterval(typeTimer); cur = null;
     $("dp-player").hidden = true;
     $("dp-menu").hidden = false;
     $("dp-art").innerHTML = "";
-  }
-
-  function togglePlay() {
-    if (ended) { idx = 0; playing = true; renderStep(); return; }
-    if (playing) { stopTimer(); remain = Math.max(0, remain - (Date.now() - t0)); playing = false; }
-    else { playing = true; schedule(remain); }
-    updateControls();
   }
 
   function open() {
@@ -253,14 +229,13 @@
     const btn = $("settings-prep-btn"); if (btn) btn.addEventListener("click", open);
     const back = $("prep-back-btn");
     if (back) back.addEventListener("click", () => {
-      if (cur) toMenu(); else { stopTimer(); global.PharmacyUI.showView("settings"); }
+      if (cur) toMenu(); else global.PharmacyUI.showView("settings");
     });
     const grid = $("dp-grid");
     if (grid) grid.addEventListener("click", (e) => { const t = e.target.closest(".dp-tile"); if (t) play(t.dataset.id); });
     const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("click", fn); };
     on("dp-prev", () => { if (cur && idx > 0) { idx--; renderStep(); } });
     on("dp-next", () => { if (cur && idx < cur.steps.length - 1) { idx++; renderStep(); } });
-    on("dp-play", () => { if (cur) togglePlay(); });
     on("dp-segs", (e) => { const s = e.target.closest(".dp-seg"); if (s && cur) { idx = +s.dataset.k || 0; renderStep(); } });
   }
 
