@@ -39,20 +39,39 @@
       notes: ["لا تستعمل محاليل الدكستروز للتخفيف.", "الجرعة الاعتيادية: 70 mg في اليوم الأول ثم 50 mg يوميًا."]
     },
     {
-      id: "joulie", name: "Joulie's solution", sub: "محلول جولي (الفوسفات)",
-      steps: [],
-      missing: "لم أكتب خطواته: تركيب محلول جولي يختلف بين المستشفيات، ولا أريد أن أضع أرقامًا غير مؤكدة. أرسل لي التركيب والخطوات المعتمدة عندكم لأضيفها."
+      id: "joulie", name: "Joulie's oral solution", sub: "محلول جولي الفموي — تحضير 100 mL",
+      parts: [
+        { title: "خطوات التحضير", steps: [
+          "ضع قضيب التحريك المغناطيسي (magnetic bar stirrer) في كأس مدرّجة (Calibrated beaker).",
+          "أضف 90 mL من الماء المعقّم (Sterile water)، ثم ضع الكأس على الصفيحة (hot plate) وشغّل المحرّك ليتكوّن دوّامة (Vortex). لا تستعمل الحرارة!",
+          "أضف تدريجيًا 17 غرامًا من مسحوق Dihydrous Disodium phosphate.",
+          "أضف Phosphoric acid 85%: 5.7 غرام = 3.4 mL.",
+          "حرّك جيدًا حتى يصبح المحلول رائقًا.",
+          "انقل المحلول إلى عبوة داكنة (Dark container) واكتب عليها بياناته (Label)."
+        ] },
+        { title: "التركيز", bullets: true, steps: ["1.45 mmol/mL", "2 mmol/mL"] },
+        { title: "الثبات والحفظ", bullets: true, steps: ["مدة الثبات: 7 أيام.", "الحفظ: في درجة حرارة الغرفة، وبعيدًا عن الضوء."] }
+      ]
     },
     {
-      id: "magic", name: "Magic solution", sub: "غسول الفم السحري (Magic mouthwash)",
-      steps: [
-        "جهّز كميات متساوية من المكوّنات الثلاثة: Diphenhydramine syrup، وViscous Lidocaine 2%، ومضاد الحموضة (Maalox أو ما يماثله).",
-        "إذا طُلب مضاد فطري، أضف Nystatin suspension بالكمية نفسها.",
-        "اخلط المكوّنات في عبوة نظيفة وارجّها جيدًا حتى تتجانس.",
-        "اكتب على العبوة: اسم المريض، والتركيب، وتاريخ التحضير، وعبارة «ارجّ قبل الاستعمال».",
-        "طريقة الاستعمال المعتادة: مضمضة بنحو 5–10 mL ثم يُبصق، ولا يُبتلع."
-      ],
-      notes: ["التركيب يختلف بين المستشفيات والأطباء: اعتمد وصفة الطبيب أو بروتوكولكم."]
+      id: "magic", name: "Magic solution", sub: "المحلول السحري",
+      parts: [
+        { title: "المكونات", bullets: true, steps: [
+          "Dexamethasone (الدكسون): زجاجة كاملة",
+          "Diphenhydramine (الارمين): زجاجة كاملة",
+          "Nystatin (محلول نيستاتين): زجاجتان كاملتان",
+          "Tetracycline (تيتراسيكلين): 6 كبسولات"
+        ] },
+        { title: "طريقة التحضير", steps: [
+          "اخلط زجاجة الدكسون وزجاجة الارمين معًا.",
+          "أضف إليهما زجاجتي النيستاتين.",
+          "افتح كبسولات التتراسيكلين الستة وأضف محتواها إلى الخليط.",
+          "عبّئ الخليط في زجاجات جديدة.",
+          "اكتب على الزجاجة المحضّرة: اسم المريض، وتاريخ التحضير، وتاريخ الإتلاف، وعبارة «رجّ جيدًا قبل الاستعمال» لأن المواد الفعالة ترسب في قعر الزجاجة.",
+          "ثقّف المريض بأن يتغرغر بالمحلول ثم يبلعه."
+        ] },
+        { title: "طريقة الإعطاء", bullets: true, steps: ["أربع مرات في اليوم."] }
+      ]
     },
     {
       id: "mtx", name: "Methotrexate (MTX)", sub: "قنينة أو أمبولة 50 mg",
@@ -120,7 +139,7 @@
   function bodyHtml(d) {
     let h = "";
     if (d.missing) h += '<p class="sp-missing">' + esc(d.missing) + "</p>";
-    if (d.parts) d.parts.forEach((p) => { h += '<h4 class="sp-part">' + esc(p.title) + "</h4>" + stepsHtml(p.steps); });
+    if (d.parts) d.parts.forEach((p) => { h += '<h4 class="sp-part">' + esc(p.title) + "</h4>" + (p.bullets ? '<ul class="sp-steps">' + p.steps.map((x) => "<li>" + esc(x) + "</li>").join("") + "</ul>" : stepsHtml(p.steps)); });
     else if (d.steps && d.steps.length) h += stepsHtml(d.steps);
     if (d.notes && d.notes.length) h += '<ul class="sp-notes">' + d.notes.map((n) => "<li>" + esc(n) + "</li>").join("") + "</ul>";
     return h;
