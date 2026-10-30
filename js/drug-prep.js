@@ -1,9 +1,8 @@
-/* drug-prep.js — «تحضير الأدوية الخاصة» (settings page; the super admin only for now).
+/* drug-prep.js — «تحضير الأدوية الخاصة» (settings page, every role).
    A button per medicine; a press shows its preparation as animated scenes, one per step, moved through with
    previous / next only (no auto-play — the user asked); the step text is typed in while the scene plays. The recipes
-   are the ward's own (given by the user) — never add a recipe or an amount that the user did not give. The vial / bag
-   medicines are DRAFTS from the manufacturers' leaflets (draft: true, asked for by the user): marked «مسودة» and shown to
-   the super admin only until the user approves each one (then remove its draft flag).
+   and the vial / bag medicines (first written from the manufacturers' leaflets) were reviewed and approved by the user —
+   never add a recipe or an amount that the user did not give or approve.
    prefers-reduced-motion: no animation, the text shown at once. */
 (function (global) {
   "use strict";
@@ -252,9 +251,8 @@
       ]
     },
 
-    // ---- DRAFTS written from the manufacturers' leaflets (draft: true) — shown only to the super admin until the user approves each one ----
     {
-      id: "ampho-conv", name: "Amphotericin B — Conventional", ar: "الأمفوتيرسين التقليدي (Deoxycholate) — قنينة 50 ملغ", tone: "vial", color: "#e9b52b", draft: true,
+      id: "ampho-conv", name: "Amphotericin B — Conventional", ar: "الأمفوتيرسين التقليدي (Deoxycholate) — قنينة 50 ملغ", tone: "vial", color: "#e9b52b",
       steps: [
         { scene: "vAdd", o: { cap: "#e9b52b", pc: "powY" }, text: "أضف بسرعة 10 مل من الماء المعقّم للحقن (بدون مادة حافظة) إلى القنينة." },
         { scene: "vShake", o: { cap: "#e9b52b", c: "amph", pc: "powY" }, text: "رجّ القنينة فورًا حتى يصبح المحلول الغرواني ذائبًا ومتجانسًا (التركيز 5 ملغ/مل)." },
@@ -268,7 +266,7 @@
       ]
     },
     {
-      id: "ampho-lipo", name: "Amphotericin B — Liposomal", ar: "الأمفوتيرسين اللايبوزومال (AmBisome) — قنينة 50 ملغ", tone: "vial", color: "#e39a2d", draft: true,
+      id: "ampho-lipo", name: "Amphotericin B — Liposomal", ar: "الأمفوتيرسين اللايبوزومال (AmBisome) — قنينة 50 ملغ", tone: "vial", color: "#e39a2d",
       steps: [
         { scene: "vAdd", o: { cap: "#e39a2d", pc: "powY" }, text: "أضف 12 مل من الماء المعقّم للحقن إلى القنينة." },
         { scene: "vShake", o: { cap: "#e39a2d", c: "amph", pc: "powY" }, text: "رجّ القنينة بقوة لمدة 30 ثانية حتى ينتشر المسحوق تمامًا (التركيز 4 ملغ/مل)." },
@@ -283,7 +281,7 @@
       ]
     },
     {
-      id: "caspofungin", name: "Caspofungin", ar: "الكاسبوفنجين (Cancidas) — قنينة 50 أو 70 ملغ", tone: "vial", color: "#d9534f", draft: true,
+      id: "caspofungin", name: "Caspofungin", ar: "الكاسبوفنجين (Cancidas) — قنينة 50 أو 70 ملغ", tone: "vial", color: "#d9534f",
       steps: [
         { scene: "vWarm", o: { cap: "#d9534f" }, text: "أخرج القنينة من الثلاجة واتركها حتى تبلغ حرارة الغرفة." },
         { scene: "vAdd", o: { cap: "#d9534f" }, text: "أضف 10.5 مل من المحلول الملحي 0.9% أو الماء المعقّم للحقن إلى القنينة." },
@@ -298,7 +296,7 @@
       ]
     },
     {
-      id: "mtx", name: "MTX — Methotrexate", ar: "الميثوتريكسيت — دواء سام للخلايا", tone: "vial", color: "#e6c229", draft: true,
+      id: "mtx", name: "MTX — Methotrexate", ar: "الميثوتريكسيت — دواء سام للخلايا", tone: "vial", color: "#e6c229",
       steps: [
         { scene: "ppe", text: "ارتدِ القفازات والرداء والكمامة، لأن الدواء سام للخلايا (Cytotoxic)." },
         { scene: "vCheck", o: { cap: "#e6c229", c: "mtx" }, text: "تأكد من الجرعة والتكرار (أسبوعية أم يومية)، ومن أن المستحضر خالٍ من المادة الحافظة للجرعات العالية وفي Intrathecal uses." },
@@ -313,7 +311,7 @@
       ]
     },
     {
-      id: "vanco-oral", name: "Vancomycin — Oral", ar: "الفانكومايسين الفموي من القنينة الوريدية 1 غرام", tone: "vial", color: "#4a90d9", draft: true,
+      id: "vanco-oral", name: "Vancomycin — Oral", ar: "الفانكومايسين الفموي من القنينة الوريدية 1 غرام", tone: "vial", color: "#4a90d9",
       steps: [
         { scene: "vAdd", o: { cap: "#4a90d9" }, text: "أذب قنينة الفانكومايسين 1 غرام بـ 20 مل من الماء المعقّم للحقن (التركيز 50 ملغ/مل)." },
         { scene: "vShake", o: { cap: "#4a90d9", gentle: true }, text: "حرّك القنينة حتى يذوب المسحوق تمامًا." },
@@ -327,7 +325,7 @@
       ]
     },
     {
-      id: "lactulose-enema", name: "Lactulose Enema", ar: "حقنة اللاكتولوز الشرجية", tone: "vial", color: "#c9a227", draft: true,
+      id: "lactulose-enema", name: "Lactulose Enema", ar: "حقنة اللاكتولوز الشرجية", tone: "vial", color: "#c9a227",
       steps: [
         { scene: "jug", text: "اخلط بنسبة 30% لاكتولوز و70% ماء معقّم أو محلول ملحي مثل NaCl 0.9%." },
         { scene: "enema", text: "ثقّف مرافق المريض أو المريض: يأخذ المحلول المخلوط ويعبّئه في حقنة شرجية قابلة للعصر، ثم يعطيها شرجيًا." },
@@ -339,7 +337,7 @@
       ]
     },
     {
-      id: "endoxan", name: "Endoxan — Cyclophosphamide", ar: "الإندوكسان (سايكلوفوسفاميد) — قنينة 500 ملغ أو 1 غ", tone: "vial", color: "#8e5ac8", draft: true,
+      id: "endoxan", name: "Endoxan — Cyclophosphamide", ar: "الإندوكسان (سايكلوفوسفاميد) — قنينة 500 ملغ أو 1 غ", tone: "vial", color: "#8e5ac8",
       steps: [
         { scene: "ppe", text: "ارتدِ القفازات والرداء والكمامة؛ فهو دواء سام للخلايا." },
         { scene: "vAdd", o: { cap: "#8e5ac8" }, text: "أضف المحلول الملحي 0.9% إلى القنينة: 25 مل لقنينة 500 ملغ، و50 مل لقنينة 1 غ (التركيز 20 ملغ/مل)." },
@@ -355,7 +353,7 @@
       ]
     },
     {
-      id: "tigecycline", name: "Tigecycline", ar: "التايجيسايكلين (Tygacil) — قنينة 50 ملغ", tone: "vial", color: "#f08a24", draft: true,
+      id: "tigecycline", name: "Tigecycline", ar: "التايجيسايكلين (Tygacil) — قنينة 50 ملغ", tone: "vial", color: "#f08a24",
       steps: [
         { scene: "vAdd", o: { cap: "#f08a24" }, text: "أضف 5.3 مل من المحلول الملحي 0.9% أو الدكستروز 5% إلى القنينة." },
         { scene: "vShake", o: { cap: "#f08a24", c: "tige", gentle: true }, text: "حرّك القنينة بلطف حتى يذوب الدواء (التركيز 10 ملغ/مل). لونه الطبيعي أصفر إلى برتقالي؛ إن كان غير ذلك فلا تستعمله." },
@@ -369,7 +367,7 @@
       ]
     },
     {
-      id: "remdesivir", name: "Remdesivir", ar: "الريمديسيفير (Veklury) — قنينة 100 ملغ مسحوق", tone: "vial", color: "#2a9d8f", draft: true,
+      id: "remdesivir", name: "Remdesivir", ar: "الريمديسيفير (Veklury) — قنينة 100 ملغ مسحوق", tone: "vial", color: "#2a9d8f",
       steps: [
         { scene: "vAdd", o: { cap: "#2a9d8f" }, text: "أضف 19 مل من الماء المعقّم للحقن إلى القنينة." },
         { scene: "vShake", o: { cap: "#2a9d8f" }, text: "رجّ القنينة 30 ثانية ثم اتركها 2–3 دقائق؛ كرّر إن لم يذب تمامًا (التركيز 5 ملغ/مل)." },
@@ -385,7 +383,7 @@
       ]
     },
     {
-      id: "rituximab", name: "Rituximab", ar: "الريتوكسيماب (MabThera) — 10 ملغ/مل", tone: "vial", color: "#3b5bdb", draft: true,
+      id: "rituximab", name: "Rituximab", ar: "الريتوكسيماب (MabThera) — 10 ملغ/مل", tone: "vial", color: "#3b5bdb",
       steps: [
         { scene: "premed", text: "قبل كل تسريب: أعطِ الدواء المسبق — باراسيتامول ومضاد هيستامين، ومعهما كورتيزون حسب البروتوكول." },
         { scene: "vDraw", o: { cap: "#3b5bdb" }, text: "اسحب الجرعة المطلوبة من القنينة." },
@@ -406,7 +404,6 @@
     pink: '<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M19 5h10v7l6 6v22a4 4 0 0 1-4 4H17a4 4 0 0 1-4-4V18l6-6z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M14.5 26h19v14a2.5 2.5 0 0 1-2.5 2.5H17a2.5 2.5 0 0 1-2.5-2.5z" fill="#e07aa8" opacity=".8"/></svg>'
   };
   const vialIcon = (c) => '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="17" y="4" width="14" height="6" rx="1.5" fill="' + c + '"/><path d="M19 10h10v4h1.5a3 3 0 0 1 3 3v23a4 4 0 0 1-4 4h-11a4 4 0 0 1-4-4V17a3 3 0 0 1 3-3H19z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M16.5 27h15v13a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z" fill="' + c + '" opacity=".75"/></svg>';
-  const superAdmin = () => !!(global.PharmacyAuth && global.PharmacyAuth.isSuperAdmin && global.PharmacyAuth.isSuperAdmin());
 
   // ---------------- player ----------------
   let cur = null, idx = 0, typeTimer = 0;
@@ -427,11 +424,11 @@
     const grid = $("dp-grid");
     if (!grid) return;
     grid.innerHTML = "";
-    DRUGS.filter((d) => !d.draft || superAdmin()).forEach((d) => {      // drafts: the super admin only, until approved
+    DRUGS.forEach((d) => {
       const b = document.createElement("button");
       b.type = "button"; b.className = "dp-tile dp-" + d.tone; b.dataset.id = d.id;
       b.innerHTML = '<span class="dp-ticon"' + (d.color ? ' style="background:color-mix(in srgb, ' + d.color + ' 18%, var(--surface))"' : "") + ">" + (TILE_ICON[d.tone] || vialIcon(d.color)) + "</span>" +
-        '<span class="dp-tname"><b dir="ltr"></b><small></small><span class="dp-tmeta"><span class="dp-tcount"></span>' + (d.draft ? '<span class="dp-tdraft">مسودة</span>' : "") + "</span></span>";
+        '<span class="dp-tname"><b dir="ltr"></b><small></small><span class="dp-tmeta"><span class="dp-tcount"></span></span></span>';
       b.querySelector("b").textContent = d.name;
       b.querySelector("small").textContent = d.ar;
       b.querySelector(".dp-tcount").textContent = d.steps.length + " خطوات";
@@ -470,7 +467,6 @@
     if (!cur) return;
     $("dp-name").textContent = cur.name;
     $("dp-ar").textContent = cur.ar;
-    $("dp-draft").hidden = !cur.draft;
     $("dp-menu").hidden = true;
     $("dp-player").hidden = false;
     idx = 0;
@@ -486,8 +482,6 @@
   }
 
   function open() {
-    const A = global.PharmacyAuth;
-    if (!(A && A.isSuperAdmin && A.isSuperAdmin())) return;      // hidden from everyone else for now
     renderMenu(); toMenu();
     global.PharmacyUI.showView("prep");
   }

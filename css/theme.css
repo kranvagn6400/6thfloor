@@ -2585,8 +2585,6 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-tname small { font-size: 12px; font-weight: 600; color: var(--text-muted); }
 .dp-tmeta { display: flex; gap: 6px; align-items: center; margin-top: 4px; }
 .dp-tmeta .dp-tcount { margin-top: 0; }
-.dp-tdraft { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--warning-soft); color: var(--text); }
-.dp-draft { margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; line-height: 1.6; background: var(--warning-soft); color: var(--text); }
 .dp-tcount { align-self: flex-start; margin-top: 4px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 800; background: var(--primary-soft); color: var(--text); }
 .dp-ptitle { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 10px; }
 .dp-ptitle b { font-size: 18px; font-weight: 800; text-align: start; }
