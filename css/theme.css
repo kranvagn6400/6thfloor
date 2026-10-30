@@ -2155,6 +2155,7 @@ tr.is-today th { box-shadow: inset -3px 0 0 var(--primary); }
 
 /* تسليم واستلام (handover.js): not for doctors */
 html.role-doctor #settings-handover-btn { display: none !important; }
+html.role-doctor #settings-prep-btn { display: none !important; }
 .hv-status { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; font-size: 12px; max-width: 46vw; }
 .hv-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding: 9px 12px; margin: 6px 0; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; color: var(--text); }
 .hv-row strong { flex: 1 1 130px; min-width: 0; }

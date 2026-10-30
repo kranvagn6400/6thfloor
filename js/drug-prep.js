@@ -1,4 +1,4 @@
-/* drug-prep.js — «تحضير الأدوية الخاصة» (settings page, every role).
+/* drug-prep.js — «تحضير الأدوية الخاصة» (settings page; hidden from doctors).
    A button per medicine; a press shows its preparation as animated scenes, one per step, moved through with
    previous / next only (no auto-play — the user asked); the step text is typed in while the scene plays. The recipes
    and the vial / bag medicines (first written from the manufacturers' leaflets) were reviewed and approved by the user —
@@ -482,6 +482,8 @@
   }
 
   function open() {
+    const A = global.PharmacyAuth;
+    if (A && A.isDoctor && A.isDoctor()) return;      // hidden from doctors (theme.css + here)
     renderMenu(); toMenu();
     global.PharmacyUI.showView("prep");
   }
