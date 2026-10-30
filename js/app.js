@@ -53,6 +53,14 @@
     moveBed: (fromKey, toKey) => moveBed(fromKey, toKey),
     swapBeds: (aKey, bKey) => swapBeds(aKey, bKey),
     flashHint: (msg) => flashHint(msg),
+    // the medicine sheet, when it is open, shows a change that came from another user
+    refreshMedSheet: () => {
+      const sheet = document.getElementById("med-sheet");
+      if (!sheet || !sheet.classList.contains("open")) return;
+      UI.renderMedOptions(state.medications, state.sheet.selected, state.sheet.filter, state.sheet.activeTab);
+      bindMedOptionCheckboxes();
+      syncSelectedUI();
+    },
     escapeHtml: (t) => escapeHtml(t),
     refresh: () => refreshStatsAndRooms(),
     // someone who came first holds this bed (presence.js): this device steps out of its card
@@ -285,6 +293,7 @@
   }
   async function pollOnce() {
     if (!SB || !SBSync || !SB.isConfigured()) return;
+    if (global.PharmacyMedAvailability) global.PharmacyMedAvailability.refreshFromCloud();
     try {
       // Only pull patients if we're NOT currently viewing a patient.
       // Pulling while viewing would overwrite local edits (like med
@@ -1119,6 +1128,8 @@
   }
 
   function handleMedicationRealtimeChange(payload) {
+    // availability changes reach this device at once, whatever happens to the full pull below
+    if (payload && payload.new && payload.new.id && global.PharmacyMedAvailability) global.PharmacyMedAvailability.applyCloud([payload.new]);
     if (!SBSync || !SBSync.pullCatalog) return;
     // Don't re-pull the catalog if the admin view is currently open
     // and we just made an edit (delete/add). The push may still be
@@ -1145,6 +1156,7 @@
       if (res.ok) {
         state.medications = Storage.loadMedications();
         UI.renderAdminMedList(state.medications, null);
+        if (global.PharmacyMedAvailability) global.PharmacyMedAvailability.redraw();
       }
     });
   }

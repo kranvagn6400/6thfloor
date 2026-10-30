@@ -241,6 +241,19 @@
     } catch (e) { return { ok: false, error: (e && e.message) ? e.message : String(e) }; }
   }
 
+  // Only { id, available } of every medicine: every device reads this often (app.js pollOnce), so a change made by anyone
+  // arrives even if a realtime event was missed (asleep, no connection) or this device has its own unsent catalogue edits.
+  async function fetchAvailability() {
+    if (!SB || !SB.isConfigured()) return { ok: false, error: "غير مُهيّأ" };
+    const client = SB.getClient();
+    if (!client) return { ok: false, error: "تعذّر إنشاء عميل Supabase" };
+    try {
+      const { data, error } = await client.from("medications").select("id, available");
+      if (error) return { ok: false, error: error.message };
+      return { ok: true, rows: Array.isArray(data) ? data : [] };
+    } catch (e) { return { ok: false, error: (e && e.message) ? e.message : String(e) }; }
+  }
+
   async function pushCatalog() {
     if (!SB || !SB.isConfigured()) return { ok: false, error: "غير مُهيّأ" };
     const client = SB.getClient();
@@ -256,7 +269,7 @@
       // `name_chart`) — this lets the app keep working on legacy
       // Supabase installs that haven't yet run the latest schema
       // migration that adds the `name_chart` column.
-      const rows = meds.map((m, i) => medToRow(m, i));
+      const rows = meds.map((m, i) => { const r = medToRow(m, i); delete r.available; return r; });   // availability: only pushMedicationRows writes it
       const CHUNK = 100;
       const stripped = new Set();   // optional columns the cloud doesn't have
       for (let i = 0; i < rows.length; i += CHUNK) {
@@ -797,6 +810,7 @@
   global.PharmacySupabaseSync = {
     pullCatalog,
     pushMedicationRows,
+    fetchAvailability,
     pushCatalog,
     pushPatients,
     pushPatient,
