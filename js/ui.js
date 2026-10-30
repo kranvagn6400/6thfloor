@@ -709,6 +709,19 @@
       ]);
     }
 
+    // Tigecycline: the extra vial(s) — the first dose of the first day is 2 vials (added to the quantity sent to the chart)
+    let extraVialField = null;
+    const ClinX = global.PharmacyClinical;
+    if (/tigecycline|tigacycline/i.test([med.id, med.nameEn, med.nameTrade, med.nameChart].join(" ")) && ClinX && ClinX.abxDay && ClinX.abxDay(med, patient) === 1) {      // day 1 of the course only
+      const cur = parseInt(med.extraVial, 10) || 0;
+      const opts = [];
+      for (let i = 0; i <= 4; i++) opts.push(h("option", { value: String(i), selected: i === cur ? "selected" : undefined }, i === 0 ? "—" : String(i)));
+      extraVialField = h("div", { class: "med-field" }, [
+        h("label", {}, "فيالة زائدة (اليوم الأول: الجرعة الأولى فيالتان)"),
+        h("select", { dir: "ltr", dataset: { medIndex: index, field: "extraVial" } }, opts)
+      ]);
+    }
+
     return h("div", { class: "med-card" + (worst ? " has-alert-" + worst : ""), dataset: { medIndex: index } }, [
       h("div", { class: "med-card-head" }, [
         nameBlock,
@@ -733,7 +746,8 @@
           h("label", {}, "طريقة الإعطاء"),
           modeSelect
         ]),
-        lasixField
+        lasixField,
+        extraVialField
       ])
     ]);
   }

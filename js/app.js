@@ -2743,7 +2743,7 @@
     });
     $("meds-list").addEventListener("change", (e) => {
       const t = e.target;
-      if (!t.dataset.medIndex || (t.dataset.field !== "frequency" && t.dataset.field !== "mode" && t.dataset.field !== "lasixExtra")) return;
+      if (!t.dataset.medIndex || (t.dataset.field !== "frequency" && t.dataset.field !== "mode" && t.dataset.field !== "lasixExtra" && t.dataset.field !== "extraVial")) return;
       if (!state.currentBed) return;
       const p = state.patients[state.currentBed.key];
       if (!p || !Array.isArray(p.medications)) return;
@@ -2757,6 +2757,9 @@
       if (t.dataset.field === "lasixExtra") {
         const n = parseInt(t.value, 10) || 0;
         if (n > 0) med.lasixExtra = n; else delete med.lasixExtra;
+      } else if (t.dataset.field === "extraVial") {
+        const n = parseInt(t.value, 10) || 0;
+        if (n > 0) med.extraVial = n; else delete med.extraVial;
       } else if (t.dataset.field === "mode") {
         if (t.value) med.mode = t.value; else delete med.mode;
       } else {
@@ -3579,7 +3582,9 @@
           const freq = pm.frequency || catalog.defaultFrequency || "";
           const n = parseFreq(freq, pm.id);
           if (n === 0 && freq) tally[pm.id].custom = true;
-          tally[pm.id].total += n;
+          // tigecycline on its first day: one extra vial (the first dose is 2 vials)
+          const extraVial = n > 0 && global.PharmacyChartBridge.extraVialOf ? global.PharmacyChartBridge.extraVialOf(pm, p) : 0;
+          tally[pm.id].total += n + extraVial;
           if (!seen.has(pm.id)) {
             seen.add(pm.id);
           }

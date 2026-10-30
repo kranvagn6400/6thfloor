@@ -148,6 +148,19 @@
   // med.lasixExtra on the albumin medicine = that many extra Lasix 20mg ampoules a day, added to the
   // Lasix quantity sent to the chart (the Lasix order itself is never changed).
   const LASIX_ID = "lasix-20mg-amp";
+
+  // Tigecycline: the first dose of the first day is a double dose (100 mg = 2 vials), the next ones 1 vial (50 mg) —
+  // like the Lasix that goes with albumin, the pharmacist sets the EXTRA vials on the medicine card (med.extraVial, «فيالة زائدة»);
+  // they are added to the ordinary quantity (1×2 + 1 = 3 vials) — on the FIRST day of the course only (the field shows only then,
+  // and the number is ignored from day 2 on).
+  const isTigecycline = (m) => /tigecycline|tigacycline/i.test([m && m.id, m && m.nameEn, m && m.nameTrade, m && m.nameChart].join(" "));
+  function extraVialOf(pm, patient) {
+    if (!pm || !isTigecycline(pm)) return 0;
+    const Clin = global.PharmacyClinical;
+    if (!(Clin && Clin.abxDay && Clin.abxDay(pm, patient) === 1)) return 0;
+    const n = parseInt(pm.extraVial, 10);
+    return n > 0 ? n : 0;
+  }
   function isAlbuminMed(pm) { return !!(pm && /albumin/i.test(String(pm.id || ""))); }
   function lasixExtraOf(patient) {
     let n = 0;
@@ -191,7 +204,8 @@
             const freq = pm.frequency || (catalog ? catalog.defaultFrequency : "") || "";
             // Include the med id so buildChartTSV can look it up in
             // CHART_QTY_EXCEPTIONS (e.g. heparin-vial → always "1").
-            return Object.assign({ id: pm.id, name: name, freq: freq, form: source.form || pm.form || "", available: source.available !== false }, orderRank(source));
+            const extraVial = extraVialOf(pm, p);
+            return Object.assign({ id: pm.id, name: name, freq: freq, form: source.form || pm.form || "", available: source.available !== false }, extraVial ? { extraQty: extraVial } : {}, orderRank(source));
           })
           .filter(Boolean);
 
@@ -408,6 +422,7 @@
     freqToDose,
     dailyQuantity,
     lasixExtraOf,
+    extraVialOf,
     LASIX_ID,
     buildChartTSV,
     CHART_URL,
