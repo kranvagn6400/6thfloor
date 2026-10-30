@@ -43,7 +43,7 @@
 
   const FORMS = {
     ivig: {
-      id: "ivig", title: "IVIG vial", short: "IVIG", sub: "الغلوبيولين المناعي الوريدي — دائرة مدينة الطب",
+      id: "ivig", title: "IVIG vial", short: "IVIG", sub: "الغلوبيولين المناعي الوريدي",
       gid: "1FAIpQLSfswB5mpWZU4Hrh9BIimdgmNnDimBdHLrr6bHK0q9fOlpl25A", pages: "0,1",
       fields: common({ institution: 700571695, season: 214137601, month: 1987280467, name: 539442606, doctor: 1069499657, plate: 1249769055, gender: 1595320943, age: 105603720, vials: 2018093175 }).concat([
         {
@@ -57,7 +57,7 @@
     },
 
     albumin: {
-      id: "albumin", title: "Albumin vial", short: "Albumin", sub: "الألبومين — مدينة الطب",
+      id: "albumin", title: "Albumin vial", short: "Albumin", sub: "الألبومين",
       gid: "1FAIpQLSe-IMTxnC28h84i0dKBLMfeB8QLS_AkgRXICkUOhbVzGfaPgw", pages: "0,1",
       fields: common({ institution: 1214806455, season: 589084363, month: 1792534844, name: 423556593, doctor: 2078163932, plate: 1062167645, gender: 1143953533, age: 1373968846, vials: 1161018343 }).concat([
         { k: "waste", label: "الكمية الضائعة من المادة بسبب الجرعة (مليلتر)", t: "num", e: 1124900641, req: 1, half: 1 },
@@ -118,7 +118,7 @@
     },
 
     tigecycline: {
-      id: "tigecycline", title: "Tigecycline Vial", short: "Tigecycline", sub: "التايجيسايكلين — دائرة مدينة الطب",
+      id: "tigecycline", title: "Tigecycline Vial", short: "Tigecycline", sub: "التايجيسايكلين",
       gid: "1FAIpQLSfBv-FQxDd-XA74IKNcSTf-SY7E9vlSBjSTznIt9OSZLKmOUw", pages: "0",
       fields: [
         { k: "season", label: "الفصل", t: "radio", e: 1002732231, opts: ["الاول", "الثاني", "الثالث", "الرابع"], req: 1, half: 1 },
@@ -141,7 +141,7 @@
     },
 
     colistin: {
-      id: "colistin", title: "Colistin vial", short: "Colistin", sub: "الكوليستين — دائرة صحة مدينة الطب",
+      id: "colistin", title: "Colistin vial", short: "Colistin", sub: "الكوليستين",
       gid: "1FAIpQLScKnP4IrG9HDHYlHnGr7AYPIVwAMRQTWEYRzm8J0P9fd1B20w", pages: "0,1",
       fields: [
         { k: "institution", label: "المؤسسة", t: "fixed", e: 2071414154, v: INSTITUTION },
@@ -166,7 +166,7 @@
     },
 
     antibiotics: {
-      id: "antibiotics", title: "موقف المضادات الحياتية", short: "المضادات", sub: "استمارة صرف المضادات الحياتية — مستشفى بغداد التعليمي",
+      id: "antibiotics", title: "موقف المضادات الحياتية", short: "المضادات", sub: "استمارة صرف المضادات الحياتية",
       gid: "1FAIpQLSfwLQ0aIHzgMH_bN4c4Xy_0uODQbPIlwXKiK2oP9AhViAo0Bw", pages: "0", anyAntibiotic: 1,
       fields: [
         { k: "name", label: "اسم المريض", t: "text", e: 1839216805, req: 1 },

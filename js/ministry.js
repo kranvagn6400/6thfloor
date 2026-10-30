@@ -21,9 +21,9 @@
   // Fields the editor does NOT show (the pharmacist enters them on the patient's card, or the app fixes them). A missing one stops the send
   // with «لم تكتمل المعلومات الآتية في سرير المريض».
   const HIDE = {
-    ivig: ["season", "month", "name", "doctor", "plate", "gender", "age", "vials"],
-    tigecycline: ["season", "month", "name", "plate", "gender", "age", "ward", "creat", "dose"],
-    colistin: ["committee", "name", "doctor", "ward", "gender", "age", "plate", "start", "weight", "dose", "given", "waste", "creat"]
+    ivig: ["institution", "season", "month", "name", "doctor", "plate", "gender", "age", "vials"],
+    tigecycline: ["dept", "institution", "season", "month", "name", "plate", "gender", "age", "ward", "creat", "dose"],
+    colistin: ["institution", "committee", "sharing", "name", "doctor", "ward", "gender", "age", "plate", "start", "weight", "dose", "given", "waste", "creat"]
   };
   const hiddenMissing = (formId, v) => (MF.FORMS[formId].fields || []).filter((fl) => (HIDE[formId] || []).indexOf(fl.k) >= 0 && fl.t !== "fixed" && fl.req)
     .filter((fl) => !String(v[fl.k] == null ? "" : v[fl.k]).trim()).map((fl) => fl.label);
@@ -223,15 +223,19 @@
   }
 
   // ---- screens ----
+  const syncBack = () => { const b = $("ministry-back-btn"); if (b) b.style.display = S.screen === "list" ? "" : "none"; };
   function head(title, sub, backAction) {
     return '<button type="button" class="mn-back" data-act="' + backAction + '">‹ رجوع</button><h3 class="mn-title">' + esc(title) + "</h3>" + (sub ? '<p class="mn-sub">' + esc(sub) + "</p>" : "");
   }
   function drawList() {
-    const forms = Object.keys(MF.FORMS).map((id) => {
+    // the order the user chose
+    const ORDER = ["meronem", "albumin", "ivig", "tigecycline", "colistin", "antibiotics"];
+    const forms = ORDER.filter((id) => MF.FORMS[id]).map((id) => {
       const f = MF.FORMS[id], n = patients(id).length;
       return '<button type="button" class="mn-card" data-act="form" data-f="' + id + '"><b>' + esc(f.title) + "</b><small>" + esc(f.sub) + "</small><span>" + n + " مريض</span></button>";
     }).join("");
     $("ministry-body").innerHTML = '<p class="mn-note">اختر الدواء لتظهر مرضاه، ثم املأ النموذج وأرسله إلى الوزارة.</p>' + forms;
+    syncBack();
   }
   function drawPatients() {
     const f = MF.FORMS[S.form], rows = patients(S.form);
@@ -240,6 +244,7 @@
       return '<button type="button" class="mn-pt" data-act="pt" data-k="' + esc(x.key) + '"><b>' + esc(x.p.name) + "</b><small>" +
         esc((global.PharmacyWard.bedText ? global.PharmacyWard.bedText(x.key) : x.key) + (x.p.plateNumber ? " · طبلة " + x.p.plateNumber : "")) + '</small><span class="mn-st' + (done ? " ok" : "") + '">' + (done ? (MF.FORMS[S.form].once ? "أُرسل ✓" : "أُرسل اليوم ✓") : AUTO[S.form] ? "اضغط للإرسال" : "لم يُرسل") + "</span></button>";
     }).join("") : '<div class="mn-empty">لا يوجد مرضى على هذا الدواء حاليًا.</div>');
+    syncBack();
   }
   const OTHER = "__other__";
   function fieldHtml(fl, v) {
@@ -274,6 +279,7 @@
     $("ministry-body").innerHTML = head(f.title, "راجع البيانات قبل الإرسال", "pts") + warn +
       '<div class="mn-form">' + f.fields.filter((fl) => (HIDE[f.id] || []).indexOf(fl.k) < 0).map((fl) => fieldHtml(fl, v)).join("") + "</div>" +
       '<button type="button" class="mn-send" id="mn-send" data-act="send"' + (S.busy || miss.length ? " disabled" : "") + ">" + (S.busy ? "جارٍ الإرسال…" : "إرسال إلى الوزارة") + "</button>";
+    syncBack();
   }
   function readEditor() {
     const f = MF.FORMS[S.form], v = S.v, g = (id) => { const e = $(id); return e ? e.value : null; };
