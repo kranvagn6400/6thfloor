@@ -1592,7 +1592,7 @@
     _pendingExit.timer = setTimeout(commitPendingExit, UNDO_MS);
     showUndoToast(message);
     // a deleted bed glitches (cyan / pink) until the undo window ends
-    if (opts && opts.glitch && global.PharmacyFx) global.PharmacyFx.glitchBed(bedKey, UNDO_MS + 1500);
+    if (opts && opts.glitch && global.PharmacyFx) global.PharmacyFx.glitchBed(bedKey, UNDO_MS + 1500, opts.fx);
   }
   function commitPendingExit() {
     const x = _pendingExit;
@@ -2896,7 +2896,7 @@
         pushNotification("patient_discharged",
           `خروج المريض: ${p.name.trim()} — ${global.PharmacyWard.roomTitle(roomId)}`,
           p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
-      }, { glitch: true });
+      }, { glitch: true, fx: "discharge" });
     }
 
     // Discharge button → open modal (instead of confirm)
@@ -2951,7 +2951,7 @@
         pushNotification("patient_died",
           `وفاة المريض: ${p.name.trim()} — ${global.PharmacyWard.roomTitle(roomId)}`,
           p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
-      }, { glitch: true });
+      }, { glitch: true, fx: "died" });
     });
 
     // ----- Boarder returns to their own floor (رجوع المريض إلى طابقه) -----
@@ -2996,7 +2996,7 @@
         pushNotification("patient_transferred",
           `رجوع المريض: ${p.name.trim()} إلى ${dest} — ${global.PharmacyWard.roomTitle(roomId)}`,
           p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
-      }, { glitch: true });
+      }, { glitch: true, fx: "return" });
     });
 
     // ----- Origin ward (مريض مستضاف) -----

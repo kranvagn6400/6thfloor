@@ -3,7 +3,8 @@
    - fire on the log-out buttons;
    - a light sweep on a medicine option when it is ticked in the «إضافة علاج» sheet;
    - a rainbow border (5 s) around the bed whose patient just got a new medicine (shown when the rooms are drawn);
-   - a cyan / pink glitch on a deleted bed during the undo window (the patient stays shown).
+   - during the undo window the bed keeps showing the patient, with an effect for each way of leaving: deleted (cyan / pink
+     glitch), discharged, died, returned to the floor.
    For everyone who is signed in (the trial on the admin account is over — the user asked). */
 (function (global) {
   "use strict";
@@ -84,21 +85,35 @@
     bed.appendChild(r);
     setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, Math.max(100, RING_MS - elapsed));
   }
-  // a deleted patient's bed glitches (cyan / pink) from the delete until the undo window ends
-  var glitchKey = null, glitchUntil = 0;
+  // The bed of a patient who is leaving keeps showing the patient until the undo window ends, with its own effect:
+  // delete = cyan / pink glitch; discharge = green glow, chevrons going out; died = slowly greys and darkens, a black corner
+  // ribbon (calm, no flicker); return to the floor = indigo glow, chevrons going up
+  var EXIT_FX = {
+    "delete": ["fx-holo-live", "fx-holo-box"],
+    discharge: ["fx-out-live", "fx-out-box"],
+    died: ["fx-died-live", "fx-died-box"],
+    "return": ["fx-ret-live", "fx-ret-box"]
+  };
+  var glitchKey = null, glitchUntil = 0, glitchKind = "delete";
   function ensureGlitch() {
     var grid = document.getElementById("rooms-grid");
     if (!grid) return;
     if (glitchKey && Date.now() > glitchUntil) glitchKey = null;
-    Array.prototype.forEach.call(grid.querySelectorAll(".fx-holo-live"), function (b) {
-      if (b.dataset.key !== glitchKey) { b.classList.remove("fx-holo-live"); var o = b.querySelector(".fx-holo-box"); if (o) o.remove(); }
+    Array.prototype.forEach.call(grid.querySelectorAll(".fx-exit-bed"), function (b) {
+      if (b.dataset.key === glitchKey) return;
+      b.classList.remove("fx-exit-bed");
+      Object.keys(EXIT_FX).forEach(function (k) {
+        b.classList.remove(EXIT_FX[k][0]);
+        var o = b.querySelector("." + EXIT_FX[k][1]); if (o) o.remove();
+      });
     });
     if (!glitchKey || !allowed()) return;
     var bed = grid.querySelector('.bed-btn[data-key="' + glitchKey + '"]');
-    if (!bed || bed.classList.contains("fx-holo-live")) return;
-    bed.classList.add("fx-holo-live");
+    if (!bed || bed.classList.contains("fx-exit-bed")) return;
+    var fx = EXIT_FX[glitchKind] || EXIT_FX["delete"];
+    bed.classList.add("fx-exit-bed", fx[0]);
     var box = document.createElement("i");
-    box.className = "fx-holo-box";
+    box.className = fx[1];
     box.setAttribute("aria-hidden", "true");
     bed.appendChild(box);
   }
@@ -131,8 +146,8 @@
 
   global.PharmacyFx = {
     orderGlow: setOrderGlow,
-    glitchBed: function (key, ms) {
-      glitchKey = key; glitchUntil = Date.now() + (ms || 9500);
+    glitchBed: function (key, ms, kind) {
+      glitchKey = key; glitchUntil = Date.now() + (ms || 9500); glitchKind = kind || "delete";
       setTimeout(ensureGlitch, 0); setTimeout(ensureGlitch, 400);
       setTimeout(ensureGlitch, (ms || 9500) + 50);                 // failsafe: stop by itself
     },

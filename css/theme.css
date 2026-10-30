@@ -2372,7 +2372,29 @@ html[data-theme="dark"] { --hdr1: #143832; --hdr2: #0F2925; --hdr3: #0B1D1A; }
 .fx-holo-live { animation: fxHoloLive 900ms steps(1, end) infinite; }
 .fx-holo-box { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; background: repeating-linear-gradient(0deg, rgba(0, 255, 255, .22) 0 2px, transparent 2px 5px), linear-gradient(90deg, rgba(255, 0, 255, .12), rgba(0, 255, 255, .12)); animation: fxHoloBox 700ms steps(3, end) infinite; }
 @media (prefers-reduced-motion: reduce) { .fx-holo-live, .fx-holo-box { animation: none; } }
-.fx-holo-live { pointer-events: none; }
+.fx-exit-bed { pointer-events: none; }
+/* discharged: a green glow, chevrons going out */
+.fx-out-live { animation: fxOutGlow 1.6s ease-in-out infinite; }
+.fx-out-box { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M14 5 L7 11 L14 17' fill='none' stroke='%2316a34a' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 0 50% / 22px 22px repeat-x, rgba(34, 197, 94, .16); animation: fxOutMove 1.1s linear infinite; }
+@keyframes fxOutGlow { 0%, 100% { box-shadow: 0 0 0 2px rgba(34, 197, 94, .85), 0 0 8px 1px rgba(34, 197, 94, .45); } 50% { box-shadow: 0 0 0 2px rgba(34, 197, 94, 1), 0 0 18px 5px rgba(34, 197, 94, .6); } }
+@keyframes fxOutMove { to { background-position: -22px 50%, 0 0; } }
+/* died: calm — slowly greys and darkens, a black corner ribbon, no flicker */
+.fx-died-live { animation: fxDiedFade 2.6s ease-out both; }
+.fx-died-box { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2; background: rgba(0, 0, 0, .38); animation: fxDiedVeil 2.6s ease-out both; }
+.fx-died-box::after { content: ""; position: absolute; top: 0; left: 0; width: 26px; height: 26px; background: linear-gradient(135deg, #000 0 48%, transparent 48%); }
+@keyframes fxDiedFade { from { filter: none; } to { filter: grayscale(1) brightness(.72); } }
+@keyframes fxDiedVeil { from { opacity: 0; } to { opacity: 1; } }
+/* returned to the floor: an indigo glow, chevrons going up */
+.fx-ret-live { animation: fxRetGlow 1.6s ease-in-out infinite; }
+.fx-ret-box { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Cpath d='M5 14 L11 7 L17 14' fill='none' stroke='%234f46e5' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 50% 0 / 22px 22px repeat-y, rgba(99, 102, 241, .16); animation: fxRetMove 1.1s linear infinite; }
+@keyframes fxRetGlow { 0%, 100% { box-shadow: 0 0 0 2px rgba(99, 102, 241, .85), 0 0 8px 1px rgba(99, 102, 241, .45); } 50% { box-shadow: 0 0 0 2px rgba(99, 102, 241, 1), 0 0 18px 5px rgba(99, 102, 241, .6); } }
+@keyframes fxRetMove { to { background-position: 50% -22px, 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .fx-out-live, .fx-out-box, .fx-ret-live, .fx-ret-box, .fx-died-live, .fx-died-box { animation: none; }
+  .fx-out-live { box-shadow: 0 0 0 2px rgba(34, 197, 94, .9); }
+  .fx-ret-live { box-shadow: 0 0 0 2px rgba(99, 102, 241, .9); }
+  .fx-died-live { filter: grayscale(1) brightness(.72); }
+}
 
 /* Add-medicine sheet: the list always keeps room, and with the keyboard up the sheet is compact —
    the search field, the list and the selected medicines all stay in view */
