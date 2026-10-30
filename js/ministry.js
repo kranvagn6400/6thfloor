@@ -15,6 +15,10 @@
   const todayISO = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
   const digits = (s) => String(s == null ? "" : s).replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d));
   let S = { screen: "list", form: "", key: "", v: null, busy: false };
+  // forms with NO editor: everything comes from the patient's card (the pharmacist enters it there); a press sends it, and a
+  // missing piece of data stops it with the list of what the card lacks
+  const AUTO = { albumin: true };
+  const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "التشخيص" };
 
   function allowed() { const A = global.PharmacyAuth; return !!(A && A.canMinistry && A.canMinistry()); }
 
@@ -72,7 +76,9 @@
     if (monthField) set("month", monthField.opts[now.getMonth()] || "");        // tigecycline's form has no December → empty, the user is told
     set("name", String(p.name || "").trim()); set("doctor", String(p.doctor || "").trim());
     set("plate", digits(p.plateNumber || "")); set("gender", sex); set("age", num(p.age));
-    if (formId === "ivig" || formId === "albumin") { set("vials", String(dailyQty(x))); set("branch", ""); set("dx", ""); if (formId === "albumin") set("waste", "0"); }
+    if (formId === "ivig" || formId === "albumin") { set("vials", String(dailyQty(x))); set("branch", ""); set("dx", ""); }
+    // albumin: the lost quantity is always 0, and the diagnosis is the card's own text, sent under «Others» (a free-text branch of the form)
+    if (formId === "albumin") { set("waste", "0"); v.branch = "others"; v.dx = dx; }
     if (formId === "tigecycline") {
       const m0 = x.meds[0].pm, nm = MATCH.tigecycline, fr = (global.PharmacyMedications && global.PharmacyMedications.parseFreq) ? global.PharmacyMedications.parseFreq(m0.frequency || x.meds[0].c.defaultFrequency || "") : null;
       set("ward", "الباطنية"); set("dx", dx); set("creat", creat);
@@ -126,7 +132,7 @@
     $("ministry-body").innerHTML = head(f.title, f.sub, "list") + (rows.length ? rows.map((x) => {
       const done = sentToday(x.p, S.form);
       return '<button type="button" class="mn-pt" data-act="pt" data-k="' + esc(x.key) + '"><b>' + esc(x.p.name) + "</b><small>" +
-        esc((global.PharmacyWard.bedText ? global.PharmacyWard.bedText(x.key) : x.key) + (x.p.plateNumber ? " · طبلة " + x.p.plateNumber : "")) + '</small><span class="mn-st' + (done ? " ok" : "") + '">' + (done ? "أُرسل اليوم ✓" : "لم يُرسل") + "</span></button>";
+        esc((global.PharmacyWard.bedText ? global.PharmacyWard.bedText(x.key) : x.key) + (x.p.plateNumber ? " · طبلة " + x.p.plateNumber : "")) + '</small><span class="mn-st' + (done ? " ok" : "") + '">' + (done ? "أُرسل اليوم ✓" : AUTO[S.form] ? "اضغط للإرسال" : "لم يُرسل") + "</span></button>";
     }).join("") : '<div class="mn-empty">لا يوجد مرضى على هذا الدواء حاليًا.</div>');
   }
   const OTHER = "__other__";
@@ -195,16 +201,19 @@
       return fl.label + ": " + (val || "—");
     }).join("\n");
   }
+  // → the card data an auto form lacks (Arabic names)
+  function missingOf(formId, v) { return Object.keys(NEEDS).filter((k) => !String(v[k] == null ? "" : v[k]).trim()).map((k) => NEEDS[k]); }
   async function send() {
     if (S.busy) return;
-    readEditor();
+    if (!AUTO[S.form]) readEditor();
     const f = MF.FORMS[S.form], v = S.v;
     const bad = MF.validate(S.form, v);
     if (bad) { App().flashHint(bad); return; }
     const x = App().state.patients[S.key];
     if (x && sentToday(x, S.form) && !confirm("أُرسل نموذج هذا المريض اليوم من قبل. هل ترسله مرة ثانية؟")) return;
-    if (!confirm("إرسال إلى وزارة الصحة — " + f.title + ":\n\n" + summary(f, v) + "\n\nهل تريد الإرسال؟")) return;
-    S.busy = true; drawEditor();
+    const shown = AUTO[S.form] ? v.name + " — طبلة " + v.plate + "\nالفيالات: " + v.vials + "\nالتشخيص: " + v.dx : summary(f, v);
+    if (!confirm("إرسال إلى وزارة الصحة — " + f.title + ":\n\n" + shown + "\n\nهل تريد الإرسال؟")) return;
+    S.busy = true; if (!AUTO[S.form]) drawEditor();
     let r, body = {};
     try {
       r = await fetch((location.origin === PROD ? "" : PROD) + "/api/ministry-send", {
@@ -214,7 +223,7 @@
       try { body = await r.json(); } catch (e) { /* empty */ }
     } catch (e) { r = null; }
     S.busy = false;
-    if (!r || !r.ok || body.ok === false) { drawEditor(); App().flashHint("⚠ " + ((body && body.message) || "تعذّر الإرسال — تحقق من الإنترنت")); return; }
+    if (!r || !r.ok || body.ok === false) { if (!AUTO[S.form]) drawEditor(); App().flashHint("⚠ " + ((body && body.message) || "تعذّر الإرسال — تحقق من الإنترنت")); return; }
     if (x) {
       if (!x.labs || typeof x.labs !== "object") x.labs = {};
       if (!x.labs._ministry) x.labs._ministry = {};
@@ -253,7 +262,14 @@
       else if (act === "pts") { S.screen = "pts"; drawPatients(); }
       else if (act === "pt") {
         const x = patients(S.form).find((y) => y.key === a.dataset.k); if (!x) return;
-        S.key = x.key; S.v = defaults(S.form, x); S.screen = "edit"; drawEditor();
+        S.key = x.key; S.v = defaults(S.form, x);
+        if (AUTO[S.form]) {                                      // no editor: check the card, then confirm + send
+          const miss = missingOf(S.form, S.v);
+          if (miss.length) { App().flashHint("لم تكتمل المعلومات الآتية في سرير المريض: " + miss.join("، ")); return; }
+          send();
+          return;
+        }
+        S.screen = "edit"; drawEditor();
       } else if (act === "send") send();
     });
   }
