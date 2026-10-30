@@ -2732,7 +2732,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .hand { stroke: #d92d2d; stroke-width: 3.4; stroke-linecap: round; }
 .dp-svg .lens { fill: rgba(255, 255, 255, .35); stroke: var(--text); stroke-width: 3.4; }
 .dp-svg .maskc { fill: #9fd3ec; stroke: #4a7f99; stroke-width: 2; }
-.dp-svg .gown { fill: #b9a6e6; stroke: #6a55a8; stroke-width: 2; stroke-linejoin: round; }
+.dp-svg .gown { fill: #fff; stroke: #8f9aa2; stroke-width: 2; stroke-linejoin: round; }
 .dp-svg .glove { fill: #7fb3e0; stroke: #3f74a3; stroke-width: 2; stroke-linejoin: round; }
 .dp-svg .bin { fill: #8e5ac8; stroke: #5a3586; stroke-width: 2; stroke-linejoin: round; }
 .dp-svg .binlid { fill: #6c3fa3; }
