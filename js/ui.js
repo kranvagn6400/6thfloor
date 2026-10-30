@@ -678,12 +678,13 @@
     if (Clinical && (Clinical.isAntibiotic(med) || isAlb)) {
       const d = Clinical.abxDay(med, patient);
       const tone = isAlb ? "" : !d ? "" : d >= 14 ? " is-long" : d >= 7 ? " is-review" : "";
+      const locked = Clinical.dayEditLocked ? Clinical.dayEditLocked(med, patient) : false;     // from D4 nobody edits the day
       dayChip = h("button", {
         type: "button",
-        class: "abx-day-chip" + tone,
+        class: "abx-day-chip" + tone + (locked ? " is-locked" : ""),
         dataset: { medIndex: index, action: "abx-day" },
-        title: (isAlb ? "يوم علاج الألبومين" : "يوم المضاد الحيوي") + " — اضغط للتعديل"
-      }, [d ? "D" + d : "D?", h("span", { class: "abx-day-edit", "aria-hidden": "true" }, "✎")]);
+        title: (isAlb ? "يوم علاج الألبومين" : "يوم المضاد الحيوي") + (locked ? " — التعديل مقفل (3 أيام فقط)" : " — اضغط للتعديل")
+      }, locked ? [d ? "D" + d : "D?"] : [d ? "D" + d : "D?", h("span", { class: "abx-day-edit", "aria-hidden": "true" }, "✎")]);
     }
     const nameBlock = h("div", { class: "med-name-block" }, [
       h("div", { class: "med-name" }, [primaryName(med), dayChip ? " " : null, dayChip]),

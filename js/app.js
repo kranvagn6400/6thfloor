@@ -2690,6 +2690,7 @@
         const p = state.patients[state.currentBed.key];
         const med = p && p.medications && p.medications[parseInt(dayBtn.dataset.medIndex, 10)];
         if (!med) return;
+        if (Clinical.dayEditLocked(med, p)) { flashHint("تعديل اليوم مقفل: يُتاح لمدة 3 أيام فقط من إضافة الدواء"); return; }
         const cur = Clinical.abxDay(med, p);
         const answer = prompt(Clinical.isAntibiotic(med) ? `اليوم الحالي لهذا المضاد؟ (1 = بدأ اليوم)` : `اليوم الحالي لهذا الدواء؟ (1 = بدأ اليوم)`, cur ? String(cur) : "1");
         if (answer === null) return;
@@ -3364,7 +3365,8 @@
           form:      s.form || "vial",
           dose:      s.dose,
           frequency: s.frequency,
-          startDate: today
+          startDate: today,
+          addedAt:   today          // the day-correction window (3 days) runs from here
         });
       });
       const userAddedCount = state.sheet.selectedList.length;

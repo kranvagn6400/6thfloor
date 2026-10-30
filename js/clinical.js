@@ -226,6 +226,16 @@
     const d = abxDay(med, patient);
     return d ? "D" + d : "";
   }
+  // The course day may be corrected for 3 days only (D1–D3); from D4 nobody can change it. The 3 days run from the day the
+  // medicine was added to the patient (med.addedAt — a correction that moves the start date does not restart them);
+  // medicines added before that field existed use the day they show now.
+  const DAY_EDIT_DAYS = 3;
+  function dayEditLocked(med, patient) {
+    if (!med) return false;
+    if (med.addedAt) { const e = daysBetween(med.addedAt); return e !== null && e >= DAY_EDIT_DAYS; }
+    const d = abxDay(med, patient);
+    return d != null && d > DAY_EDIT_DAYS;
+  }
   function setAbxDay(med, dayNumber) {
     const n = parseInt(dayNumber, 10);
     if (!med || !isFinite(n) || n < 1 || n > 365) return false;
@@ -583,7 +593,7 @@
     calculateCrCl, idealBodyWeight, renalFunction,
     ANTIBIOTIC_IDS, ALBUMIN_IDS,
     isAntibiotic, isAlbumin, criticalKind, CRITICAL_KINDS,
-    abxDay, abxDayLabel, setAbxDay,
+    abxDay, abxDayLabel, setAbxDay, dayEditLocked, DAY_EDIT_DAYS,
     RENAL_RULES, renalAlert,
     ALLERGY_CLASSES, ALLERGY_OPTIONS, allergyConflicts, splitAllergies, joinAllergies,
     DUPLICATE_CLASSES, duplicateAlerts,

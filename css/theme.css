@@ -2965,3 +2965,6 @@ html[data-theme="dark"] .pl-warn { background: #4a3d0a; color: #ffe27a; }
 .pl-hit small { color: var(--text-muted); font-weight: 600; }
 .pl-hit span { margin-inline-start: auto; font-weight: 800; color: var(--primary); }
 .pl-none { padding: 8px; font-size: 12.5px; color: var(--text-muted); text-align: center; }
+
+/* the course-day chip once its 3-day correction window is over: no pencil, no pointer */
+.abx-day-chip.is-locked { cursor: default; }
