@@ -2776,7 +2776,9 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .dp-tubeIn { animation: dpTintIn .5s ease-out 1.6s both; }
 @keyframes dpFitF { from { transform: translate(50px, -50px); opacity: 0; } 30% { opacity: 1; } to { transform: translate(0, 0); opacity: 1; } }
 .dp-svg .dp-lInj, .dp-svg .dp-lDraw, .dp-svg .dp-vRise, .dp-svg .dp-vDrop, .dp-svg .dp-thermo, .dp-svg .dp-bar { transform-box: fill-box; transform-origin: bottom; }
-.dp-svg .dp-shakeV, .dp-svg .dp-swirlV, .dp-svg .dp-invert { transform-box: fill-box; transform-origin: center; }
+.dp-svg .dp-shakeV, .dp-svg .dp-swirlV { transform-box: fill-box; transform-origin: center; }
+.dp-svg .dp-invert, .dp-svg .dp-unrot { transform-origin: 150px 52px; }
+.dp-svg .dp-unrot { animation: dpUnrot 3s ease-in-out 2; }
 .dp-svg .dp-pInj { animation: dpPInj 2.4s ease-in-out .3s both; }
 .dp-svg .dp-lInj { animation: dpLInj 2.4s ease-in-out .3s both; }
 .dp-svg .dp-pDraw { animation: dpPDraw 2.4s ease-in-out .3s both; }
@@ -2808,6 +2810,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpShakeV { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
 @keyframes dpSwirlV { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
 @keyframes dpDissolve { from { opacity: 1; } to { opacity: 0; } }
+@keyframes dpUnrot { 0% { transform: rotate(0); } 45%, 55% { transform: rotate(-180deg); } 100% { transform: rotate(-360deg); } }
 @keyframes dpInvert { 0% { transform: rotate(0); } 45%, 55% { transform: rotate(180deg); } 100% { transform: rotate(360deg); } }
 @keyframes dpHand { to { transform: rotate(360deg); } }
 @keyframes dpDropF { 0% { transform: translateY(0); opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(11px); opacity: 0; } }

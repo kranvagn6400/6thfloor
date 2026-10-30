@@ -70,10 +70,11 @@
   // an IV bag with its label; tint = the medicine's colour (animate: it spreads in after the injection)
   const BAG = "M118 14 Q118 8 124 8 L176 8 Q182 8 182 14 L182 82 Q182 94 170 96 L130 96 Q118 94 118 82Z";
   const BAG_IN = "M119 30 L181 30 L181 82 Q181 93 170 95 L130 95 Q119 93 119 82Z";
-  const bag = (label, tint, animate) => clip("dpBag", BAG_IN) +
-    '<g clip-path="url(#dpBag)"><rect class="water" x="116" y="30" width="68" height="68"/>' + (tint && tint !== "clear" ? '<rect class="' + tint + (animate ? " dp-tintIn" : "") + '" x="116" y="30" width="68" height="68"/>' : "") + "</g>" +
-    '<path class="ln glass" d="' + BAG + '"/><circle class="ln thin" cx="150" cy="15" r="3.5"/><path class="ln" d="M143 96 L143 108 M157 96 L157 108"/>' +
+  const BAG_FULL = "M119 14 Q119 9 124 9 L176 9 Q181 9 181 14 L181 82 Q181 93 170 95 L130 95 Q119 93 119 82Z";
+  const bagShell = (label) => '<path class="ln glass" d="' + BAG + '"/><circle class="ln thin" cx="150" cy="15" r="3.5"/><path class="ln" d="M143 96 L143 108 M157 96 L157 108"/>' +
     '<rect class="lbl" x="128" y="42" width="44" height="17" rx="2"/><text class="bagt" x="150" y="54.5" text-anchor="middle" direction="ltr">' + (label || "") + "</text>";
+  const bag = (label, tint, animate) => clip("dpBag", BAG_IN) +
+    '<g clip-path="url(#dpBag)"><rect class="water" x="116" y="30" width="68" height="68"/>' + (tint && tint !== "clear" ? '<rect class="' + tint + (animate ? " dp-tintIn" : "") + '" x="116" y="30" width="68" height="68"/>' : "") + "</g>" + bagShell(label);
   // a 5-micron syringe filter seen from the side, flow left → right: female luer inlet, the disc housing with
   // its white membrane inside, male luer outlet
   const FILTER = '<path class="fstem" d="M-26 -9 L-23 -9 L-23 9 L-26 9Z M-23 -5 L-12 -5 L-12 5 L-23 5Z"/>' +
@@ -173,7 +174,8 @@
     filterFit: (o) => filterSet("D5W", o, false),
     filterPush: (o) => filterSet("D5W", o, true),
     bagOut: (o) => bag(o.label) + '<g transform="translate(157 104) rotate(180) scale(.72) translate(-150 -100)">' + syringe("Draw", "water", 100) + "</g>",
-    bagInvert: (o) => '<g class="dp-invert">' + bag(o.label, o.c) + "</g>",
+    bagInvert: (o) => clip("dpBagF", BAG_FULL) + '<g transform="translate(0 42)"><g class="dp-invert"><g clip-path="url(#dpBagF)"><g class="dp-unrot"><rect class="water" x="60" y="30" width="180" height="120"/>' +
+      (o.c && o.c !== "clear" ? '<rect class="' + o.c + '" x="60" y="30" width="180" height="120"/>' : "") + "</g></g>" + bagShell(o.label) + "</g></g>",
     infuse: (o) => '<g transform="translate(-62 4) scale(.62)">' + bag(o.label, o.c) + (o.cover ? '<path class="cover" d="' + BAG + '"/>' : "") + "</g>" + drip(o.c) +
       handSkin() + line("M31 104 L31 132 Q31 168 80 168 L172 168 Q192 168 197 158 Q201 150 214 150", o.c) + cannula() +
       clock(150, 76, 30) + (o.cover ? noLight(96, 30) : ""),
@@ -348,7 +350,7 @@
         { scene: "waste", text: "تخلّص من الحقن والقنينة والقفازات في حاوية النفايات السامة للخلايا." }
       ],
       info: [
-        { title: "تنبيهات", items: ["الإذابة بالماء المعقّم تعطي محلولًا ناقص التوتر لا يُحقن مباشرة؛ استعمل المحلول الملحي للحقن المباشر.", "الجرعات العالية: ترطيب جيد وMesna حسب البروتوكول لحماية المثانة."] },
+        { title: "تنبيهات", items: ["الإذابة بالماء المعقّم تعطي Hypotonic Solution لا يُحقن مباشرة؛ استعمل المحلول الملحي للحقن المباشر إذا أردت.", "الجرعات العالية تحتاج Fluid Hydration، مع ضرورة إعطاء دواء Mesna حسب البروتوكول لحماية المثانة.", "دواء Mesna هو Uroprotective agent، ويتمثل دوره الأساسي في حماية المثانة والمسالك البولية من الأضرار والسميّة الناتجة عن أدوية العلاج الكيميائي، عن طريق إبطال مفعول مادة الأكرولين السامة، الناتجة عن تحلل دواء الإندوكسان والتي تسبب التهابًا ونزفًا شديدًا. يقوم دواء Mesna بالارتباط بها وتحويلها إلى مواد غير سامة."] },
         { title: "الثبات والحفظ", items: ["يُفضَّل استعمال المحلول فورًا، ويُحفظ حتى 24 ساعة في الثلاجة (2–8°م)."] }
       ]
     },
@@ -363,7 +365,7 @@
       ],
       info: [
         { title: "الجرعة", items: ["100 ملغ جرعة أولى، ثم 50 ملغ كل 12 ساعة."] },
-        { title: "الثبات والحفظ", items: ["حتى 24 ساعة في حرارة الغرفة (منها 6 ساعات كحد أقصى داخل القنينة)، أو 48 ساعة في الثلاجة بعد نقله إلى الكيس."] }
+        { title: "الثبات والحفظ", items: ["إذا أُذيب الدواء في الفيال وبقي فيه: يمكن حفظه بدرجة حرارة الغرفة لمدة 6 ساعات فقط.", "إذا خُفّف بالمغذي الوريدي: يمكن حفظه لحد أقصى 24 ساعة في درجة حرارة الغرفة، و48 ساعة بدرجة 2–8 مئوية."] }
       ]
     },
     {
@@ -394,7 +396,7 @@
       ],
       info: [
         { title: "تنبيهات", items: ["راقب المريض لتفاعلات التسريب؛ أوقف التسريب أو أبطئه عند حدوثها."] },
-        { title: "الثبات والحفظ", items: ["المحلول المخفف: 24 ساعة في الثلاجة (2–8°م)، ثم 12 ساعة في حرارة الغرفة."] }
+        { title: "الثبات والحفظ", items: ["المحلول المخفف: 24 ساعة في الثلاجة (2–8°م)، أو 12 ساعة في حرارة الغرفة."] }
       ]
     }
   ];
