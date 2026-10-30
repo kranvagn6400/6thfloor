@@ -273,7 +273,7 @@
     if (s && s.pending && s.pending.date === todayISO()) return { state: "due", wait: true, text: "أُنشئ الملف — بانتظار الطبع", day };
     // Friday: Thursday's order is doubled for the chart, so a Thursday form that was printed and not refused covers Friday too
     // (a refusal takes the entry out of hist; a patient admitted on Friday has no Thursday entry and still needs a form)
-    if (formId === "albumin" && hist.some(h => h.date === thursdayBeforeFriday())) return { state: "covered", text: "تكفيها استمارة الخميس ✓", day };
+    if (formId === "albumin" && hist.some(h => h.date === thursdayBeforeFriday())) return { state: "covered", text: "مضاعف من يوم الخميس ✓", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
     const c = courseOf(p, day);
     if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
