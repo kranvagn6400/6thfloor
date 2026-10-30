@@ -200,6 +200,41 @@
     }
   };
 
+  // The meropenem follow-up is not a Google Form: pharmacist24.github.io/allform keeps a register and, when the patient's course ends, posts ONE
+  // JSON row to this Google Apps Script (the sheet). Same fields, same names as that page sends.
+  FORMS.meronem = {
+    id: "meronem", title: "Meropenem", short: "Meronem", sub: "سجل الميرونيم — يُرسل صف واحد لكل مريض",
+    kind: "script", once: 1,
+    url: "https://script.google.com/macros/s/AKfycbwI12_KSHQ95cew4Q6f9W9je2_lCSgifqxDFayupc7deCypjUrZN6ROL66GzIB_elJH/exec",
+    fields: [
+      { k: "name", label: "اسم المريض", t: "text", req: 1 },
+      { k: "age", label: "العمر بالسنوات", t: "num", req: 1, half: 1 },
+      { k: "gender", label: "الجنس", t: "radio", opts: ["ذكر", "انثى"], req: 1, half: 1 },
+      { k: "dx", label: "التشخيص", t: "radio", req: 1, other: 1, opts: [
+        "Acute mastoiditis", "Acute rhinosinusitis due to intubation", "Bacterial meningitis", "Contaminated blast injury (specify location and severity)",
+        "Gangrenous cellulitis (necrotizing fasciitis or gas gangrene)", "HAP Post-op, Ventilator ESBL positive", "Infective bronchiectasis exacerbation (with severe lung impairment)",
+        "Lung abscess", "NVE - Acute presentation (severe sepsis with ESBL)", "Neutropenic sepsis", "Pleural empyema ESBL positive", "Proven acute pancreatitis",
+        "Pyogenic liver abscess", "Radical resection performed", "Severe CAP admitted to ICU", "Severe diabetic foot infection", "Severe secondary peritonitis",
+        "Sepsis (specify origin of infection)", "Surgical site infection"] },
+      { k: "dose", label: "الجرعة", t: "radio", opts: ["2000 mg", "1000 mg", "500 mg"], req: 1, half: 1 },
+      { k: "freq", label: "التكرار (كل كم ساعة)", t: "radio", opts: ["8", "12", "24", "48"], req: 1, half: 1 },
+      { k: "sens", label: "فحص الحساسية", t: "radio", opts: ["نعم", "كلا"], req: 1, half: 1 },
+      { k: "pharm", label: "الصيدلاني", t: "text", req: 1, half: 1 },
+      { k: "v1", label: "فيالات 1 غ (للعلاج كله)", t: "num", req: 1, half: 1 },
+      { k: "v05", label: "فيالات 0.5 غ (للعلاج كله)", t: "num", req: 1, half: 1 },
+      { k: "days", label: "مدة العلاج (أيام)", t: "num", req: 1, half: 1 }
+    ]
+  };
+  // → the JSON row the register page itself posts when a patient is discharged
+  function toPayload(formId, v) {
+    const n = (x) => Number(txt(x)) || 0;
+    return {
+      timestamp: v.timestamp || new Date().toISOString(), patientName: txt(v.name), age: n(v.age), gender: txt(v.gender), diagnosis: txt(v.dx),
+      dosing: txt(v.dose), sensitivityTest: txt(v.sens), frequency: txt(v.freq), duration: n(v.days), pharmacistId: txt(v.pharm),
+      meropenem1gQuantity: n(v.v1), meropenem0_5gQuantity: n(v.v05), syncStatus: "Synced"
+    };
+  }
+
   const seasonOf = (monthIndex, f) => (f && f.fields.find((x) => x.k === "season") || { opts: SEASONS }).opts[Math.floor(monthIndex / 3)];
   const formUrl = (f) => "https://docs.google.com/forms/d/e/" + f.gid + "/viewform";
   const postUrl = (f) => "https://docs.google.com/forms/d/e/" + f.gid + "/formResponse";
@@ -234,6 +269,7 @@
       if (fl.t === "radio" && fl.opts.indexOf(s) < 0 && !fl.other) return "خيار غير موجود في النموذج: " + fl.label;
       if ((fl.t === "text" || fl.t === "num") && s.length > 500) return "نص طويل جدًا: " + fl.label;
     }
+    if (f.kind === "script" && !(Number(txt(v.v1)) > 0 || Number(txt(v.v05)) > 0)) return "أدخل عدد الفيالات";
     return "";
   }
 
@@ -263,5 +299,5 @@
     return p.toString();
   }
 
-  return { INSTITUTION, SEASONS, MONTHS, FORMS, seasonOf, formUrl, postUrl, validate, toBody };
+  return { INSTITUTION, SEASONS, MONTHS, FORMS, seasonOf, formUrl, postUrl, validate, toBody, toPayload };
 });

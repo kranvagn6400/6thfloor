@@ -18,6 +18,15 @@
   // forms with NO editor: everything comes from the patient's card (the pharmacist enters it there); a press sends it, and a
   // missing piece of data stops it with the list of what the card lacks
   const AUTO = { albumin: true };
+  // Fields the editor does NOT show (the pharmacist enters them on the patient's card, or the app fixes them). A missing one stops the send
+  // with «لم تكتمل المعلومات الآتية في سرير المريض».
+  const HIDE = {
+    ivig: ["season", "month", "name", "doctor", "plate", "gender", "age", "vials"],
+    tigecycline: ["season", "month", "name", "plate", "gender", "age", "ward", "creat", "dose"],
+    colistin: ["committee", "name", "doctor", "ward", "gender", "age", "plate", "start", "weight", "dose", "given", "waste", "creat"]
+  };
+  const hiddenMissing = (formId, v) => (MF.FORMS[formId].fields || []).filter((fl) => (HIDE[formId] || []).indexOf(fl.k) >= 0 && fl.t !== "fixed" && fl.req)
+    .filter((fl) => !String(v[fl.k] == null ? "" : v[fl.k]).trim()).map((fl) => fl.label);
   const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "الحالة المطابقة في استمارة الألبومين (علّمها عند طباعة الاستمارة)" };
 
   // The albumin condition the pharmacist ticks when he prints the albumin form (patient-forms.js, item n) → the Ministry's own
@@ -58,7 +67,7 @@
   function allowed() { const A = global.PharmacyAuth; return !!(A && A.canMinistry && A.canMinistry()); }
 
   // ---- which patients each form is for ----
-  const MATCH = { ivig: /ivig|immunoglobulin/i, tigecycline: /tigecycline|tigacycline/i, colistin: /colistin/i };
+  const MATCH = { ivig: /ivig|immunoglobulin/i, tigecycline: /tigecycline|tigacycline/i, colistin: /colistin/i, meronem: /meropenem|meronem/i };
   const catOf = (pm) => (App().state.medications || []).find((m) => m && m.id === pm.id) || {};
   const probe = (pm, c) => [pm.id, pm.nameEn, pm.nameTrade, c.nameEn, c.nameTrade, c.nameChart].join(" ");
   // → the patient's medicines the form is about ([{ pm, c }]) — one for a drug form, every antibiotic for the antibiotics status
@@ -84,7 +93,8 @@
     });
     return out.sort((a, b) => a.order - b.order);
   }
-  const sentToday = (p, formId) => { const r = p.labs && p.labs._ministry && p.labs._ministry[formId]; return !!(r && r.date === todayISO()); };
+  const sentRec = (p, formId) => (p.labs && p.labs._ministry && p.labs._ministry[formId]) || null;
+  const sentToday = (p, formId) => { const r = sentRec(p, formId); return !!(r && (MF.FORMS[formId].once || r.date === todayISO())); };
 
   // ---- the values a form starts with: everything the app knows ----
   const num = (s) => { const m = /\d+(\.\d+)?/.exec(digits(s)); return m ? m[0] : ""; };
@@ -99,6 +109,52 @@
     ["ceftazidime", /ceftazidime/i], ["cefotaxime", /cefotaxime/i], ["ciprofloxacin", /cipro/i], ["colistin", /colistin/i], ["flagyl", /flagyl|metronidazole/i],
     ["gentamicin", /gentamicin|gentamycin|garamycin/i], ["levofloxacin", /levofloxacin/i], ["meropenem", /meropenem|meronem/i], ["septrin", /septrin|trimethoprim|co-trimox|methoprim/i],
     ["tazocin", /tazocin|piperacillin/i], ["vancomycin", /vancomycin/i]];
+  // the meropenem register row: from the card + the ward's meronem form (ticked condition, culture) + the course so far
+  const norm = (t) => String(t || "").toLowerCase().replace(/\bthe\b/g, "").replace(/[^a-z]/g, "");
+  function meronemDefaults(x) {
+    const p = x.p, Clin = global.PharmacyClinical, PFm = global.PharmacyPatientForms, f = MF.FORMS.meronem, v = {};
+    const st = (p.labs && p.labs._forms && p.labs._forms.meronem) || {};
+    // the condition ticked on the meronem form → the register's own list (the lists are the same; «Others» keeps its note)
+    const n = (st.ticks || []).slice().sort((a, b) => a - b)[0];
+    const it = n && PFm && PFm.FORMS.meronem.items.find((y) => y.n === n);
+    const dxOpts = f.fields.find((y) => y.k === "dx").opts;
+    if (it) {
+      const text = String(it.text || it.label || ""), note = String((st.notes && st.notes[n]) || "").trim();
+      const hit = dxOpts.find((o) => norm(o) === norm(text) || norm(text).indexOf(norm(o).slice(0, 18)) === 0);
+      v.dx = hit || (note || text.replace(/^others\s*\(specify\)$/i, "").trim());
+    } else v.dx = "";
+    v.sens = st.culture === "after" || st.culture === "before" ? "نعم" : st.culture === "none" ? "كلا" : "";
+    const A = global.PharmacyAuth, u = A && A.getCurrentUser ? A.getCurrentUser() : null;
+    v.pharm = String((u && (u.displayName || u.username)) || "").trim();
+    // dose / frequency from the first meropenem medicine; vials = the day's quantity × the days so far, per vial size
+    let days = 1, v1 = 0, v05 = 0, dose = "", freq = "";
+    x.meds.forEach(({ pm, c }, i) => {
+      const d = Clin && Clin.abxDay ? Clin.abxDay(pm, p) : null; if (d && d > days) days = d;
+      const fr = global.PharmacyMedications && global.PharmacyMedications.parseFreq ? global.PharmacyMedications.parseFreq(pm.frequency || c.defaultFrequency || "") : null;
+      const Bridge = global.PharmacyChartBridge, q = Bridge && Bridge.dailyQuantity ? (Bridge.dailyQuantity(pm.id, pm.frequency || c.defaultFrequency || "", c.form) || 0) : 0;
+      const small = /500|0\.5/.test([pm.id, pm.dose, c.defaultDose].join(" "));
+      if (small) v05 += q; else v1 += q;
+      if (!i) {
+        const g = /^(\d+(?:\.\d+)?)\s*g\b/i.exec(String(pm.dose || c.defaultDose || "").trim()), mg = /^(\d+)\s*mg\b/i.exec(String(pm.dose || c.defaultDose || "").trim());
+        dose = g ? Math.round(Number(g[1]) * 1000) + " mg" : mg ? mg[1] + " mg" : "";
+        freq = fr && fr.m ? String(Math.round(24 / fr.m)) : "";
+      }
+    });
+    v.dose = f.fields.find((y) => y.k === "dose").opts.indexOf(dose) >= 0 ? dose : "";
+    v.freq = f.fields.find((y) => y.k === "freq").opts.indexOf(freq) >= 0 ? freq : "";
+    v.days = String(days); v.v1 = String(v1 * days); v.v05 = String(v05 * days);
+    v.timestamp = (x.meds[0].pm.startDate ? new Date(x.meds[0].pm.startDate + "T08:00:00").toISOString() : new Date().toISOString());
+    return v;
+  }
+  // the card's colistin dose → the daily mg the form wants: "150mg" / "1M" (million IU, 1 MIU = 80 mg) / "1000000iu", × the times a day
+  function colistinMg(dose, perDay) {
+    const t = String(dose || "").toLowerCase().replace(/\s+/g, "");
+    let mg = 0, m;
+    if ((m = /^(\d+(?:\.\d+)?)mg/.exec(t))) mg = Number(m[1]);
+    else if ((m = /^(\d+(?:\.\d+)?)m(?:iu)?$/.exec(t)) || (m = /^(\d+(?:\.\d+)?)miu/.exec(t))) mg = Number(m[1]) * 80;
+    else if ((m = /^(\d{4,})(?:iu|units?)?$/.exec(t))) mg = Number(m[1]) / 1e6 * 80;
+    return mg > 0 ? String(Math.round(mg * (perDay > 0 ? perDay : 1) * 10) / 10) : "";
+  }
   function defaults(formId, x) {
     const f = MF.FORMS[formId], p = x.p, now = new Date(), v = {};
     const sex = p.gender === "female" ? (formId === "tigecycline" ? "أنثى" : "انثى") : p.gender === "male" ? "ذكر" : "";
@@ -109,7 +165,7 @@
     const seasonField = f.fields.find((fl) => fl.k === "season"), monthField = f.fields.find((fl) => fl.k === "month");
     if (seasonField) set("season", MF.seasonOf(now.getMonth(), f));
     if (monthField) set("month", monthField.opts[now.getMonth()] || "");        // tigecycline's form has no December → empty, the user is told
-    set("name", String(p.name || "").trim()); set("doctor", String(p.doctor || "").trim());
+    set("name", String(p.name || "").trim()); set("doctor", String(p.doctor || "").trim()); if (formId === "meronem") set("gender", p.gender === "female" ? "انثى" : p.gender === "male" ? "ذكر" : "");
     set("plate", digits(p.plateNumber || "")); set("gender", sex); set("age", num(p.age));
     if (formId === "ivig" || formId === "albumin") { set("vials", String(dailyQty(x))); set("branch", ""); set("dx", ""); }
     // albumin: the lost quantity is always 0; the Ministry's group + choice come from the condition ticked on the albumin form
@@ -117,14 +173,21 @@
     if (formId === "tigecycline") {
       const m0 = x.meds[0].pm, nm = MATCH.tigecycline, fr = (global.PharmacyMedications && global.PharmacyMedications.parseFreq) ? global.PharmacyMedications.parseFreq(m0.frequency || x.meds[0].c.defaultFrequency || "") : null;
       set("ward", "الباطنية"); set("dx", dx); set("creat", creat);
-      set("dose", (m0.dose ? m0.dose : "50mg") + (fr && fr.m ? " × " + fr.m : "")); void nm;
-      set("days", ""); set("culture", ""); set("indication", "");
+      set("dose", m0.dose ? m0.dose + (fr && fr.m ? " × " + fr.m : "") : ""); void nm;
+      set("days", String((global.PharmacyClinical && global.PharmacyClinical.abxDay && global.PharmacyClinical.abxDay(m0, p)) || "")); set("culture", ""); set("indication", "");
     }
     if (formId === "colistin") {
-      set("ward", "الباطنية"); set("start", x.meds[0].pm.startDate || todayISO()); set("weight", num(p.weight)); set("creat", creat);
-      set("sharing", "لا"); set("days", "غير محدد من قبل الطبيب"); set("culture", "not done"); set("committee", ""); set("dx", "");
-      set("dose", ""); set("given", ""); set("waste", "0");
+      const W = global.PharmacyWard, A = global.PharmacyAuth, u = A && A.getCurrentUser ? A.getCurrentUser() : null;
+      const rm = /room-(\d+)-bed/.exec(x.key || ""), unit = rm && W && W.unitOf ? W.unitOf(rm[1]) : null;
+      const m0 = x.meds[0], fr = global.PharmacyMedications && global.PharmacyMedications.parseFreq ? global.PharmacyMedications.parseFreq(m0.pm.frequency || m0.c.defaultFrequency || "") : null;
+      const cd = colistinMg(m0.pm.dose || m0.c.defaultDose || "", fr && fr.m);
+      set("committee", String((u && (u.displayName || u.username)) || "").trim());
+      set("ward", "الباطنية" + (unit && unit.name ? " - " + unit.name : ""));
+      set("start", m0.pm.startDate || todayISO()); set("weight", num(p.weight)); set("creat", creat);
+      set("sharing", "لا"); set("days", "غير محدد من قبل الطبيب"); set("culture", "not done"); set("dx", "");
+      set("dose", cd); set("given", cd); set("waste", "0");
     }
+    if (formId === "meronem") Object.assign(v, meronemDefaults(x));
     if (formId === "antibiotics") {
       const Clin = global.PharmacyClinical, names = [], doses = [], freqs = [];
       let oral = false, inj = false, days = 0;
@@ -167,7 +230,7 @@
     $("ministry-body").innerHTML = head(f.title, f.sub, "list") + (rows.length ? rows.map((x) => {
       const done = sentToday(x.p, S.form);
       return '<button type="button" class="mn-pt" data-act="pt" data-k="' + esc(x.key) + '"><b>' + esc(x.p.name) + "</b><small>" +
-        esc((global.PharmacyWard.bedText ? global.PharmacyWard.bedText(x.key) : x.key) + (x.p.plateNumber ? " · طبلة " + x.p.plateNumber : "")) + '</small><span class="mn-st' + (done ? " ok" : "") + '">' + (done ? "أُرسل اليوم ✓" : AUTO[S.form] ? "اضغط للإرسال" : "لم يُرسل") + "</span></button>";
+        esc((global.PharmacyWard.bedText ? global.PharmacyWard.bedText(x.key) : x.key) + (x.p.plateNumber ? " · طبلة " + x.p.plateNumber : "")) + '</small><span class="mn-st' + (done ? " ok" : "") + '">' + (done ? (MF.FORMS[S.form].once ? "أُرسل ✓" : "أُرسل اليوم ✓") : AUTO[S.form] ? "اضغط للإرسال" : "لم يُرسل") + "</span></button>";
     }).join("") : '<div class="mn-empty">لا يوجد مرضى على هذا الدواء حاليًا.</div>');
   }
   const OTHER = "__other__";
@@ -199,7 +262,7 @@
     const f = MF.FORMS[S.form], v = S.v;
     const warn = f.id === "tigecycline" && !v.month ? '<div class="mn-warn">نموذج Tigecycline لا يتضمن شهر كانون الأول، فلا يمكن إرساله في هذا الشهر.</div>' : "";
     $("ministry-body").innerHTML = head(f.title, "راجع البيانات قبل الإرسال", "pts") + warn +
-      '<div class="mn-form">' + f.fields.map((fl) => fieldHtml(fl, v)).join("") + "</div>" +
+      '<div class="mn-form">' + f.fields.filter((fl) => (HIDE[f.id] || []).indexOf(fl.k) < 0).map((fl) => fieldHtml(fl, v)).join("") + "</div>" +
       '<button type="button" class="mn-send" id="mn-send" data-act="send"' + (S.busy ? " disabled" : "") + ">" + (S.busy ? "جارٍ الإرسال…" : "إرسال إلى الوزارة") + "</button>";
   }
   function readEditor() {
@@ -245,7 +308,7 @@
     const bad = MF.validate(S.form, v);
     if (bad) { App().flashHint(bad); return; }
     const x = App().state.patients[S.key];
-    if (x && sentToday(x, S.form) && !confirm("أُرسل نموذج هذا المريض اليوم من قبل. هل ترسله مرة ثانية؟")) return;
+    if (x && sentToday(x, S.form) && !confirm(f.once ? "أُرسل سجل هذا المريض من قبل (" + ((sentRec(x, S.form) || {}).date || "") + ") — إرساله ثانية يضيف صفًا جديدًا في الجدول. هل ترسله؟" : "أُرسل نموذج هذا المريض اليوم من قبل. هل ترسله مرة ثانية؟")) return;
     const shown = AUTO[S.form] ? v.name + " — طبلة " + v.plate + "\nالفيالات: " + v.vials + "\n" + f.fields.find((x) => x.t === "branch").branches[v.branch].label + ": " + v.dx : summary(f, v);
     if (!confirm("إرسال إلى وزارة الصحة — " + f.title + ":\n\n" + shown + "\n\nهل تريد الإرسال؟")) return;
     S.busy = true; if (!AUTO[S.form]) drawEditor();
@@ -303,6 +366,10 @@
           if (miss.length) { App().flashHint("لم تكتمل المعلومات الآتية في سرير المريض: " + miss.join("، ")); return; }
           send();
           return;
+        }
+        if (HIDE[S.form]) {                                      // some data comes from the card: all of it must be there
+          const miss = hiddenMissing(S.form, S.v);
+          if (miss.length) { App().flashHint("لم تكتمل المعلومات الآتية في سرير المريض: " + miss.join("، ")); return; }
         }
         S.screen = "edit"; drawEditor();
       } else if (act === "send") send();

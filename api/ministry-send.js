@@ -57,6 +57,17 @@ module.exports = async (req, res) => {
   const bad = MF.validate(formId, values);
   if (bad) return fail(res, 400, bad);
 
+  // the meropenem register: one JSON row posted to its Google Apps Script (it answers nothing useful, so success = the post went through)
+  if (form.kind === "script") {
+    try {
+      const r0 = await fetch(form.url, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(MF.toPayload(formId, values)) });
+      if (!r0.ok) return fail(res, 502, "تعذّر الإرسال إلى سجل الميرونيم (" + r0.status + ")");
+      return res.status(200).json({ ok: true, unverified: true });
+    } catch (e) {
+      return fail(res, 502, "تعذّر الوصول إلى سجل الميرونيم — حاول لاحقًا");
+    }
+  }
+
   let r, text = "";
   try {
     r = await fetch(MF.postUrl(form), {
