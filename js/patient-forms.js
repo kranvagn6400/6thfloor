@@ -113,8 +113,10 @@
         F("date", "تاريخ بدء العلاج", 684, 802, 322, "r", { auto: true }), F("weight", "الوزن", 27, 296, 322, "r", { auto: true, num: true }),
         F("dose", "الجرعة المطلوبة يوميًا", 27, 672, 383, "r", { full: true, center: true, auto: true }),
         F("days", "عدد الأيام المطلوب أخذ العلاج فيها", 690, 918, 445, "r", { num: true, center: true }),
-        F("scr", "S.Cr", 406, 670, 419, "l", { auto: true }), F("culture", "نتيجة الزرع البكتيري", 27, 194, 419, "r", {})
-      ]
+        F("scr", "S.Cr", 406, 670, 419, "l", { auto: true }), F("culture", "نتيجة الزرع البكتيري", 27, 194, 419, "r", { hidden: true })
+      ],
+      // the culture result is chosen (two buttons) and printed in its cell; it is not filled from the card
+      choice: { k: "culture", label: "نتيجة الزرع البكتيري", opts: ["Sensitive", "Resistant"] }
     },
     meronem: {
       id: "meronem", title: "استمارة الميرونيم / الإيميبينيم", short: "الميرونيم", bg: "img/forms/meronem.jpg",
@@ -750,6 +752,11 @@
       extra += '<div class="pfe-card"><h4 class="pfe-h">Culture &amp; sensitivity</h4><div class="pfs-chips" id="pfs-culture">' +
         form.culture.map(c => '<button type="button" data-v="' + c.v + '" class="' + (V.st.culture === c.v ? "is-on" : "") + '">' + esc(c.text) + "</button>").join("") + "</div></div>";
     }
+    if (form.choice) {
+      const cv = String(V.st.vals[form.choice.k] || "");
+      extra += '<div class="pfe-card"><h4 class="pfe-h">' + esc(form.choice.label) + '</h4><div class="pfs-chips" id="pfs-choice">' +
+        form.choice.opts.map(o => '<button type="button" data-c="' + o + '" class="' + (cv === o ? "is-on" : "") + '">' + o + "</button>").join("") + "</div></div>";
+    }
     let dur = "";
     if (form.duration) {
       const allowed = allowedNow();
@@ -793,6 +800,14 @@
       saveSoon();
     }));
     el.querySelectorAll("input[data-note]").forEach(inp => inp.addEventListener("input", () => { V.st.notes[inp.dataset.note] = inp.value; saveSoon(); }));
+    const chc = $("pfs-choice");
+    if (chc) chc.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-c]"); if (!b) return;
+      const k = form.choice.k;
+      V.st.vals[k] = V.st.vals[k] === b.dataset.c ? "" : b.dataset.c;
+      chc.querySelectorAll("button").forEach(x => x.classList.toggle("is-on", x.dataset.c === V.st.vals[k]));
+      saveSoon();
+    });
     const cul = $("pfs-culture");
     if (cul) cul.addEventListener("click", (e) => {
       const b = e.target.closest("button[data-v]"); if (!b) return;

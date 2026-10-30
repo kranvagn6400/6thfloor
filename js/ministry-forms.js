@@ -135,7 +135,7 @@
         { k: "dose", label: "الجرعة المطلوبة يوميًا", t: "text", e: 380163433, req: 1, half: 1 },
         { k: "days", label: "عدد أيام صرف العلاج", t: "num", e: 100922730, req: 1, half: 1 },
         { k: "creat", label: "Serum Creatinine", t: "text", e: 990249454, req: 1, half: 1 },
-        { k: "culture", label: "نتيجة الزرع البكتيري", t: "text", e: 903042108, req: 1, half: 1 },
+        { k: "culture", label: "نتيجة الزرع البكتيري", t: "radio", e: 903042108, opts: ["Sensitive", "Resistant"], req: 1, half: 1 },
         { k: "indication", label: "الحالة المصرّح بها", t: "radio", e: 873605897, opts: ["complicated skin and soft tissue infections", "complicated intraabdominal infections"], req: 1 }
       ]
     },
