@@ -91,11 +91,9 @@
   // the giving set: a clear tube filled with the bag's fluid, a light flow moving along it
   const line = (d, c) => '<path class="tubeo" d="' + d + '"/><path class="tubew" d="' + d + '"/><path class="tube-water" d="' + d + '"/>' +
     (c && c !== "clear" ? '<path class="tube-' + c + '" d="' + d + '"/>' : "") + '<path class="tflow dp-flowT" d="' + d + '"/>';
-  // the patient's hand (back of the hand, fingers to the right) with the cannula taped on it; the line reaches its hub at (212, 150)
-  const hand = () => '<path class="skin" d="M190 138 L262 135 Q272 135 272 145 L272 169 Q272 179 262 179 L190 184Z"/>' +
-    [139, 149, 159, 169].map((y) => '<rect class="skin" x="264" y="' + y + '" width="32" height="9" rx="4.5"/>').join("") +
-    '<path class="skin" d="M238 136 Q246 117 260 111 Q267 109 267 116 Q259 124 255 136Z"/>' +
-    '<path class="cannc" d="M226 150 L246 150"/><path class="cannw" d="M219 144 L229 137 L232 141 L224 147Z M219 156 L229 163 L232 159 L224 153Z"/>' +
+  // the back of the patient's hand (no fingers), then the cannula taped on it — drawn after the line so the line ends inside its hub
+  const handSkin = () => '<path class="skin" d="M188 138 L260 135 Q286 135 288 157 Q286 179 260 179 L188 184Z"/>';
+  const cannula = () => '<path class="cannc" d="M226 150 L246 150"/><path class="cannw" d="M219 144 L229 137 L232 141 L224 147Z M219 156 L229 163 L232 159 L224 153Z"/>' +
     '<rect class="cannhub" x="210" y="145" width="16" height="10" rx="2"/><rect class="tape" x="224" y="141" width="22" height="18" rx="2"/>';
   const clock = (x, y, r) => '<circle class="clockf" cx="' + x + '" cy="' + y + '" r="' + r + '"/>' +
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((k) => { const a = k * Math.PI / 6, c = Math.cos(a), s = Math.sin(a);
@@ -177,7 +175,7 @@
     bagOut: (o) => bag(o.label) + '<g transform="translate(157 104) rotate(180) scale(.72) translate(-150 -100)">' + syringe("Draw", "water", 100) + "</g>",
     bagInvert: (o) => '<g class="dp-invert">' + bag(o.label, o.c) + "</g>",
     infuse: (o) => '<g transform="translate(-62 4) scale(.62)">' + bag(o.label, o.c) + (o.cover ? '<path class="cover" d="' + BAG + '"/>' : "") + "</g>" + drip(o.c) +
-      line("M31 104 L31 132 Q31 168 80 168 L176 168 Q200 168 210 150", o.c) + hand() +
+      handSkin() + line("M31 104 L31 132 Q31 168 80 168 L172 168 Q192 168 197 158 Q201 150 214 150", o.c) + cannula() +
       clock(150, 76, 30) + (o.cover ? noLight(96, 30) : ""),
     ppe: () => '<g class="dp-pop" style="--d:.2s"><rect class="maskc" x="30" y="82" width="58" height="34" rx="10"/><path class="ln thin" d="M30 90 Q16 96 30 108 M88 90 Q102 96 88 108 M42 94 L76 94 M42 102 L76 102"/></g>' +
       '<g class="dp-pop" style="--d:.6s"><path class="gown" d="M128 52 L172 52 L198 178 L102 178Z"/><path class="ln thin" d="M138 52 Q150 70 162 52 M150 70 L150 178"/></g>' +
