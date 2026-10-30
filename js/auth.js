@@ -384,9 +384,11 @@
   }
   // The ward-display sayings: the admin, or a pharmacist the admin allowed
   // The Ministry «مواقف» forms: the admin, or a pharmacist the admin allowed (features.sql §28)
+  // FOR NOW only the supreme admin (the user asked) — to open it to the admin + the allowed pharmacists later, use the line below it.
   function canMinistry() {
     const s = loadSession();
-    return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canMinistry)));
+    return !!(s && s.role === "admin" && !s.limitedAdmin);
+    // return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canMinistry)));
   }
   function canEditQuotes() {
     const s = loadSession();
