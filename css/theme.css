@@ -2750,6 +2750,15 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .bart { fill: var(--text); font: 800 9px system-ui, sans-serif; }
 .dp-svg rect.bar { fill: var(--primary); stroke: none; }
 .dp-svg .stream.st-lact { stroke: #d9b45a; }
+.dp-svg .stream.st-amph { stroke: #e9b52b; stroke-width: 3; }
+.dp-svg .fbody { fill: rgba(225, 238, 247, .9); stroke: #4a5560; stroke-width: 2; }
+.dp-svg .fmem { stroke: #fff; stroke-width: 4; }
+.dp-svg .frib { stroke: #8f9aa2; stroke-width: 1.4; }
+.dp-svg .fstem { fill: #eef1f3; stroke: #4a5560; stroke-width: 1.6; stroke-linejoin: round; }
+.dp-svg .tube2 { fill: none; stroke: #b5bec4; stroke-width: 5; stroke-linecap: round; }
+.dp-svg .dp-fitF { animation: dpFitF 1.2s ease-out .3s both; }
+.dp-svg .dp-tubeIn { animation: dpTintIn .5s ease-out 1.6s both; }
+@keyframes dpFitF { from { transform: translate(50px, -50px); opacity: 0; } 30% { opacity: 1; } to { transform: translate(0, 0); opacity: 1; } }
 .dp-svg .dp-lInj, .dp-svg .dp-lDraw, .dp-svg .dp-vRise, .dp-svg .dp-vDrop, .dp-svg .dp-thermo, .dp-svg .dp-bar { transform-box: fill-box; transform-origin: bottom; }
 .dp-svg .dp-shakeV, .dp-svg .dp-swirlV, .dp-svg .dp-invert, .dp-svg .dp-balloon { transform-box: fill-box; transform-origin: center; }
 .dp-svg .dp-pInj { animation: dpPInj 2.4s ease-in-out .3s both; }

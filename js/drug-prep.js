@@ -74,6 +74,12 @@
     '<g clip-path="url(#dpBag)"><rect class="water" x="116" y="30" width="68" height="68"/>' + (tint && tint !== "clear" ? '<rect class="' + tint + (animate ? " dp-tintIn" : "") + '" x="116" y="30" width="68" height="68"/>' : "") + "</g>" +
     '<path class="ln glass" d="' + BAG + '"/><circle class="ln thin" cx="150" cy="15" r="3.5"/><path class="ln" d="M143 96 L143 108 M157 96 L157 108"/>' +
     '<rect class="lbl" x="128" y="42" width="44" height="17" rx="2"/><text class="bagt" x="150" y="54.5" text-anchor="middle" direction="ltr">' + (label || "") + "</text>";
+  // a 5-micron syringe filter seen from the side, flow left → right: female luer inlet, the disc housing with
+  // its white membrane inside, male luer outlet
+  const FILTER = '<path class="fstem" d="M-26 -9 L-23 -9 L-23 9 L-26 9Z M-23 -5 L-12 -5 L-12 5 L-23 5Z"/>' +
+    '<path class="fbody" d="M-12 -22 Q-12 -27 -6 -27 L6 -27 Q12 -27 12 -22 L12 22 Q12 27 6 27 L-6 27 Q-12 27 -12 22Z"/>' +
+    '<path class="fmem" d="M0 -23 L0 23"/><path class="frib" d="M-12 -16 L-8 -16 M-12 -8 L-8 -8 M-12 0 L-8 0 M-12 8 L-8 8 M-12 16 L-8 16 M8 -16 L12 -16 M8 -8 L12 -8 M8 0 L12 0 M8 8 L12 8 M8 16 L12 16"/>' +
+    '<path class="fstem" d="M12 -5 L24 -2.6 L24 2.6 L12 5Z"/>';
   const drip = () => '<path class="ln thin" d="M31 71 L31 76"/><path class="ln glass" d="M25 76 L37 76 L37 98 Q37 103 31 103 Q25 103 25 98Z"/>' +
     '<path class="water" d="M26 94 L36 94 L36 98 Q36 102 31 102 Q26 102 26 98Z"/><path class="drop2 dp-drop" d="M31 79 Q28 83 31 85 Q34 83 31 79Z"/>';
   const clock = (x, y, r) => '<circle class="clockf" cx="' + x + '" cy="' + y + '" r="' + r + '"/>' +
@@ -151,6 +157,14 @@
       '<rect class="ln glass" x="222" y="66" width="14" height="76" rx="7"/><circle class="thermb" cx="229" cy="148" r="11"/>' +
       '<rect class="thermr dp-thermo" x="225" y="84" width="8" height="62" rx="4"/>',
     bagIn: (o) => bag(o.label, o.c, true) + '<g transform="translate(157 104) rotate(180) scale(.72) translate(-150 -100)">' + syringe("Inj", o.c || "clear", 100, o) + "</g>",
+    filterFit: (o) => '<g transform="translate(130 4) scale(.7)">' + bag("D5W") + "</g>" +
+      '<g transform="translate(110 112) rotate(-90) translate(-150 -66)">' + syringe("Full", o.c || "clear", 0) + "</g>" +
+      '<g class="dp-fitF"><g transform="translate(136 112)">' + FILTER + "</g></g>" +
+      '<path class="tube2 dp-tubeIn" d="M160 112 L204 112 Q235 112 235 82"/>',
+    filterPush: (o) => '<g transform="translate(130 4) scale(.7)">' + bag("D5W", o.c, true) + "</g>" +
+      '<g transform="translate(110 112) rotate(-90) translate(-150 -66)">' + syringe("Inj", o.c || "clear", 0) + "</g>" +
+      '<path class="tube2" d="M160 112 L204 112 Q235 112 235 82"/><path class="stream st-amph dp-injStr" d="M160 112 L204 112 Q235 112 235 82"/>' +
+      '<g transform="translate(136 112)">' + FILTER + "</g>",
     bagOut: (o) => bag(o.label) + '<g transform="translate(157 104) rotate(180) scale(.72) translate(-150 -100)">' + syringe("Draw", "water", 100) + "</g>",
     bagInvert: (o) => '<g class="dp-invert">' + bag(o.label, o.c) + "</g>",
     infuse: (o) => '<g transform="translate(-62 4) scale(.62)">' + bag(o.label, o.c) + (o.cover ? '<path class="cover" d="' + BAG + '"/>' : "") + "</g>" + drip() +
@@ -228,29 +242,30 @@
     {
       id: "ampho-conv", name: "Amphotericin B — Conventional", ar: "الأمفوتيرسين التقليدي (Deoxycholate) — قنينة 50 ملغ", tone: "vial", color: "#e9b52b", draft: true,
       steps: [
-        { scene: "vAdd", o: { cap: "#e9b52b" }, text: "أضف بسرعة 10 مل من الماء المعقّم للحقن (بدون مادة حافظة) إلى القنينة، بإبرة لا يقل قطرها عن 20G." },
-        { scene: "vShake", o: { cap: "#e9b52b", c: "amph" }, text: "رجّ القنينة فورًا حتى يصبح المحلول الغرواني رائقًا (التركيز 5 ملغ/مل)." },
+        { scene: "vAdd", o: { cap: "#e9b52b" }, text: "أضف بسرعة 10 مل من الماء المعقّم للحقن (بدون مادة حافظة) إلى القنينة." },
+        { scene: "vShake", o: { cap: "#e9b52b", c: "amph" }, text: "رجّ القنينة فورًا حتى يصبح المحلول الغرواني ذائبًا ومتجانسًا (التركيز 5 ملغ/مل)." },
         { scene: "vDraw", o: { cap: "#e9b52b", c: "amph" }, text: "اسحب الجرعة المطلوبة من القنينة." },
         { scene: "bagIn", o: { label: "D5W", c: "amph" }, text: "أضفها إلى محلول الدكستروز 5% فقط حتى يصبح التركيز 0.1 ملغ/مل (مثلًا 50 ملغ في 500 مل). لا تستعمل المحلول الملحي." },
         { scene: "infuse", o: { label: "D5W", c: "amph" }, text: "أعطه بالتسريب الوريدي البطيء خلال 2–6 ساعات." }
       ],
       info: [
-        { title: "تنبيهات", items: ["لا تتجاوز الجرعة اليومية 1.5 ملغ/كغ — الجرعة الزائدة قد تسبب توقف القلب والتنفس.", "لا يُبدَّل بالأمفوتيرسين الشحمي (AmBisome): جرعاتهما مختلفة.", "لا يُخلط بالمحلول الملحي أو أي محلول فيه أملاح (يترسّب)، ولا بأدوية أخرى.", "اغسل الخط الوريدي بالدكستروز 5% قبل التسريب وبعده.", "إن استُعمل فلتر على الخط فيجب ألا تقل فتحاته عن 1 ميكرون.", "تُنصح جرعة اختبارية: 1 ملغ في 20 مل دكستروز 5% خلال 20–30 دقيقة، مع مراقبة المريض."] },
+        { title: "تنبيهات", items: ["لا تتجاوز الجرعة اليومية 1.5 ملغ/كغ — الجرعة الزائدة قد تسبب توقف القلب والتنفس.", "لا يُبدَّل بالأمفوتيرسين اللايبوزومال (AmBisome): جرعاتهما مختلفة.", "لا يُخلط بالمحلول الملحي أو أي محلول فيه أملاح (يترسّب)، ولا بأدوية أخرى.", "اغسل الخط الوريدي بالدكستروز 5% قبل التسريب وبعده."] },
         { title: "الثبات والحفظ", items: ["القنينة المذابة (5 ملغ/مل): 24 ساعة في حرارة الغرفة بعيدًا عن الضوء، أو أسبوع في الثلاجة (2–8°م).", "المحلول المخفف: يُعطى فور تحضيره."] }
       ]
     },
     {
-      id: "ampho-lipo", name: "Amphotericin B — Liposomal", ar: "الأمفوتيرسين الشحمي (AmBisome) — قنينة 50 ملغ", tone: "vial", color: "#e39a2d", draft: true,
+      id: "ampho-lipo", name: "Amphotericin B — Liposomal", ar: "الأمفوتيرسين اللايبوزومال (AmBisome) — قنينة 50 ملغ", tone: "vial", color: "#e39a2d", draft: true,
       steps: [
         { scene: "vAdd", o: { cap: "#e39a2d" }, text: "أضف 12 مل من الماء المعقّم للحقن إلى القنينة." },
         { scene: "vShake", o: { cap: "#e39a2d", c: "amph" }, text: "رجّ القنينة بقوة لمدة 30 ثانية حتى ينتشر المسحوق تمامًا (التركيز 4 ملغ/مل)." },
         { scene: "vDraw", o: { cap: "#e39a2d", c: "amph" }, text: "اسحب الجرعة المحسوبة إلى حقنة." },
-        { scene: "bagIn", o: { label: "D5W", c: "amph", filter: true }, text: "ركّب فلتر 5 ميكرون المرفق بالعلبة على الحقنة، وأضف الدواء إلى الدكستروز 5% حتى يصبح التركيز 1–2 ملغ/مل." },
+        { scene: "filterFit", o: { c: "amph" }, text: "ضع فلتر 5 ميكرون المرفق بالعلبة بين الحقنة التي تحتوي الدواء ومحلول الدكستروز 5%." },
+        { scene: "filterPush", o: { c: "amph" }, text: "احقن الدواء من خلال الفلتر في الدكستروز 5% حتى يصبح التركيز 1–2 ملغ/مل، واستعمل فلترًا جديدًا لكل قنينة." },
         { scene: "infuse", o: { label: "D5W", c: "amph" }, text: "أعطه بالتسريب خلال 120 دقيقة تقريبًا، ويمكن تقليلها إلى 60 دقيقة إن تحمّلها المريض." }
       ],
       info: [
         { title: "تنبيهات", items: ["لا يُخلط بالمحلول الملحي ولا بأدوية أخرى.", "اغسل الخط الوريدي بالدكستروز 5% قبل التسريب.", "لا يُبدَّل بالأمفوتيرسين التقليدي: جرعاتهما مختلفة.", "للأطفال الصغار يجوز تركيز أقل (0.2–0.5 ملغ/مل)."] },
-        { title: "الثبات والحفظ", items: ["القنينة المذابة: حتى 24 ساعة في الثلاجة (2–8°م).", "بعد التخفيف: يبدأ التسريب خلال 6 ساعات."] }
+        { title: "الثبات والحفظ", items: ["القنينة المذابة: حتى 24 ساعة في الثلاجة (2–8°م).", "بعد التخفيف: يجب استعماله خلال 6 ساعات."] }
       ]
     },
     {
@@ -258,7 +273,7 @@
       steps: [
         { scene: "vWarm", o: { cap: "#d9534f" }, text: "أخرج القنينة من الثلاجة واتركها حتى تبلغ حرارة الغرفة." },
         { scene: "vAdd", o: { cap: "#d9534f" }, text: "أضف 10.5 مل من المحلول الملحي 0.9% أو الماء المعقّم للحقن إلى القنينة." },
-        { scene: "vShake", o: { cap: "#d9534f", gentle: true }, text: "حرّك القنينة بلطف حتى يصبح المحلول رائقًا (5.2 ملغ/مل لقنينة 50 ملغ، و7.2 ملغ/مل لقنينة 70 ملغ)." },
+        { scene: "vShake", o: { cap: "#d9534f", gentle: true }, text: "حرّك القنينة بلطف حتى يصبح المحلول ذائبًا ومتجانسًا (5.2 ملغ/مل لقنينة 50 ملغ، و7.2 ملغ/مل لقنينة 70 ملغ)." },
         { scene: "vDraw", o: { cap: "#d9534f" }, text: "اسحب 10 مل من القنينة (أو حجم الجرعة المطلوبة)." },
         { scene: "bagIn", o: { label: "NS 0.9%" }, text: "أضفها إلى كيس 250 مل من المحلول الملحي 0.9% (أو 100 مل لجرعتي 50 و35 ملغ). لا تستعمل محاليل الدكستروز." },
         { scene: "infuse", o: { label: "NS 0.9%" }, text: "أعطه بالتسريب الوريدي البطيء خلال ساعة تقريبًا." }
@@ -314,7 +329,7 @@
       steps: [
         { scene: "ppe", text: "ارتدِ القفازات والرداء والكمامة؛ فهو دواء سام للخلايا." },
         { scene: "vAdd", o: { cap: "#8e5ac8" }, text: "أضف المحلول الملحي 0.9% إلى القنينة: 25 مل لقنينة 500 ملغ، و50 مل لقنينة 1 غ (التركيز 20 ملغ/مل)." },
-        { scene: "vShake", o: { cap: "#8e5ac8" }, text: "رجّ القنينة بقوة حتى يذوب المسحوق؛ وإن لم يذب فورًا اتركها بضع دقائق حتى يصبح المحلول رائقًا." },
+        { scene: "vShake", o: { cap: "#8e5ac8" }, text: "رجّ القنينة بقوة حتى يذوب المسحوق؛ وإن لم يذب فورًا اتركها بضع دقائق حتى يصبح المحلول ذائبًا ومتجانسًا." },
         { scene: "vDraw", o: { cap: "#8e5ac8" }, text: "اسحب الجرعة المطلوبة." },
         { scene: "bagIn", o: { label: "NS 0.9%" }, text: "للتسريب: خفّفه في المحلول الملحي 0.9% أو الدكستروز 5% بالحجم الذي يحدده البروتوكول." },
         { scene: "infuse", o: { label: "NS 0.9%" }, text: "أعطه بالتسريب خلال المدة التي يحددها البروتوكول." },
