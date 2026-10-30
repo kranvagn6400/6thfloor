@@ -86,8 +86,8 @@
     setTimeout(function () { if (r.parentNode) r.parentNode.removeChild(r); }, Math.max(100, RING_MS - elapsed));
   }
   // The bed of a patient who is leaving keeps showing the patient until the undo window ends, with its own effect:
-  // delete = cyan / pink glitch; discharge = green glow, chevrons going out; died = slowly greys and darkens, a black corner
-  // ribbon (calm, no flicker); return to the floor = indigo glow, chevrons going up
+  // delete = cyan / pink glitch; discharge = a green glass sheen; died = slowly greys and darkens, a black corner
+  // ribbon (calm, no flicker); return to the floor = an indigo tint with an arrow-up icon
   var EXIT_FX = {
     "delete": ["fx-holo-live", "fx-holo-box"],
     discharge: ["fx-out-live", "fx-out-box"],
