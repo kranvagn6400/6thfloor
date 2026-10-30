@@ -268,10 +268,12 @@
   }
   function drawEditor() {
     const f = MF.FORMS[S.form], v = S.v;
-    const warn = f.id === "tigecycline" && !v.month ? '<div class="mn-warn">نموذج Tigecycline لا يتضمن شهر كانون الأول، فلا يمكن إرساله في هذا الشهر.</div>' : "";
+    const miss = HIDE[f.id] ? hiddenMissing(f.id, v) : [];
+    const warn = (f.id === "tigecycline" && !v.month ? '<div class="mn-warn">نموذج Tigecycline لا يتضمن شهر كانون الأول، فلا يمكن إرساله في هذا الشهر.</div>' : "") +
+      (miss.length ? '<div class="mn-warn">لم تكتمل المعلومات الآتية في سرير المريض: ' + esc(miss.join("، ")) + " — أكملها في بطاقة المريض ثم أعد فتح النموذج، ولا يمكن الإرسال قبل ذلك.</div>" : "");
     $("ministry-body").innerHTML = head(f.title, "راجع البيانات قبل الإرسال", "pts") + warn +
       '<div class="mn-form">' + f.fields.filter((fl) => (HIDE[f.id] || []).indexOf(fl.k) < 0).map((fl) => fieldHtml(fl, v)).join("") + "</div>" +
-      '<button type="button" class="mn-send" id="mn-send" data-act="send"' + (S.busy ? " disabled" : "") + ">" + (S.busy ? "جارٍ الإرسال…" : "إرسال إلى الوزارة") + "</button>";
+      '<button type="button" class="mn-send" id="mn-send" data-act="send"' + (S.busy || miss.length ? " disabled" : "") + ">" + (S.busy ? "جارٍ الإرسال…" : "إرسال إلى الوزارة") + "</button>";
   }
   function readEditor() {
     const f = MF.FORMS[S.form], v = S.v, g = (id) => { const e = $(id); return e ? e.value : null; };
@@ -313,6 +315,7 @@
     if (S.busy) return;
     if (!AUTO[S.form]) readEditor();
     const f = MF.FORMS[S.form], v = S.v;
+    if (HIDE[S.form]) { const miss = hiddenMissing(S.form, v); if (miss.length) { App().flashHint("لم تكتمل المعلومات الآتية في سرير المريض: " + miss.join("، ")); return; } }
     const bad = MF.validate(S.form, v);
     if (bad) { App().flashHint(bad); return; }
     const x = App().state.patients[S.key];
@@ -375,10 +378,6 @@
           if (miss.length) { App().flashHint("لم تكتمل المعلومات الآتية في سرير المريض: " + miss.join("، ")); return; }
           send();
           return;
-        }
-        if (HIDE[S.form]) {                                      // some data comes from the card: all of it must be there
-          const miss = hiddenMissing(S.form, S.v);
-          if (miss.length) { App().flashHint("لم تكتمل المعلومات الآتية في سرير المريض: " + miss.join("، ")); return; }
         }
         S.screen = "edit"; drawEditor();
       } else if (act === "send") send();
