@@ -143,6 +143,7 @@
     colistin: {
       id: "colistin", title: "Colistin vial", short: "Colistin", sub: "الكوليستين",
       gid: "1FAIpQLScKnP4IrG9HDHYlHnGr7AYPIVwAMRQTWEYRzm8J0P9fd1B20w", pages: "0,1",
+      needsEmail: 1,          // this form collects an email address (a required first question): the server adds it (env MINISTRY_EMAIL)
       fields: [
         { k: "institution", label: "المؤسسة", t: "fixed", e: 2071414154, v: INSTITUTION },
         { k: "name", label: "اسم المريض", t: "text", e: 841377494, req: 1 },
@@ -274,8 +275,9 @@
   }
 
   // → the urlencoded body the form's own page would send
-  function toBody(formId, v) {
+  function toBody(formId, v, extra) {
     const f = FORMS[formId], p = new URLSearchParams();
+    if (f.needsEmail && extra && extra.email) p.append("emailAddress", extra.email);
     let page = "";
     const other = (e, val) => { p.append("entry." + e, "__other_option__"); p.append("entry." + e + ".other_option_response", txt(val)); };
     for (const fl of f.fields) {

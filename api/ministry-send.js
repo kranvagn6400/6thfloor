@@ -68,12 +68,16 @@ module.exports = async (req, res) => {
     }
   }
 
+  // a form that collects an email address (the colistin one): the ward's address from the server settings — never in the code
+  const email = form.needsEmail ? String(process.env.MINISTRY_EMAIL || "").trim() : "";
+  if (form.needsEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(res, 412, "نموذج الكوليستين يطلب بريدًا إلكترونيًا ولم يُضبط بعد: أضف MINISTRY_EMAIL في إعدادات Vercel");
+
   let r, text = "";
   try {
     r = await fetch(MF.postUrl(form), {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Referer: MF.formUrl(form) },
-      body: MF.toBody(formId, values)
+      body: MF.toBody(formId, values, { email })
     });
     text = await r.text();
   } catch (e) {
