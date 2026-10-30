@@ -253,7 +253,14 @@
     return { ok: true, undo() { st.hist = prevHist; if (prevPending) st.pending = prevPending; else delete st.pending; } };
   }
 
-  // → { state: "done" | "due" | "late" | "soon" | "none", text }
+  // today is a Friday → yesterday's date, else null
+  function thursdayBeforeFriday() {
+    const t = new Date(todayISO() + "T12:00:00");
+    if (t.getDay() !== 5) return null;
+    t.setDate(t.getDate() - 1);
+    return t.toLocaleDateString("en-CA");
+  }
+  // → { state: "done" | "covered" | "due" | "late" | "soon" | "none", text }
   function dueInfo(formId, p) {
     const hit = findMed(formId, p);
     if (!hit) return { state: "none", text: "ليس على الدواء" };
@@ -264,6 +271,9 @@
     if (hist.some(h => h.date === todayISO())) return { state: "done", text: "طُبعت اليوم ✓", day };
     // the file was made today but «تم الطبع» is not pressed yet: the form is still required
     if (s && s.pending && s.pending.date === todayISO()) return { state: "due", wait: true, text: "أُنشئ الملف — بانتظار الطبع", day };
+    // Friday: Thursday's order is doubled for the chart, so a Thursday form that was printed and not refused covers Friday too
+    // (a refusal takes the entry out of hist; a patient admitted on Friday has no Thursday entry and still needs a form)
+    if (formId === "albumin" && hist.some(h => h.date === thursdayBeforeFriday())) return { state: "covered", text: "تكفيها استمارة الخميس ✓", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
     const c = courseOf(p, day);
     if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
@@ -478,11 +488,11 @@
     #pf-editor .pfs-st { display: inline-block; border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 800; }
     #pf-editor .pfs-st.due { background: #fff3cd; color: #8a5a00; }
     #pf-editor .pfs-st.late { background: #fde2e0; color: #a02315; }
-    #pf-editor .pfs-st.done { background: #dff5e3; color: #1b6b2f; }
+    #pf-editor .pfs-st.done, #pf-editor .pfs-st.covered { background: #dff5e3; color: #1b6b2f; }
     #pf-editor .pfs-st.soon, #pf-editor .pfs-st.none { background: var(--bg, #eef2f6); color: var(--text-muted, #5c6b73); }
     html[data-theme="dark"] #pf-editor .pfs-st.due { background: #4a3a10; color: #ffd978; }
     html[data-theme="dark"] #pf-editor .pfs-st.late { background: #4d1d18; color: #ffb4a8; }
-    html[data-theme="dark"] #pf-editor .pfs-st.done { background: #17391f; color: #8fe0a2; }
+    html[data-theme="dark"] #pf-editor .pfs-st.done, html[data-theme="dark"] #pf-editor .pfs-st.covered { background: #17391f; color: #8fe0a2; }
     #pf-editor .pfs-autos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
     #pf-editor .pfs-auto { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--text-muted, #5c6b73); font-weight: 700; min-width: 0; }
     #pf-editor .pfs-auto b { font-size: 14px; color: var(--text, #14211f); overflow-wrap: anywhere; }
