@@ -871,3 +871,24 @@ alter table public.medications add column if not exists price_seen numeric;
 -- ---------- 28) صلاحية «مواقف وزارة الصحة» ----------
 -- المسؤول يمنحها لصيدلاني أو أكثر من إدارة المستخدمين؛ المسؤول نفسه يملكها دائمًا.
 alter table public.profiles add column if not exists can_ministry boolean not null default false;
+
+-- ---------- 29) «مواقف الوزارة»: كتابة قائمة المرسَل (موقف المضادات الحياتية) ----------
+-- المسؤول يكتب كل المفاتيح أصلًا (settings_admin)؛ هذه السياسة تسمح للصيدلاني الممنوح «مواقف الوزارة» بكتابة المفتاح ministry_abx_sent فقط.
+create or replace function public.app_can_ministry()
+returns boolean
+language sql stable security definer
+set search_path = public
+as $$
+  select coalesce(public.app_role() = 'admin', false)
+      or exists (select 1 from public.profiles
+                  where id = auth.uid() and role = 'pharmacist' and active is not false
+                    and can_ministry = true)
+$$;
+revoke all on function public.app_can_ministry() from public, anon;
+grant execute on function public.app_can_ministry() to authenticated;
+
+drop policy if exists "settings_ministry_sent" on public.app_settings;
+create policy "settings_ministry_sent" on public.app_settings
+  for all to authenticated
+  using (key = 'ministry_abx_sent' and public.app_can_ministry())
+  with check (key = 'ministry_abx_sent' and public.app_can_ministry());

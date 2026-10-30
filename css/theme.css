@@ -3003,8 +3003,6 @@ html[data-theme="dark"] .pl-warn { background: #4a3d0a; color: #ffe27a; }
 html[data-theme="dark"] .mn-warn { background: #4a3d0a; color: #ffe27a; }
 .mn-send { grid-column: 1 / -1; width: 100%; }
 
-/* «مواقف الوزارة» is for the supreme admin only for now: the per-pharmacist button in user management stays hidden until it is opened to them */
-.btn-user-flag[data-flag="can_ministry"] { display: none !important; }
 
 /* «إيقاف» on the medicine card + the stopped-medicines list */
 .med-stop { flex: none; height: 32px; padding: 0 12px; border-radius: var(--r-sm); border: 0; background: var(--danger-soft); color: var(--danger); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }

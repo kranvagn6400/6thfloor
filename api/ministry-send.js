@@ -28,12 +28,16 @@ async function appUser(req) {
 }
 // role / active / can_ministry of the caller (their own profiles row — readable under RLS)
 async function appProfile(req, user) {
-  const r = await fetch(SUPABASE_URL + "/rest/v1/profiles?select=role,active,can_ministry,limited_admin&id=eq." + encodeURIComponent(user.id), {
-    headers: { apikey: SUPABASE_ANON, Authorization: req.headers.authorization }
-  });
-  if (!r.ok) return null;
-  const rows = await r.json();
-  return Array.isArray(rows) ? rows[0] : null;
+  // with can_ministry (features.sql §28); a database that does not have the column yet answers an error → ask again without it
+  for (const cols of ["role,active,can_ministry,limited_admin", "role,active,limited_admin"]) {
+    const r = await fetch(SUPABASE_URL + "/rest/v1/profiles?select=" + cols + "&id=eq." + encodeURIComponent(user.id), {
+      headers: { apikey: SUPABASE_ANON, Authorization: req.headers.authorization }
+    });
+    if (!r.ok) continue;
+    const rows = await r.json();
+    return Array.isArray(rows) ? rows[0] : null;
+  }
+  return null;
 }
 
 module.exports = async (req, res) => {
@@ -44,9 +48,8 @@ module.exports = async (req, res) => {
   const user = await appUser(req);
   if (!user) return fail(res, 401, "سجّل الدخول أولًا");
   const prof = await appProfile(req, user);
-  // FOR NOW only the supreme admin (an admin who is not the limited floor manager); later: the admin + the pharmacists with can_ministry
-  const allowed = prof && prof.active !== false && prof.role === "admin" && prof.limited_admin !== true;
-  // const allowed = prof && prof.active !== false && (prof.role === "admin" || (prof.role === "pharmacist" && prof.can_ministry === true));
+  // the supreme admin, the floor managers (any active admin), and the pharmacists they gave the permission
+  const allowed = prof && prof.active !== false && (prof.role === "admin" || (prof.role === "pharmacist" && prof.can_ministry === true));
   if (!allowed) return fail(res, 403, "لا تملك صلاحية رفع مواقف الوزارة");
 
   let body = req.body;
