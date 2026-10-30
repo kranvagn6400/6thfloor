@@ -203,6 +203,35 @@ html[data-palette="purple"] .notif-badge { box-shadow: 0 0 0 2px #4c1f5c; }
 html[data-palette="purple"] .nav-item.active .nav-icon { box-shadow: 0 6px 14px -6px rgba(80, 23, 99, 0.7); }
 html[data-palette="purple"][data-theme="dark"] .nav-item.active .nav-icon { color: #130c15; }
 
+/* ليلكي */
+html[data-palette="lilac"] {
+  --bg: #f4f1f6; --primary: #7d4b96; --primary-dark: #663d7b; --primary-soft: #ede4f1;
+  --fill-strong: #7d4b96; --pal-accent: #6e388a; --hdr1: #9461ad; --hdr2: #7d4b96; --hdr3: #6c4081;
+  --shadow-sm: 0 1px 2px rgba(70, 35, 87, 0.06);
+  --shadow-md: 0 8px 24px -12px rgba(70, 35, 87, 0.28);
+  --shadow-lg: 0 18px 40px -18px rgba(70, 35, 87, 0.40);
+  --shadow-xl: 0 -10px 34px rgba(70, 35, 87, 0.16);
+}
+html[data-palette="lilac"][data-theme="dark"] {
+  --bg: #120c15; --surface: #1d1421; --primary: #b98bd0; --primary-dark: #9762b1; --primary-soft: #2a1a32;
+  --hdr1: #573866; --hdr2: #462d52; --hdr3: #382442; --fill: #9461ad; --fill-strong: #7d4b96; --pal-accent: #ad71cc;
+}
+html[data-palette="lilac"] .ico { --ic-em: #6e388a; --ic-em2: #d2bbdd; --ic-em3: #4e2862; --ic-bg: #efe9f2; --ic-hole: #f6f2f7; }
+html[data-palette="lilac"] .brand-actions .ico, html[data-palette="lilac"][data-theme="dark"] .settings-row-icon .ico, html[data-palette="lilac"][data-theme="dark"] .ico { --ic-em: #ad71cc; --ic-em2: #743b91; --ic-em3: #d3b7e1; --ic-bg: #392244; --ic-hole: #35223f; }
+html[data-palette="lilac"] .settings-row-icon.ico-tile { background: #f6f2f7; border-color: #d9cedf; }
+html[data-palette="lilac"][data-theme="dark"] .settings-row-icon.ico-tile { background: #2a1b31; border-color: #4b3356; }
+html[data-palette="lilac"] .app-header, html[data-palette="lilac"] .orn-preview { background: radial-gradient(80% 140% at 100% 0%, rgba(226, 194, 126, 0.22) 0%, transparent 55%), linear-gradient(160deg, #9461ad 0%, #7d4b96 50%, #6c4081 100%); box-shadow: 0 14px 30px -18px rgba(52, 27, 65, 0.75); }
+html[data-palette="lilac"][data-theme="dark"] .app-header, html[data-palette="lilac"][data-theme="dark"] .orn-preview { background: radial-gradient(80% 140% at 100% 0%, rgba(216, 180, 106, 0.16) 0%, transparent 55%), linear-gradient(160deg, #573866 0%, #462d52 55%, #382442 100%); }
+html[data-palette="lilac"] .login-screen, html[data-palette="lilac"][data-theme="dark"] .login-screen { background: radial-gradient(120% 70% at 85% -10%, rgba(226, 194, 126, 0.28) 0%, transparent 55%), radial-gradient(90% 60% at 0% 110%, rgba(185, 139, 208, 0.22) 0%, transparent 60%), linear-gradient(165deg, #9461ad 0%, #301e39 45%, #19101e 100%); }
+html[data-palette="lilac"] .login-brand h1 { color: #7d4b96; }
+html[data-palette="lilac"] .login-field input:focus, html[data-palette="lilac"] .login-field select:focus { border-color: #7d4b96; box-shadow: 0 0 0 4px rgba(70, 35, 87, 0.12); }
+html[data-palette="lilac"] .login-submit, html[data-palette="lilac"] .btn-primary { background: linear-gradient(135deg, #9461ad 0%, #7d4b96 58%, #663d7b 100%); }
+html[data-palette="lilac"][data-theme="dark"] .btn-primary { background: linear-gradient(135deg, #b98bd0 0%, #9762b1 100%); color: #120c15; }
+html[data-palette="lilac"][data-theme="dark"] .login-submit { background: linear-gradient(135deg, #9461ad 0%, #7d4b96 58%, #663d7b 100%); }
+html[data-palette="lilac"] .notif-badge { box-shadow: 0 0 0 2px #7d4b96; }
+html[data-palette="lilac"] .nav-item.active .nav-icon { box-shadow: 0 6px 14px -6px rgba(70, 35, 87, 0.7); }
+html[data-palette="lilac"][data-theme="dark"] .nav-item.active .nav-icon { color: #120c15; }
+
 /* أزرق سماوي */
 html[data-palette="skyblue"] {
   --bg: #f1f3f6; --primary: #1a3060; --primary-dark: #112040; --primary-soft: #e4e8f1;

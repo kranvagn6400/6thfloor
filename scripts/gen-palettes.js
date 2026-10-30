@@ -9,6 +9,7 @@ const PALETTES = [
   { id: "charcoal", name: "رمادي فحمي",   h: 215, s: 12 },
   { id: "teal",     name: "فيروزي",       h: 176, s: 78 },
   { id: "purple",   name: "أرجواني",      h: 285, s: 62 },
+  { id: "lilac",    name: "ليلكي",        h: 280, s: 42, dl: 20 },
   { id: "skyblue",  name: "أزرق سماوي",   h: 221, s: 72 },
   { id: "classic",  name: "الأزرق القديم", h: 221, s: 83, raw: true },
   { id: "black",    name: "أسود",         h: 0,   s: 0,  dl: -13 },
