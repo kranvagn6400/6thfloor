@@ -180,9 +180,13 @@
     if (formId === "albumin") { set("waste", "0"); const d = albuminDx(p); v.branch = d.branch; v.dx = d.dx; }
     if (formId === "tigecycline") {
       const m0 = x.meds[0].pm, nm = MATCH.tigecycline, fr = (global.PharmacyMedications && global.PharmacyMedications.parseFreq) ? global.PharmacyMedications.parseFreq(m0.frequency || x.meds[0].c.defaultFrequency || "") : null;
-      set("ward", "الباطنية"); set("dx", dx); set("creat", creat);
+      // from the ward's tigecycline form (the paper printed on day 1): diagnosis, days, culture result and the ticked condition
+      const tf = (p.labs && p.labs._forms && p.labs._forms.tigecycline) || {}, tv = tf.vals || {};
+      const tick = (tf.ticks || []).slice().sort((a, b) => a - b)[0];
+      set("ward", "الباطنية"); set("dx", String(tv.diag || dx || "").trim()); set("creat", creat);
       set("dose", m0.dose ? m0.dose + (fr && fr.m ? " × " + fr.m : "") : ""); void nm;
-      set("days", String((global.PharmacyClinical && global.PharmacyClinical.abxDay && global.PharmacyClinical.abxDay(m0, p)) || "")); set("culture", ""); set("indication", "");
+      set("days", String(tv.days || "").trim()); set("culture", String(tv.culture || "").trim());
+      set("indication", tick === 1 ? "complicated skin and soft tissue infections" : tick === 2 ? "complicated intraabdominal infections" : "");
     }
     if (formId === "colistin") {
       const W = global.PharmacyWard, A = global.PharmacyAuth, u = A && A.getCurrentUser ? A.getCurrentUser() : null;
