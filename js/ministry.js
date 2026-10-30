@@ -196,7 +196,12 @@
       set("committee", String((u && (u.displayName || u.username)) || "").trim());
       set("ward", "الباطنية" + (unit && unit.name ? " - " + unit.name : ""));
       set("start", m0.pm.startDate || todayISO()); set("weight", num(p.weight)); set("creat", creat);
-      set("sharing", "لا"); set("days", "غير محدد من قبل الطبيب"); set("culture", "not done"); set("dx", "");
+      // from the ward's colistin form (printed on day 1): the ticked condition, the days, the culture result
+      const cf = (p.labs && p.labs._forms && p.labs._forms.colistin) || {}, cv = cf.vals || {}, ctick = (cf.ticks || []).slice().sort((a, b) => a - b)[0];
+      const cdx = f.fields.find((fl) => fl.k === "dx").opts;
+      set("sharing", "لا"); set("days", /^\d+$/.test(String(cv.days || "").trim()) ? String(cv.days).trim() : "غير محدد من قبل الطبيب");
+      set("culture", cv.culture === "Sensitive" ? "sensetive" : cv.culture === "Resistant" ? "Resistant" : "not done");
+      set("dx", ctick === 1 ? cdx[0] : ctick === 2 ? cdx[1] : "");
       set("dose", cd); set("given", cd); set("waste", "0");
     }
     if (formId === "meronem") Object.assign(v, meronemDefaults(x));

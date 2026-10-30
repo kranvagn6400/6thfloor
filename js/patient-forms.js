@@ -3,7 +3,7 @@
    ============================================================
    Medicines that need a form filled for the storeroom (المذخر) before they are prepared:
      • الألبومين  — a form EVERY day for every patient on albumin.
-     • التايجيسايكلين — a form on the FIRST day only (the paper: img/forms/tigecycline.jpg).
+     • التايجيسايكلين والكوليستين — a form on the FIRST day only (the papers: img/forms/tigecycline.jpg, colistin.jpg).
      • الميرونيم / الإيميبينيم — a form on the first day, and again on the day the dispensing period ends:
        day 7 when the period is 7 days, day 14 when it is 14 (next due = last form's day + period − 1).
    The paper form is the ward's own (img/forms/*.jpg, the user's PDF as a picture); the app fills the values on top of it
@@ -78,6 +78,14 @@
     "Complicated intra-abdominal infections (when other antibiotics are not suitable)"
   ]).map((it, i) => Object.assign(it, { n: i + 1 }));
 
+  // colistin: the two conditions of the paper («يتم اختيار احد الحالتين»), the whole cell of each is outlined
+  const COL_ITEMS = mk([R(92, 606, 603, 711), R(92, 713, 603, 806)], [
+    "Serious infections due to selected aerobic G-ve bacteria in patients with limited treatment options",
+    "Management of chronic pulmonary infections due to Pseudomonas aeruginosa in patients with cystic fibrosis"
+  ]).map((it, i) => Object.assign(it, { n: i + 1 }));
+  // forms asked once, on the first day of the course
+  const FIRST_DAY_ONLY = { tigecycline: 1, colistin: 1 };
+
   const MER_CULTURE = [
     { v: "after", text: "Sent after antibiotics", rect: R(283, 912, 480, 975) },
     { v: "before", text: "Sent before Antibiotics", rect: R(480, 912, 668, 975) },
@@ -118,6 +126,21 @@
       // the culture result is chosen (two buttons) and printed in its cell; it is not filled from the card
       choice: { k: "culture", label: "نتيجة الزرع البكتيري", opts: ["Sensitive", "Resistant"] }
     },
+    colistin: {
+      id: "colistin", title: "استمارة الكوليستين", short: "الكوليستين", bg: "img/forms/colistin.jpg",
+      px: [953, 1348], items: COL_ITEMS, pdfName: "استمارة-كوليستين",
+      hint: "",
+      fields: [
+        // auto = from the card; the days are typed, the culture result is chosen; the value of each sits next to its printed label
+        F("name", "اسم المريض", 610, 766, 219, "r", { auto: true }), F("sex", "الجنس", 354, 548, 219, "r", { auto: true }), F("age", "العمر", 97, 302, 219, "r", { auto: true, num: true }),
+        F("ward", "الردهة", 610, 808, 285, "r", { auto: true }), F("plate", "رقم الطبلة", 354, 528, 285, "r", { auto: true, num: true }), F("diag", "التشخيص", 97, 266, 285, "r", {}),
+        F("date", "تاريخ بدء العلاج", 354, 744, 346, "r", { auto: true }), F("weight", "الوزن", 97, 299, 346, "r", { auto: true, num: true }),
+        F("dose", "الجرعة المطلوبة يوميًا", 612, 853, 455, "r", { center: true, auto: true }),
+        F("days", "عدد الأيام المطلوب أخذ العلاج فيها", 612, 853, 580, "r", { num: true, center: true }),
+        F("scr", "S.Cr", 398, 598, 545, "l", { auto: true }), F("culture", "نتيجة الزرع البكتيري", 97, 342, 582, "r", { hidden: true, center: true })
+      ],
+      choice: { k: "culture", label: "نتيجة الزرع البكتيري", opts: ["Sensitive", "Resistant", "Not done"] }
+    },
     meronem: {
       id: "meronem", title: "استمارة الميرونيم / الإيميبينيم", short: "الميرونيم", bg: "img/forms/meronem.jpg",
       px: [952, 1347], items: MER_ITEMS, culture: MER_CULTURE, duration: true, pdfName: "استمارة-ميرونيم",
@@ -138,6 +161,7 @@
   const catalog = () => (App() && App().state.medications) || [];
   const MER_RE = /meropenem|meronem|imipenem|tienam|ميروب|ميرون|ايميبين|إيميبين/i;
   const TIGE_RE = /tigecycline|tigacycline|تايجي|تيجي/i;
+  const COL_RE = /colistin|colistimethate|كولست|كوليست/i;
   function findMed(formId, p) {
     const C = global.PharmacyClinical;
     for (const pm of (p && p.medications) || []) {
@@ -145,6 +169,7 @@
       const c = catalog().find(m => m && m.id === pm.id) || {};
       const probe = Object.assign({}, pm, c);
       if (formId === "albumin" && C && C.isAlbumin(probe)) return { pm, c };
+      if (formId === "colistin" && COL_RE.test([pm.id, c.nameTrade, c.nameEn, c.nameAr, pm.nameTrade, pm.nameEn].join(" "))) return { pm, c };
       if (formId === "tigecycline" && TIGE_RE.test([pm.id, c.nameTrade, c.nameEn, c.nameAr, pm.nameTrade, pm.nameEn].join(" "))) return { pm, c };
       if (formId === "meronem" && MER_RE.test([pm.id, c.nameTrade, c.nameEn, c.nameAr, pm.nameTrade, pm.nameEn].join(" "))) return { pm, c };
     }
@@ -245,7 +270,7 @@
   // the record of a form (what is kept in hist once it is printed): the day of the course, the period and the days it covers
   function buildEntry(formId, p) {
     const day = dayOf(findMed(formId, p), p) || 1;
-    if (formId === "albumin" || formId === "tigecycline") return { date: todayISO(), day, dur: 1 };
+    if (formId === "albumin" || FIRST_DAY_ONLY[formId]) return { date: todayISO(), day, dur: 1 };
     const st = savedOf(p, formId, true);
     const dur = parseInt(st.vals.durDays, 10) || 0;
     const c = courseOf(p, day, true);
@@ -258,7 +283,7 @@
     const st = savedOf(p, formId, true);
     let entry = st.pending && st.pending.date === todayISO() ? st.pending : null;
     if (!entry) {
-      if (formId === "albumin" || formId === "tigecycline" || allowBuild) entry = buildEntry(formId, p);
+      if (formId === "albumin" || FIRST_DAY_ONLY[formId] || allowBuild) entry = buildEntry(formId, p);
       else return { ok: false, why: "أنشئ الاستمارة أولًا: افتحها واختر مدة الصرف ثم «حفظ PDF»" };
     }
     const prevHist = st.hist.slice(), prevPending = st.pending || null;
@@ -300,8 +325,8 @@
     // (a refusal takes the entry out of hist; a patient admitted on Friday has no Thursday entry and still needs a form)
     if (formId === "albumin" && hist.some(h => h.date === thursdayBeforeFriday())) return { state: "covered", text: "مضاعف من يوم الخميس ✓", day };
     if (formId === "albumin") return { state: "due", text: "مطلوبة اليوم", day };
-    // tigecycline: ONE form, on the first day of the course (the user's rule); from day 2 on nothing is asked
-    if (formId === "tigecycline") return day === 1 ? { state: "due", text: "مطلوبة — اليوم الأول", day } : { state: "none", text: "تُطلب في اليوم الأول فقط", day };
+    // tigecycline / colistin: ONE form, on the first day of the course (the user's rule); from day 2 on nothing is asked
+    if (FIRST_DAY_ONLY[formId]) return day === 1 ? { state: "due", text: "مطلوبة — اليوم الأول", day } : { state: "none", text: "تُطلب في اليوم الأول فقط", day };
     const c = courseOf(p, day);
     if (c.first) return { state: "due", text: "مطلوبة — اليوم الأول", day };
     const end = c.end;
@@ -351,6 +376,20 @@
       return { name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(),
         ward: "السادس - " + unit, alb: latestLab(p, "albumin"), count: qty ? String(qty) : "", words: qty ? words(qty) : "",
         day: day ? ordinal(day) : "", weight: labs.weight || "", creat: latestLab(p, "creatinine") };
+    }
+    if (formId === "colistin") {
+      // «1M x 3 = 240 mg»: the card's dose × the times a day, and the daily mg by the paper's own equation (1 million IU = 80 mg colistimethate)
+      const strength = hit ? String(hit.pm.dose || hit.c.defaultDose || "").trim() : "";
+      const nm0 = hit && global.PharmacyMedications && global.PharmacyMedications.parseFreq ? global.PharmacyMedications.parseFreq(hit.pm.frequency || hit.c.defaultFrequency || "") : null;
+      const t = strength.toLowerCase().replace(/\s+/g, "");
+      let mg = 0, mm;
+      if ((mm = /^(\d+(?:\.\d+)?)mg/.exec(t))) mg = Number(mm[1]);
+      else if ((mm = /^(\d+(?:\.\d+)?)m(?:iu)?$/.exec(t)) || (mm = /^(\d+(?:\.\d+)?)miu/.exec(t))) mg = Number(mm[1]) * 80;
+      else if ((mm = /^(\d{4,})(?:iu|units?)?$/.exec(t))) mg = Number(mm[1]) / 1e6 * 80;
+      const perDay = nm0 && nm0.m ? nm0.m : 1, daily = mg > 0 ? Math.round(mg * perDay * 10) / 10 : 0;
+      return { name: String(p.name || "").trim(), sex: p.gender === "female" ? "أنثى" : p.gender === "male" ? "ذكر" : "", age: String(p.age || "").trim(), ward: unit,
+        plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(), date: (hit && hit.pm.startDate) || todayISO(), weight: labs.weight || p.weight || "",
+        dose: strength ? strength + (nm0 ? " x " + nm0.m : "") + (daily ? " = " + daily + " mg" : "") : "", days: "", scr: latestLab(p, "creatinine"), culture: "" };
     }
     if (formId === "tigecycline") {
       const strength = hit ? String(hit.pm.dose || hit.c.defaultDose || "").trim() : "";
@@ -616,7 +655,7 @@
       if (!on) return false;
       // the meronem form: only the patients who deserve one now (first day, or the period ended and no new form yet —
       // a late one keeps showing on day 15, 16… until the new form is made)
-      if (V.form === "meronem" || V.form === "tigecycline") { const s = dueInfo(V.form, x.p).state; if (s !== "due" && s !== "late") return false; }
+      if (V.form !== "albumin") { const s = dueInfo(V.form, x.p).state; if (s !== "due" && s !== "late") return false; }
       if (!q) return true;
       return (String(x.p.name || "").toLowerCase().indexOf(q) >= 0) || (String(x.p.plateNumber || "").indexOf(q) >= 0);
     });
@@ -631,7 +670,7 @@
         (d.state === "rej" ? '<button type="button" class="pfs-unrej">إلغاء الرفض</button>' : "");
       return '<div class="pfs-pt" data-key="' + esc(x.key) + '"><button type="button" class="pfs-main"><b>' + esc(x.p.name) + '</b><span class="m">' + esc(bedText(x.key)) + (x.p.plateNumber ? " · طبلة " + esc(x.p.plateNumber) : "") + (d.day ? " · اليوم " + d.day : "") + '</span><span class="pfs-st ' + (d.wait ? "wait" : d.state) + '">' + esc(d.text) + "</span></button>" +
         (acts ? '<div class="pfs-acts">' + acts + "</div>" : "") + "</div>";
-    }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : V.form === "tigecycline" ? "لا يوجد مرضى في اليوم الأول من التايجيسايكلين." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "</div>";
+    }).join("") : '<div class="pfe-empty">' + (V.form === "meronem" ? "لا يوجد مرضى يستحقون استمارة الميرونيم اليوم." : V.form === "tigecycline" ? "لا يوجد مرضى في اليوم الأول من التايجيسايكلين." : V.form === "colistin" ? "لا يوجد مرضى في اليوم الأول من الكوليستين." : "لا يوجد مرضى على هذا الدواء حاليًا.") + "</div>";
     updateBatch();
     const list = $("pfs-list");
     list.querySelectorAll(".pfs-main").forEach(b => b.addEventListener("click", () => openForm(V.form, b.closest(".pfs-pt").dataset.key)));
