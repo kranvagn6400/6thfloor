@@ -2947,7 +2947,11 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 
 
 /* Price link (price-link.js): the field in the catalogue editor + the yellow marks in the list */
-.pl-mark { display: inline-flex; align-items: center; justify-content: center; margin-inline-start: 6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #f5c518; color: #4a3600; font-size: 12px; font-weight: 800; }
+.pl-dot { display: inline-block; flex: none; width: 11px; height: 11px; margin-inline-start: 7px; border-radius: 50%; vertical-align: middle; box-shadow: 0 0 0 2px var(--surface, #fff); }
+.pl-dot.is-green { background: #1fae5a; }
+.pl-dot.is-yellow { background: #f5c518; }
+.pl-dot.is-red { background: #e0453a; }
+.pl-dot.is-grey { background: #9aa5a3; }
 .pl-count { margin-inline-start: 8px; padding: 1px 8px; border-radius: 999px; background: #f5c518; color: #4a3600; font-size: 12px; font-weight: 800; }
 .pl-auto-btn { margin-inline-start: 6px; }
 .pl-current { padding: 8px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); font-size: 13px; line-height: 1.7; color: var(--text); }

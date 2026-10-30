@@ -52,24 +52,29 @@
       : st.state === "changed" ? "تغيّر سعره في موقع الأسعار من " + fmt(st.from) + " إلى " + fmt(st.to) : "";
   }
 
-  // ---- the yellow marks in the catalogue list ----
+  // ---- the coloured dots in the catalogue list: green = linked, yellow = its price changed / it left the site, red = not linked ----
+  function putDot(row, cls, title) {
+    const old = row.querySelector(".pl-dot"); if (old) old.remove();
+    const d = document.createElement("span");
+    d.className = "pl-dot " + cls; d.title = title; d.setAttribute("aria-label", title);
+    const nameEl = row.querySelector(".admin-med-name"); if (nameEl) nameEl.appendChild(d);
+  }
   function decorate() {
+    const rows = () => Array.from(document.querySelectorAll("#admin-med-list .admin-med-row"));
+    const medOf = (row) => ((App() && App().state.medications) || []).find((x) => x.id === row.dataset.medId);
+    // the red dots do not need the site: they show at once
+    rows().forEach((row) => { const m = medOf(row); if (m && !m.priceRef) putDot(row, "is-red", "غير مربوط بموقع الأسعار"); });
     loadList().then((l) => {
-      if (!l || !App()) return;
-      const meds = App().state.medications || [];
       let n = 0;
-      document.querySelectorAll("#admin-med-list .admin-med-row").forEach((row) => {
-        const m = meds.find((x) => x.id === row.dataset.medId);
-        const old = row.querySelector(".pl-mark"); if (old) old.remove();
+      rows().forEach((row) => {
+        const m = medOf(row); if (!m || !m.priceRef) return;
+        if (!l) { putDot(row, "is-grey", "مربوط — تعذّر التحقق من الموقع الآن"); return; }
         const st = statusOf(m, l);
-        if (st.state !== "changed" && st.state !== "missing") return;
-        n++;
-        const mark = document.createElement("span");
-        mark.className = "pl-mark"; mark.textContent = "⚠"; mark.title = noteOf(st);
-        const nameEl = row.querySelector(".admin-med-name"); if (nameEl) nameEl.appendChild(mark);
+        if (st.state === "changed" || st.state === "missing") { n++; putDot(row, "is-yellow", noteOf(st)); }
+        else putDot(row, "is-green", "مربوط بموقع الأسعار");
       });
       const head = document.querySelector(".admin-list-head h3");
-      if (head) { const o = head.querySelector(".pl-count"); if (o) o.remove(); if (n) { const s = document.createElement("span"); s.className = "pl-count"; s.textContent = "⚠ " + n; s.title = "أدوية تغيّر سعرها في موقع الأسعار أو لم تعد فيه"; head.appendChild(s); } }
+      if (head) { const o = head.querySelector(".pl-count"); if (o) o.remove(); if (n) { const s2 = document.createElement("span"); s2.className = "pl-count"; s2.textContent = "● " + n; s2.title = "أدوية تغيّر سعرها في موقع الأسعار أو لم تعد فيه"; head.appendChild(s2); } }
     });
   }
 
