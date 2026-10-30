@@ -1655,20 +1655,6 @@
   window.addEventListener("pagehide", commitPendingExit);
   document.addEventListener("visibilitychange", () => { if (document.hidden) commitPendingExit(); });
 
-  function vacateBed(bedKey) {
-    Storage.deletePatient(bedKey);
-    Storage.saveLocalDeletion(bedKey);
-    delete state.patients[bedKey];
-    state.currentBed = null;
-    refreshStatsAndRooms();
-    UI.showView("home");
-    if (SBSync && SBSync.pushPatientDelete) {
-      SBSync.pushPatientDelete(bedKey).then(r => {
-        if (!r.ok) console.warn("[Supabase] bed delete push failed:", r.error);
-      });
-    }
-  }
-
   // Move a patient to an empty bed in this ward (drag & drop on the
   // rooms view — bed-drag.js, no confirmation). Done on the server in one step
   // (app_move_patient in features.sql): the row and this stay's change
@@ -2812,6 +2798,13 @@
       const p = state.patients[state.currentBed.key];
       if (!p || !p.name || !p.name.trim()) return;
       if (!exitAllowed(p)) { flashHint("تسجيل الخروج يحتاج صلاحية «الخروج والوفاة والعودة إلى الطابق»"); return; }
+      // Pharmacists + admin: no final-diagnosis form (the user asked), only a confirmation; the doctors keep the form
+      if (!(Auth && Auth.isDoctor && Auth.isDoctor())) {
+        if (!confirm(`هل تريد تسجيل خروج المريض "${p.name.trim()}"؟\nستُحفظ بياناته في قائمة "خرجوا".`)) return;
+        _dischargePending = { bedKey: state.currentBed.key, patient: p, roomId: state.currentBed.roomId, bed: state.currentBed.bed, noDiagnosis: true };
+        confirmDischarge();
+        return;
+      }
 
       _dischargePending = {
         bedKey: state.currentBed.key,
@@ -2869,7 +2862,7 @@
       const inputEl = $("discharge-final-diagnosis");
       const errEl = $("discharge-error");
       // The final diagnosis is optional (it may stay empty)
-      const finalDiagnosis = (inputEl && inputEl.value || "").trim();
+      const finalDiagnosis = _dischargePending.noDiagnosis ? "" : (inputEl && inputEl.value || "").trim();
       if (errEl) errEl.hidden = true;
       const { bedKey, patient: p, roomId, bed } = _dischargePending;
       const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
@@ -2903,7 +2896,7 @@
         pushNotification("patient_discharged",
           `خروج المريض: ${p.name.trim()} — ${global.PharmacyWard.roomTitle(roomId)}`,
           p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
-      });
+      }, { glitch: true });
     }
 
     // Discharge button → open modal (instead of confirm)
@@ -2958,7 +2951,7 @@
         pushNotification("patient_died",
           `وفاة المريض: ${p.name.trim()} — ${global.PharmacyWard.roomTitle(roomId)}`,
           p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
-      });
+      }, { glitch: true });
     });
 
     // ----- Boarder returns to their own floor (رجوع المريض إلى طابقه) -----
@@ -2975,7 +2968,7 @@
       if (!confirm(`رجوع المريض "${p.name.trim()}" إلى طابقه (${dest})؟\nسيُفرَّغ السرير.`)) return;
       const { key: bedKey, roomId, bed } = state.currentBed;
       const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-      global.PharmacyArchive.add("transferred", {
+      const record = {
         name:          p.name.trim(),
         plateNumber:   p.plateNumber || "",
         doctor:        p.doctor || "",
@@ -2992,16 +2985,18 @@
         transferredTo: dest,
         transferredAt: new Date().toISOString(),
         transferredBy: user ? user.username : "—"
-      });
-      if (Auth && Auth.auditLog) {
-        Auth.auditLog("patient_transferred",
-          `رجوع المريض "${p.name}" من ${global.PharmacyWard.roomTitle(roomId)} سرير ${global.PharmacyWard.bedLabel(roomId, bed)} إلى طابقه (${dest})`);
-      }
-      vacateBed(bedKey);
-      flashHint("تم رجوع المريض إلى طابقه — سجله في «عادوا لطوابقهم»");
-      pushNotification("patient_transferred",
-        `رجوع المريض: ${p.name.trim()} إلى ${dest} — ${global.PharmacyWard.roomTitle(roomId)}`,
-        p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
+      };
+      // Archive + audit + notification wait for «تراجع» (deferExit)
+      deferExit(bedKey, "تم رجوع المريض إلى طابقه — سجله في «عادوا لطوابقهم»", () => {
+        global.PharmacyArchive.add("transferred", record);
+        if (Auth && Auth.auditLog) {
+          Auth.auditLog("patient_transferred",
+            `رجوع المريض "${p.name}" من ${global.PharmacyWard.roomTitle(roomId)} سرير ${global.PharmacyWard.bedLabel(roomId, bed)} إلى طابقه (${dest})`);
+        }
+        pushNotification("patient_transferred",
+          `رجوع المريض: ${p.name.trim()} إلى ${dest} — ${global.PharmacyWard.roomTitle(roomId)}`,
+          p.name.trim(), `${global.PharmacyWard.roomTitle(roomId)}`);
+      }, { glitch: true });
     });
 
     // ----- Origin ward (مريض مستضاف) -----
