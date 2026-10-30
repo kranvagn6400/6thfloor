@@ -2945,3 +2945,19 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
   .dp-svg .dp-lcdlast { opacity: 1; }
 }
 
+
+/* Price link (price-link.js): the field in the catalogue editor + the yellow marks in the list */
+.pl-mark { display: inline-flex; align-items: center; justify-content: center; margin-inline-start: 6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #f5c518; color: #4a3600; font-size: 12px; font-weight: 800; }
+.pl-count { margin-inline-start: 8px; padding: 1px 8px; border-radius: 999px; background: #f5c518; color: #4a3600; font-size: 12px; font-weight: 800; }
+.pl-auto-btn { margin-inline-start: 6px; }
+.pl-current { padding: 8px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); font-size: 13px; line-height: 1.7; color: var(--text); }
+.pl-current small { color: var(--text-muted); }
+.pl-unlink, .pl-warn button { margin-inline-start: 6px; padding: 2px 10px; border: 0; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; background: var(--fill, var(--primary)); color: #fff; }
+.pl-warn { margin: 6px 0; padding: 8px 10px; border-radius: 10px; background: #fff3bf; color: #4a3600; font-size: 13px; font-weight: 700; line-height: 1.7; }
+html[data-theme="dark"] .pl-warn { background: #4a3d0a; color: #ffe27a; }
+.pl-results { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.pl-hit { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 13px; text-align: start; cursor: pointer; }
+.pl-hit b { font-weight: 800; }
+.pl-hit small { color: var(--text-muted); font-weight: 600; }
+.pl-hit span { margin-inline-start: auto; font-weight: 800; color: var(--primary); }
+.pl-none { padding: 8px; font-size: 12.5px; color: var(--text-muted); text-align: center; }

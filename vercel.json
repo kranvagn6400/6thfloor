@@ -1,5 +1,10 @@
 {
   "functions": {
-    "api/chart-sync.js": { "maxDuration": 60 }
+    "api/chart-sync.js": {
+      "maxDuration": 60
+    },
+    "api/drug-prices.js": {
+      "maxDuration": 15
+    }
   }
 }

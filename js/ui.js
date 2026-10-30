@@ -1337,6 +1337,7 @@
         runningIdx++;
       });
     });
+    if (global.PharmacyPriceLink) global.PharmacyPriceLink.decorate();      // yellow mark on a drug whose price changed / vanished
   }
 
   // ---------- Admin: show/hide editor form ----------
@@ -1362,6 +1363,7 @@
     nameAr.value    = med.nameAr || "";
     nameEn.value    = med.nameEn || "";
     nameChart.value = med.nameChart || "";
+    if (global.PharmacyPriceLink) global.PharmacyPriceLink.bindEditor(med);
     // Set form dropdown: fall back to "vial" if form is unknown/empty
     const VALID_FORMS = ["vial", "ampule", "prefilled-syringe", "tablet", "effervescent", "syrup-and-oral-drop", "suppository", "solution", "supplies"];
     const formVal = VALID_FORMS.indexOf(med.form) !== -1 ? med.form : "vial";
@@ -1424,6 +1426,8 @@
       nameAr:    nameAr,
       nameEn:    nameEn,
       nameChart: nameChart,
+      priceRef:  global.PharmacyPriceLink ? global.PharmacyPriceLink.draft().ref : "",
+      priceSeen: global.PharmacyPriceLink ? global.PharmacyPriceLink.draft().seen : 0,
       form:      VALID_FORMS.indexOf(form) !== -1 ? form : "vial",
       defaultDose:      dose,
       defaultFrequency: frequency

@@ -93,6 +93,8 @@
       name_ar: m.nameAr || null,
       name_en: m.nameEn || null,
       name_chart: m.nameChart || null,
+      price_ref: m.priceRef || null,                       // the drug's id on the price site (features.sql §27)
+      price_seen: m.priceSeen > 0 ? m.priceSeen : null,    // the price the admin last accepted
       form: m.form || "vial",
       default_dose: m.defaultDose || "",
       default_frequency: m.defaultFrequency || "",
@@ -107,6 +109,8 @@
       nameAr: row.name_ar || "",
       nameEn: row.name_en || "",
       nameChart: row.name_chart || "",
+      priceRef: row.price_ref || "",
+      priceSeen: Number(row.price_seen) > 0 ? Number(row.price_seen) : 0,
       form: row.form || "vial",
       defaultDose: row.default_dose || "",
       defaultFrequency: row.default_frequency || "",
@@ -190,7 +194,7 @@
   // the migration don't have the column, and the upsert would fail
   // with: "Could not find the 'name_chart' column of 'medications'
   // in the schema cache". We catch that, strip the column, retry.
-  const OPTIONAL_MED_COLS = ["available", "name_chart"];
+  const OPTIONAL_MED_COLS = ["available", "name_chart", "price_ref", "price_seen"];
 
   async function upsertMedicationsWithFallback(client, slice) {
     let currentSlice = slice;

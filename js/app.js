@@ -53,6 +53,9 @@
     moveBed: (fromKey, toKey) => moveBed(fromKey, toKey),
     swapBeds: (aKey, bKey) => swapBeds(aKey, bKey),
     flashHint: (msg) => flashHint(msg),
+    // the price-link module: save the catalogue after it changed the links, and redraw the admin list
+    catalogChanged: () => { Storage.saveMedications(state.medications); return pushCatalogAfterEdit(); },
+    redrawAdminMeds: () => UI.renderAdminMedList(state.medications, state.admin.selectedId),
     // the medicine sheet, when it is open, shows a change that came from another user
     refreshMedSheet: () => {
       const sheet = document.getElementById("med-sheet");
@@ -1236,6 +1239,7 @@
     const res = await SBSync.pushCatalog();
     if (res.ok) {
       updateSupabaseStatusUI(`مربوط · ${res.count} دواء`, "connected");
+      if ((res.stripped || []).some(c => c === "price_ref" || c === "price_seen") && (state.medications || []).some(m => m.priceRef)) flashHint("⚠ ربط الأسعار لم يُحفظ في السحابة — شغّل القسم 27 من features.sql في Supabase");
       return { ok: true };
     }
     updateSupabaseStatusUI("خطأ في الرفع: " + res.error, "error");
@@ -4462,6 +4466,8 @@
           nameAr:    data.nameAr,
           nameEn:    data.nameEn,
           nameChart: data.nameChart,
+          priceRef:  data.priceRef,
+          priceSeen: data.priceSeen,
           form:      data.form,
           defaultDose: data.defaultDose,
           defaultFrequency: data.defaultFrequency
@@ -4488,6 +4494,8 @@
         m.nameAr = data.nameAr;
         m.nameEn = data.nameEn;
         m.nameChart = data.nameChart;
+        m.priceRef = data.priceRef;
+        m.priceSeen = data.priceSeen;
         m.form = data.form;
         m.defaultDose = data.defaultDose;
         m.defaultFrequency = data.defaultFrequency;

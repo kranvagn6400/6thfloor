@@ -861,3 +861,9 @@ grant execute on function public.admin_reset_password(uuid, text) to authenticat
 -- ---------- 26) كتالوج الأدوية للمسؤول الأعلى وحده ----------
 -- تُسحب صلاحية الكتالوج من كل الصيادلة؛ التطبيق لا يمنحها بعد الآن (Auth.canEditCatalog = المسؤول ذو الصلاحية القصوى فقط).
 update public.profiles set can_edit_catalog = false where can_edit_catalog = true;
+
+-- ---------- 27) ربط الدواء بموقع الأسعار ----------
+-- price_ref = رقم الدواء في موقع الأسعار (mediprice-pharmacy.vercel.app)، وprice_seen = آخر سعر اعتمده المسؤول؛
+-- إن تغيّر سعر الدواء في الموقع أو زال تظهر علامة صفراء عليه في الكتالوج.
+alter table public.medications add column if not exists price_ref text;
+alter table public.medications add column if not exists price_seen numeric;

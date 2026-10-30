@@ -102,24 +102,25 @@
   // Sources in PRIORITY order. A medicine is priced by the FIRST source that has the same or a similar drug
   // (same substance + same strength); the sources after it are ignored for that medicine. Inside one source a
   // repeated drug takes the most suitable price = the lowest. More lists are added to PRICE_SOURCES later.
-  const SITE_API = "https://script.google.com/macros/s/AKfycbydN-_OZWgNhkngoC6zoqNcbMZgXQKOYun721wJyF0YxMHeFSJESDRjqz_XPUjMYKOR/exec";   // pharmacist24.github.io/drugprice
-  const PRICE_CACHE = "pharma.drugprice.site";
   const PRICE_TTL = 6 * 60 * 60 * 1000;
-  async function loadSite() {
+  // the price site (mediprice-pharmacy.vercel.app, ~330 drugs) — the only source — read through our own function api/drug-prices.js (the site has no CORS)
+  const MEDI_CACHE = "pharma.drugprice.medi3";
+  async function loadMedi() {
     try {
-      const c = JSON.parse(localStorage.getItem(PRICE_CACHE) || "null");
-      if (c && Date.now() - c.t < PRICE_TTL && Array.isArray(c.list)) return c.list;
+      const c = JSON.parse(localStorage.getItem(MEDI_CACHE) || "null");
+      if (c && Date.now() - c.t < PRICE_TTL && Array.isArray(c.list) && c.list.length) return c.list;
     } catch (e) { /* blocked */ }
-    const res = await fetch(SITE_API);
+    const res = await fetch("/api/drug-prices");
+    if (!res.ok) throw new Error("drug-prices " + res.status);
     const j = await res.json();
-    const list = ((j && j.data) || []).map(d => ({ name: String(d.drugName || "").replace(/\s+/g, " ").trim(), price: Number(d.unitPrice) }))
-      .filter(d => d.name && d.price > 0);
-    try { localStorage.setItem(PRICE_CACHE, JSON.stringify({ t: Date.now(), list })); } catch (e) { /* blocked */ }
+    const list = ((j && j.list) || []).filter(d => d && d.name && d.price > 0);
+    if (!list.length) throw new Error("empty price list");
+    try { localStorage.setItem(MEDI_CACHE, JSON.stringify({ t: Date.now(), list })); } catch (e) { /* blocked */ }
     return list;
   }
-  const PRICE_SOURCES = [{ id: "site", load: loadSite }];
+  const PRICE_SOURCES = [{ id: "medi", load: loadMedi }];
 
-  const WORD_SKIP = new Set(["amp", "ampule", "ampoule", "vial", "tab", "tablet", "cap", "capsule", "syrup", "inj", "iv", "i.v", "inf", "infusion", "bottle", "oint", "cream", "supp", "drop", "drops", "human", "sodium", "the", "and", "for", "of", "with"]);
+  const WORD_SKIP = new Set(["amp", "ampule", "ampoule", "vial", "tab", "tablet", "cap", "capsule", "syrup", "inj", "iv", "i.v", "inf", "infusion", "bottle", "oint", "cream", "supp", "drop", "drops", "human", "sodium", "the", "and", "for", "of", "with", "beta"]);
   function wordsOf(name) {
     return String(name || "").toLowerCase().replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d))
       .split(/[^a-z]+/).filter(w => w.length >= 4 && !WORD_SKIP.has(w));
@@ -156,28 +157,37 @@
     if (med) [med.nameEn, med.nameTrade, C && C.genericKey ? C.genericKey(med) : ""].forEach(t => wordsOf(t).forEach(w => alt.add(w)));
     return { all: wordsOf(chartName), alt: Array.from(alt), nums: numsOf(chartName), form: formClass(chartName) || (med && FORM_CLASS_OF[med.form]) || "" };
   }
-  // → the lowest price of the first source with a matching drug, else null
-  function pickPrice(chartName, lists) {
+  // → the cheapest matching entry { id, name, price } of the first source that has one, else null
+  function pickEntry(chartName, lists) {
     const me = ourSide(chartName);
     if (!me.all.length && !me.alt.length) return null;
     for (const list of lists) {
       const fits = list.filter(e => {
-        if (numsOf(e.name) !== me.nums) return false;                               // the strength must be identical
+        if (me.nums && numsOf(e.name) !== me.nums) return false;                    // the strength must be identical (when ours states one)
         const cls = formClass(e.name);
         if (cls && me.form && cls !== me.form) return false;                        // the same kind of preparation (a tablet is not a vial)
         return true;
       });
       const hit = (words, every) => fits.filter(e => {
-        const theirs = wordsOf(e.name);
+        const theirs = wordsOf(e.name + " " + (e.alt || ""));       // the site's own name + the other name it shows (the trade name)
         const ok = (w) => theirs.some(x => sameWord(w, x));
         return words.length && (every ? words.every(ok) : words.some(ok));
       });
       let found = hit(me.all, true);
-      if (!found.length) found = hit(me.alt, false);
-      if (found.length) return found.reduce((m, e) => Math.min(m, e.price), Infinity);
+      if (!found.length) {
+        found = hit(me.alt, false);
+        // several drugs share one of our words (Symbicort = budesonide + formoterol): keep the ones matching the MOST of them
+        const score = (e) => me.alt.filter(w => wordsOf(e.name).some(x => sameWord(w, x))).length;
+        const best = found.reduce((m, e) => Math.max(m, score(e)), 0);
+        found = found.filter(e => score(e) === best);
+      }
+      // our name states no strength ("Calcium amp"): the site's drug is taken only when it has ONE strength (never a guess between several)
+      if (found.length && !me.nums && new Set(found.map(e => numsOf(e.name))).size > 1) found = [];
+      if (found.length) return found.reduce((m, e) => (e.price < m.price ? e : m));
     }
     return null;
   }
+  function pickPrice(chartName, lists) { const e = pickEntry(chartName, lists); return e ? e.price : null; }
   async function fetchLists() {
     const lists = [];
     for (const src of PRICE_SOURCES) {
@@ -574,14 +584,22 @@
       }).catch(() => { /* offline: the first sent day is used */ });
     }
 
-    // unit prices from the price lists (the site first); a price typed by hand is never replaced
+    // unit prices: the drug LINKED to the price site (catalogue → «الدواء في موقع الأسعار») first — read live by its id —,
+    // else a match by name; a price typed by hand is never replaced
+    const linkedPrice = (chartName, lists) => {
+      const med = ((App() && App().state.medications) || []).find(m => m && m.priceRef && String(m.nameChart || "").trim() === chartName);
+      if (!med) return null;
+      for (const list of lists) { const e = list.find(x => x.id === med.priceRef); if (e) return e.price; }
+      return null;
+    };
     fetchLists().then(lists => {
       if (S !== mine0) return;
       let any = false;
       rowsOf(S.pr, rng().from, rng().to).forEach(x => {
         const meta = (S.pr.meta[x.k] = S.pr.meta[x.k] || {});
         if (meta.price || meta.hand) return;
-        const p = pickPrice(x.n, lists);
+        const lp = linkedPrice(x.n, lists);
+        const p = lp != null ? lp : pickPrice(x.n, lists);
         if (p != null) { meta.price = String(p); meta.auto = true; any = true; }
       });
       if (any) { saveSoon(); renderTable(); }
@@ -728,7 +746,7 @@
     });
   }
 
-  global.PharmacyPrivateForm = { record, open, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
+  global.PharmacyPrivateForm = { record, open, pickEntry, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);
