@@ -2381,7 +2381,8 @@ html[data-theme="dark"] { --hdr1: #143832; --hdr2: #0F2925; --hdr3: #0B1D1A; }
 /* died: calm — slowly greys and darkens, a black corner ribbon, no flicker */
 .fx-died-live { animation: fxDiedFade 2.6s ease-out both; }
 .fx-died-box { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; z-index: 2; background: rgba(0, 0, 0, .38); animation: fxDiedVeil 2.6s ease-out both; }
-.fx-died-box::after { content: ""; position: absolute; top: 0; left: 0; width: 26px; height: 26px; background: linear-gradient(135deg, #000 0 48%, transparent 48%); }
+/* a black band across the corner, set in from the edge so it reads on the dark bed (a light hairline on each side) */
+.fx-died-box::after { content: ""; position: absolute; top: 0; left: 0; width: 58px; height: 58px; background: linear-gradient(135deg, transparent 0 34%, rgba(255, 255, 255, .55) 34% 36%, #000 36% 58%, rgba(255, 255, 255, .55) 58% 60%, transparent 60%); }
 @keyframes fxDiedFade { from { filter: none; } to { filter: grayscale(1) brightness(.72); } }
 @keyframes fxDiedVeil { from { opacity: 0; } to { opacity: 1; } }
 /* returned to the floor: an indigo glow, chevrons going up */

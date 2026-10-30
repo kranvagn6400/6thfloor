@@ -94,7 +94,7 @@
     died: ["fx-died-live", "fx-died-box"],
     "return": ["fx-ret-live", "fx-ret-box"]
   };
-  var glitchKey = null, glitchUntil = 0, glitchKind = "delete";
+  var glitchKey = null, glitchUntil = 0, glitchKind = "delete", glitchStart = 0;
   function ensureGlitch() {
     var grid = document.getElementById("rooms-grid");
     if (!grid) return;
@@ -102,6 +102,7 @@
     Array.prototype.forEach.call(grid.querySelectorAll(".fx-exit-bed"), function (b) {
       if (b.dataset.key === glitchKey) return;
       b.classList.remove("fx-exit-bed");
+      b.style.animationDelay = "";
       Object.keys(EXIT_FX).forEach(function (k) {
         b.classList.remove(EXIT_FX[k][0]);
         var o = b.querySelector("." + EXIT_FX[k][1]); if (o) o.remove();
@@ -115,6 +116,8 @@
     var box = document.createElement("i");
     box.className = fx[1];
     box.setAttribute("aria-hidden", "true");
+    // the rooms are redrawn now and then: carry on where the redrawn bed stopped
+    bed.style.animationDelay = box.style.animationDelay = "-" + (Date.now() - glitchStart) + "ms";
     bed.appendChild(box);
   }
   document.addEventListener("DOMContentLoaded", function () {
@@ -147,7 +150,7 @@
   global.PharmacyFx = {
     orderGlow: setOrderGlow,
     glitchBed: function (key, ms, kind) {
-      glitchKey = key; glitchUntil = Date.now() + (ms || 9500); glitchKind = kind || "delete";
+      glitchKey = key; glitchUntil = Date.now() + (ms || 9500); glitchKind = kind || "delete"; glitchStart = Date.now();
       setTimeout(ensureGlitch, 0); setTimeout(ensureGlitch, 400);
       setTimeout(ensureGlitch, (ms || 9500) + 50);                 // failsafe: stop by itself
     },
