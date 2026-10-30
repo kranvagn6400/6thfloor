@@ -80,8 +80,23 @@
     '<path class="fbody" d="M-12 -22 Q-12 -27 -6 -27 L6 -27 Q12 -27 12 -22 L12 22 Q12 27 6 27 L-6 27 Q-12 27 -12 22Z"/>' +
     '<path class="fmem" d="M0 -23 L0 23"/><path class="frib" d="M-12 -16 L-8 -16 M-12 -8 L-8 -8 M-12 0 L-8 0 M-12 8 L-8 8 M-12 16 L-8 16 M8 -16 L12 -16 M8 -8 L12 -8 M8 0 L12 0 M8 8 L12 8 M8 16 L12 16"/>' +
     '<path class="fstem" d="M12 -5 L24 -2.6 L24 2.6 L12 5Z"/>';
-  const drip = () => '<path class="ln thin" d="M31 71 L31 76"/><path class="ln glass" d="M25 76 L37 76 L37 98 Q37 103 31 103 Q25 103 25 98Z"/>' +
-    '<path class="water" d="M26 94 L36 94 L36 98 Q36 102 31 102 Q26 102 26 98Z"/><path class="drop2 dp-drop" d="M31 79 Q28 83 31 85 Q34 83 31 79Z"/>';
+  const tinted = (d, c, cls) => '<path class="water ' + (cls || "") + '" d="' + d + '"/>' + (c && c !== "clear" ? '<path class="' + c + " " + (cls || "") + '" d="' + d + '"/>' : "");
+  const filterSet = (label, o, push) => '<g transform="translate(52 -2) scale(.65)">' + bag(label, push ? o.c : null, push) + "</g>" +
+    (push ? '<path class="stream st-amph dp-injStr" d="M154 120 L154 52"/>' : "") +
+    '<g' + (push ? "" : ' class="dp-step1"') + '><path class="ln thin" d="M154 50 L154 84"/><rect class="nhub" x="149" y="84" width="10" height="9" rx="1.5"/></g>' +
+    '<g' + (push ? "" : ' class="dp-step2"') + '><g transform="translate(154 106) rotate(-90) scale(.55)">' + FILTER + "</g></g>" +
+    '<g' + (push ? "" : ' class="dp-step3"') + '><g transform="translate(154 120) rotate(180) scale(.9) translate(-150 -66)">' + syringe(push ? "Inj" : "Full", o.c || "clear", 0) + "</g></g>";
+  const drip = (c) => '<path class="ln thin" d="M31 71 L31 76"/>' + tinted("M26 94 L36 94 L36 98 Q36 102 31 102 Q26 102 26 98Z", c) + tinted("M31 79 Q28 83 31 85 Q34 83 31 79Z", c, "dp-drop") +
+    '<path class="ln glass" d="M25 76 L37 76 L37 98 Q37 103 31 103 Q25 103 25 98Z"/>';
+  // the giving set: a clear tube filled with the bag's fluid, a light flow moving along it
+  const line = (d, c) => '<path class="tubeo" d="' + d + '"/><path class="tubew" d="' + d + '"/><path class="tube-water" d="' + d + '"/>' +
+    (c && c !== "clear" ? '<path class="tube-' + c + '" d="' + d + '"/>' : "") + '<path class="tflow dp-flowT" d="' + d + '"/>';
+  // the patient's hand (back of the hand, fingers to the right) with the cannula taped on it; the line reaches its hub at (212, 150)
+  const hand = () => '<path class="skin" d="M190 138 L262 135 Q272 135 272 145 L272 169 Q272 179 262 179 L190 184Z"/>' +
+    [139, 149, 159, 169].map((y) => '<rect class="skin" x="264" y="' + y + '" width="32" height="9" rx="4.5"/>').join("") +
+    '<path class="skin" d="M238 136 Q246 117 260 111 Q267 109 267 116 Q259 124 255 136Z"/>' +
+    '<path class="cannc" d="M226 150 L246 150"/><path class="cannw" d="M219 144 L229 137 L232 141 L224 147Z M219 156 L229 163 L232 159 L224 153Z"/>' +
+    '<rect class="cannhub" x="210" y="145" width="16" height="10" rx="2"/><rect class="tape" x="224" y="141" width="22" height="18" rx="2"/>';
   const clock = (x, y, r) => '<circle class="clockf" cx="' + x + '" cy="' + y + '" r="' + r + '"/>' +
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((k) => { const a = k * Math.PI / 6, c = Math.cos(a), s = Math.sin(a);
       return '<path class="ln thin" d="M' + (x + s * r * .78).toFixed(1) + " " + (y - c * r * .78).toFixed(1) + " L" + (x + s * r * .9).toFixed(1) + " " + (y - c * r * .9).toFixed(1) + '"/>'; }).join("") +
@@ -145,8 +160,8 @@
       '<path class="acc dp-waveL" d="M96 92 Q86 112 96 132"/><path class="acc dp-waveR" d="M204 92 Q214 112 204 132"/>',
 
     // ---- shared scenes for the vial / bag medicines (o = the step's options) ----
-    vAdd: (o) => vial(o.cap, vPowder() + vLiq(124, "water dp-vRise")) + syringe("Inj", "water", 100),
-    vShake: (o) => '<g class="' + (o.gentle ? "dp-swirlV" : "dp-shakeV") + '">' + vial(o.cap, vLiq(118, o.c || "clear") + vPowder("dp-dissolve") + vLiq(118, "cloud dp-dissolve")) + "</g>" +
+    vAdd: (o) => vial(o.cap, vPowder(o.pc) + vLiq(124, "water dp-vRise")) + syringe("Inj", "water", 100),
+    vShake: (o) => '<g class="' + (o.gentle ? "dp-swirlV" : "dp-shakeV") + '">' + vial(o.cap, vLiq(118, "water") + vLiq(118, (o.c || "clear") + " dp-blend") + vPowder((o.pc || "") + " dp-dissolve")) + "</g>" +
       (o.gentle ? '<ellipse class="orbit dp-swirl" cx="150" cy="186" rx="42" ry="7"/>' : '<path class="acc dp-waveL" d="M110 104 Q98 126 110 148"/><path class="acc dp-waveR" d="M190 104 Q202 126 190 148"/>'),
     vDraw: (o) => vial(o.cap, vLiq(112, (o.c || "clear") + " dp-vDrop")) + syringe("Draw", o.c || "clear", 150),
     vCheck: (o) => vial(o.cap, vLiq(112, o.c || "clear")) +
@@ -157,19 +172,12 @@
       '<rect class="ln glass" x="222" y="66" width="14" height="76" rx="7"/><circle class="thermb" cx="229" cy="148" r="11"/>' +
       '<rect class="thermr dp-thermo" x="225" y="84" width="8" height="62" rx="4"/>',
     bagIn: (o) => bag(o.label, o.c, true) + '<g transform="translate(157 104) rotate(180) scale(.72) translate(-150 -100)">' + syringe("Inj", o.c || "clear", 100, o) + "</g>",
-    filterFit: (o) => '<g transform="translate(130 4) scale(.7)">' + bag("D5W") + "</g>" +
-      '<g transform="translate(110 112) rotate(-90) translate(-150 -66)">' + syringe("Full", o.c || "clear", 0) + "</g>" +
-      '<g class="dp-fitF"><g transform="translate(136 112)">' + FILTER + "</g></g>" +
-      '<path class="tube2 dp-tubeIn" d="M160 112 L204 112 Q235 112 235 82"/>',
-    filterPush: (o) => '<g transform="translate(130 4) scale(.7)">' + bag("D5W", o.c, true) + "</g>" +
-      '<g transform="translate(110 112) rotate(-90) translate(-150 -66)">' + syringe("Inj", o.c || "clear", 0) + "</g>" +
-      '<path class="tube2" d="M160 112 L204 112 Q235 112 235 82"/><path class="stream st-amph dp-injStr" d="M160 112 L204 112 Q235 112 235 82"/>' +
-      '<g transform="translate(136 112)">' + FILTER + "</g>",
+    filterFit: (o) => filterSet("D5W", o, false),
+    filterPush: (o) => filterSet("D5W", o, true),
     bagOut: (o) => bag(o.label) + '<g transform="translate(157 104) rotate(180) scale(.72) translate(-150 -100)">' + syringe("Draw", "water", 100) + "</g>",
     bagInvert: (o) => '<g class="dp-invert">' + bag(o.label, o.c) + "</g>",
-    infuse: (o) => '<g transform="translate(-62 4) scale(.62)">' + bag(o.label, o.c) + (o.cover ? '<path class="cover" d="' + BAG + '"/>' : "") + "</g>" + drip() +
-      '<path class="tube dp-flowT" d="M31 104 L31 132 Q31 168 80 168 L198 168 Q214 168 222 158"/>' +
-      '<path class="skin" d="M212 140 Q300 128 300 148 L300 180 Q240 188 212 178 Q202 160 212 140Z"/><path class="cann" d="M222 158 L242 148"/><rect class="tape" x="230" y="146" width="18" height="10" rx="2" transform="rotate(-25 239 151)"/>' +
+    infuse: (o) => '<g transform="translate(-62 4) scale(.62)">' + bag(o.label, o.c) + (o.cover ? '<path class="cover" d="' + BAG + '"/>' : "") + "</g>" + drip(o.c) +
+      line("M31 104 L31 132 Q31 168 80 168 L176 168 Q200 168 210 150", o.c) + hand() +
       clock(150, 76, 30) + (o.cover ? noLight(96, 30) : ""),
     ppe: () => '<g class="dp-pop" style="--d:.2s"><rect class="maskc" x="30" y="82" width="58" height="34" rx="10"/><path class="ln thin" d="M30 90 Q16 96 30 108 M88 90 Q102 96 88 108 M42 94 L76 94 M42 102 L76 102"/></g>' +
       '<g class="dp-pop" style="--d:.6s"><path class="gown" d="M128 52 L172 52 L198 178 L102 178Z"/><path class="ln thin" d="M138 52 Q150 70 162 52 M150 70 L150 178"/></g>' +
@@ -186,8 +194,8 @@
       '<g clip-path="url(#dpJug)"><rect class="water" x="148" y="128" width="100" height="56"/><rect class="lact dp-mRiseL" x="148" y="100" width="100" height="28"/></g>' +
       stream("M160 66 Q168 90 172 100", "dp-mStrL st-lact") + '<path class="ln glass" d="M150 74 L246 74 L240 176 Q239 182 233 182 L163 182 Q157 182 156 176Z"/>' +
       tilting(160, 64, "dp-mBotL", "lact dp-mDrL", false, .85),
-    enema: () => '<g transform="translate(-62 4) scale(.62)">' + bag("1 L", "lact") + "</g>" + drip() +
-      '<path class="tube dp-flowT" d="M31 104 L31 132 Q31 166 80 166 L206 166"/><path class="cath" d="M206 166 L262 166"/><ellipse class="balloon dp-balloon" cx="266" cy="166" rx="10" ry="7"/>' + clock(170, 78, 30),
+    enema: () => '<g transform="translate(-62 4) scale(.62)">' + bag("1 L", "lact") + "</g>" + drip("lact") +
+      line("M31 104 L31 132 Q31 166 80 166 L206 166", "lact") + '<path class="cath" d="M206 166 L262 166"/><ellipse class="balloon dp-balloon" cx="266" cy="166" rx="10" ry="7"/>' + clock(170, 78, 30),
     retain: (o) => clock(150, 96, 52) + (o.repeat ? '<path class="acc" d="M214 60 A80 80 0 0 1 222 132 M212 122 L222 134 L232 122"/>' : ""),
     premed: () => '<g class="dp-pop" style="--d:.2s"><circle class="pill" cx="56" cy="100" r="17"/><path class="ln thin" d="M43 100 L69 100"/></g>' +
       '<g class="dp-pop" style="--d:.6s"><rect class="pill2" x="86" y="89" width="44" height="22" rx="11"/></g>' +
@@ -242,8 +250,8 @@
     {
       id: "ampho-conv", name: "Amphotericin B — Conventional", ar: "الأمفوتيرسين التقليدي (Deoxycholate) — قنينة 50 ملغ", tone: "vial", color: "#e9b52b", draft: true,
       steps: [
-        { scene: "vAdd", o: { cap: "#e9b52b" }, text: "أضف بسرعة 10 مل من الماء المعقّم للحقن (بدون مادة حافظة) إلى القنينة." },
-        { scene: "vShake", o: { cap: "#e9b52b", c: "amph" }, text: "رجّ القنينة فورًا حتى يصبح المحلول الغرواني ذائبًا ومتجانسًا (التركيز 5 ملغ/مل)." },
+        { scene: "vAdd", o: { cap: "#e9b52b", pc: "powY" }, text: "أضف بسرعة 10 مل من الماء المعقّم للحقن (بدون مادة حافظة) إلى القنينة." },
+        { scene: "vShake", o: { cap: "#e9b52b", c: "amph", pc: "powY" }, text: "رجّ القنينة فورًا حتى يصبح المحلول الغرواني ذائبًا ومتجانسًا (التركيز 5 ملغ/مل)." },
         { scene: "vDraw", o: { cap: "#e9b52b", c: "amph" }, text: "اسحب الجرعة المطلوبة من القنينة." },
         { scene: "bagIn", o: { label: "D5W", c: "amph" }, text: "أضفها إلى محلول الدكستروز 5% فقط حتى يصبح التركيز 0.1 ملغ/مل (مثلًا 50 ملغ في 500 مل). لا تستعمل المحلول الملحي." },
         { scene: "infuse", o: { label: "D5W", c: "amph" }, text: "أعطه بالتسريب الوريدي البطيء خلال 2–6 ساعات." }
@@ -256,10 +264,10 @@
     {
       id: "ampho-lipo", name: "Amphotericin B — Liposomal", ar: "الأمفوتيرسين اللايبوزومال (AmBisome) — قنينة 50 ملغ", tone: "vial", color: "#e39a2d", draft: true,
       steps: [
-        { scene: "vAdd", o: { cap: "#e39a2d" }, text: "أضف 12 مل من الماء المعقّم للحقن إلى القنينة." },
-        { scene: "vShake", o: { cap: "#e39a2d", c: "amph" }, text: "رجّ القنينة بقوة لمدة 30 ثانية حتى ينتشر المسحوق تمامًا (التركيز 4 ملغ/مل)." },
+        { scene: "vAdd", o: { cap: "#e39a2d", pc: "powY" }, text: "أضف 12 مل من الماء المعقّم للحقن إلى القنينة." },
+        { scene: "vShake", o: { cap: "#e39a2d", c: "amph", pc: "powY" }, text: "رجّ القنينة بقوة لمدة 30 ثانية حتى ينتشر المسحوق تمامًا (التركيز 4 ملغ/مل)." },
         { scene: "vDraw", o: { cap: "#e39a2d", c: "amph" }, text: "اسحب الجرعة المحسوبة إلى حقنة." },
-        { scene: "filterFit", o: { c: "amph" }, text: "ضع فلتر 5 ميكرون المرفق بالعلبة بين الحقنة التي تحتوي الدواء ومحلول الدكستروز 5%." },
+        { scene: "filterFit", o: { c: "amph" }, text: "ضع إبرة في فتحة كيس الدكستروز 5%، ثم ركّب عليها فلتر 5 ميكرون المرفق بالعلبة، ثم ركّب على الفلتر الحقنة التي تحتوي الدواء." },
         { scene: "filterPush", o: { c: "amph" }, text: "احقن الدواء من خلال الفلتر في الدكستروز 5% حتى يصبح التركيز 1–2 ملغ/مل، واستعمل فلترًا جديدًا لكل قنينة." },
         { scene: "infuse", o: { label: "D5W", c: "amph" }, text: "أعطه بالتسريب خلال 120 دقيقة تقريبًا، ويمكن تقليلها إلى 60 دقيقة إن تحمّلها المريض." }
       ],
