@@ -2741,8 +2741,6 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .thermb { fill: #e5484d; }
 .dp-svg .thermr { fill: #e5484d; }
 .dp-svg .orbit { fill: none; stroke: var(--primary); stroke-width: 2.6; stroke-dasharray: 10 6; }
-.dp-svg .cath { stroke: #c2c9cd; stroke-width: 6; stroke-linecap: round; }
-.dp-svg .balloon { fill: rgba(255, 255, 255, .8); stroke: #8f9aa2; stroke-width: 2; }
 .dp-svg .pill { fill: #fff; stroke: #5b666d; stroke-width: 2; }
 .dp-svg .pill2 { fill: #f28fb0; stroke: #a8506d; stroke-width: 2; }
 .dp-svg .sun { fill: #f2b705; }
@@ -2759,7 +2757,6 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .tube-amph { fill: none; stroke: rgba(240, 190, 40, .78); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
 .dp-svg .tube-tige { fill: none; stroke: rgba(240, 138, 36, .78); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
 .dp-svg .tube-mtx { fill: none; stroke: rgba(242, 200, 40, .82); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
-.dp-svg .tube-lact { fill: none; stroke: rgba(222, 186, 90, .8); stroke-width: 4.2; stroke-linecap: round; stroke-linejoin: round; }
 .dp-svg .tflow { fill: none; stroke: #fff; stroke-opacity: .75; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 3 9; }
 .dp-svg .cannhub { fill: #e86fa6; stroke: #a8506d; stroke-width: 1.4; }
 .dp-svg .cannw { fill: #f3a6c6; stroke: #a8506d; stroke-width: 1; }
@@ -2779,7 +2776,7 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .dp-tubeIn { animation: dpTintIn .5s ease-out 1.6s both; }
 @keyframes dpFitF { from { transform: translate(50px, -50px); opacity: 0; } 30% { opacity: 1; } to { transform: translate(0, 0); opacity: 1; } }
 .dp-svg .dp-lInj, .dp-svg .dp-lDraw, .dp-svg .dp-vRise, .dp-svg .dp-vDrop, .dp-svg .dp-thermo, .dp-svg .dp-bar { transform-box: fill-box; transform-origin: bottom; }
-.dp-svg .dp-shakeV, .dp-svg .dp-swirlV, .dp-svg .dp-invert, .dp-svg .dp-balloon { transform-box: fill-box; transform-origin: center; }
+.dp-svg .dp-shakeV, .dp-svg .dp-swirlV, .dp-svg .dp-invert { transform-box: fill-box; transform-origin: center; }
 .dp-svg .dp-pInj { animation: dpPInj 2.4s ease-in-out .3s both; }
 .dp-svg .dp-lInj { animation: dpLInj 2.4s ease-in-out .3s both; }
 .dp-svg .dp-pDraw { animation: dpPDraw 2.4s ease-in-out .3s both; }
@@ -2799,7 +2796,6 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 .dp-svg .dp-binfall { animation: dpBinFall 1.4s ease-in var(--d, 0s) both; }
 .dp-svg .dp-thermo { animation: dpThermo 2.6s ease-out .3s both; }
 .dp-svg .dp-fadeOut { animation: dpFadeOut 2.6s ease-out .3s both; }
-.dp-svg .dp-balloon { animation: dpPop 1s ease-out 1s both; }
 .dp-svg .dp-bar { animation: dpGrow .5s ease-out var(--d, 0s) both; }
 .dp-svg .dp-bart { animation: dpLcdLast .3s calc(var(--d, 0s) + .4s) both; opacity: 0; }
 @keyframes dpPInj { from { transform: translateY(0); } to { transform: translateY(29px); } }
@@ -2819,6 +2815,29 @@ html.limited-admin #view-admin > .section-title, html.limited-admin #admin-med-r
 @keyframes dpBinFall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(100px); opacity: 0; } }
 @keyframes dpThermo { from { transform: scaleY(.25); } to { transform: scaleY(1); } }
 @keyframes dpFadeOut { from { opacity: 1; } to { opacity: .15; } }
+/* the squeezable enema (6 s, once): filled from a small beaker → nozzle on → turned → squeezed */
+.dp-svg .nozz { fill: #e8c9a0; stroke: #8f6a3c; stroke-width: 1.6; stroke-linejoin: round; }
+.dp-svg .nozb { fill: #d7dde0; stroke: #5b666d; stroke-width: 1.4; }
+.dp-svg .dp-eJug { opacity: 0; animation: dpEJug 6s linear both; }
+.dp-svg .dp-ePour { animation: dpEPour 6s ease-in-out both; }
+.dp-svg .dp-eDrainJ { transform-box: fill-box; transform-origin: right center; animation: dpEDrainJ 6s ease-in-out both; }
+.dp-svg .dp-eStr { animation: dpEStr 6s linear both, dpDash .5s linear infinite; }
+.dp-svg .dp-eRise { transform-box: fill-box; transform-origin: bottom; animation: dpERise 6s ease-in-out both; }
+.dp-svg .dp-eDrainB { transform-box: fill-box; transform-origin: top; animation: dpEDrainB 6s ease-in-out both; }
+.dp-svg .dp-eNoz { animation: dpENoz 6s ease-out both; }
+.dp-svg .dp-eRot { animation: dpERot 6s ease-in-out both; }
+.dp-svg .dp-eSq { transform-box: fill-box; transform-origin: center; animation: dpESq 6s ease-in-out both; }
+.dp-svg .dp-eDrop { opacity: 0; animation: dpEDrop .7s ease-in var(--d, 0s) 2; }
+@keyframes dpEJug { 0% { opacity: 0; } 5%, 28% { opacity: 1; } 34%, 100% { opacity: 0; } }
+@keyframes dpEPour { 0% { transform: rotate(85deg); } 8%, 100% { transform: rotate(105deg); } }
+@keyframes dpEDrainJ { 0%, 8% { transform: scaleX(1); } 27%, 100% { transform: scaleX(.05); } }
+@keyframes dpEStr { 0%, 8% { opacity: 0; } 9%, 26% { opacity: 1; } 28%, 100% { opacity: 0; } }
+@keyframes dpERise { 0%, 9% { transform: scaleY(0); } 28%, 100% { transform: scaleY(1); } }
+@keyframes dpEDrainB { 0%, 62% { transform: scaleY(1); } 100% { transform: scaleY(.35); } }
+@keyframes dpENoz { 0%, 30% { transform: translateY(-26px); opacity: 0; } 44%, 100% { transform: translateY(0); opacity: 1; } }
+@keyframes dpERot { 0%, 46% { transform: rotate(0); } 60%, 100% { transform: rotate(90deg); } }
+@keyframes dpESq { 0%, 62% { transform: scaleX(1); } 70% { transform: scaleX(.72); } 78% { transform: scaleX(1); } 86% { transform: scaleX(.72); } 94%, 100% { transform: scaleX(1); } }
+@keyframes dpEDrop { 0% { transform: translate(0, 0); opacity: 1; } 100% { transform: translate(24px, 14px); opacity: 0; } }
 .dp-svg .swallow { fill: none; stroke: #c9772e; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 8 7; }
 
 /* the motion (the static look = the meaningful frame, so reduced motion still shows each step) */

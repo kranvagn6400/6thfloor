@@ -192,8 +192,14 @@
       '<g clip-path="url(#dpJug)"><rect class="water" x="148" y="128" width="100" height="56"/><rect class="lact dp-mRiseL" x="148" y="100" width="100" height="28"/></g>' +
       stream("M160 66 Q168 90 172 100", "dp-mStrL st-lact") + '<path class="ln glass" d="M150 74 L246 74 L240 176 Q239 182 233 182 L163 182 Q157 182 156 176Z"/>' +
       tilting(160, 64, "dp-mBotL", "lact dp-mDrL", false, .85),
-    enema: () => '<g transform="translate(-62 4) scale(.62)">' + bag("1 L", "lact") + "</g>" + drip("lact") +
-      line("M31 104 L31 132 Q31 166 80 166 L206 166", "lact") + '<path class="cath" d="M206 166 L262 166"/><ellipse class="balloon dp-balloon" cx="266" cy="166" rx="10" ry="7"/>' + clock(170, 78, 30),
+    enema: () => clip("dpEn", "M-11 -29 L11 -29 Q33 -23 33 8 L33 44 Q33 55 22 55 L-22 55 Q-33 55 -33 44 L-33 8 Q-33 -23 -11 -29Z") +
+      '<g class="dp-eJug"><g transform="translate(146 70) scale(.85)"><g class="dp-ePour"><rect class="lact dp-eDrainJ" x="-40" y="2" width="38" height="36"/><path class="ln glass" d="M2 -2 L0 0 L0 36 Q0 40 -4 40 L-38 40 Q-42 40 -42 36 L-42 0 L-44 -2"/></g></g></g>' +
+      stream("M146 72 Q150 84 150 100", "dp-eStr st-lact") +
+      '<g transform="translate(150 118)"><g class="dp-eRot">' +
+      '<g class="dp-eNoz"><path class="nozz" d="M-7 -30 L7 -30 L3.5 -84 Q0 -91 -3.5 -84Z"/><rect class="nozb" x="-12" y="-36" width="24" height="8" rx="2"/></g>' +
+      '<g class="dp-eSq"><g clip-path="url(#dpEn)"><g class="dp-eRise"><g class="dp-eDrainB"><rect class="lact" x="-36" y="-30" width="72" height="88"/></g></g></g>' +
+      '<path class="ln glass" d="M-12 -30 L12 -30 Q34 -24 34 8 L34 44 Q34 56 22 56 L-22 56 Q-34 56 -34 44 L-34 8 Q-34 -24 -12 -30Z"/><path class="ln thin" d="M-22 34 L22 34 M-22 42 L22 42"/></g>' +
+      "</g></g>" + [3.9, 4.25, 4.6].map((d) => '<path class="lact dp-eDrop" style="--d:' + d + 's" d="M248 114 Q244 118 248 122 Q252 118 248 114Z"/>').join(""),
     retain: (o) => clock(150, 96, 52) + (o.repeat ? '<path class="acc" d="M214 60 A80 80 0 0 1 222 132 M212 122 L222 134 L232 122"/>' : ""),
     premed: () => '<g class="dp-pop" style="--d:.2s"><circle class="pill" cx="56" cy="100" r="17"/><path class="ln thin" d="M43 100 L69 100"/></g>' +
       '<g class="dp-pop" style="--d:.6s"><rect class="pill2" x="86" y="89" width="44" height="22" rx="11"/></g>' +
@@ -293,38 +299,38 @@
       id: "mtx", name: "MTX — Methotrexate", ar: "الميثوتريكسيت — دواء سام للخلايا", tone: "vial", color: "#e6c229", draft: true,
       steps: [
         { scene: "ppe", text: "ارتدِ القفازات والرداء والكمامة، لأن الدواء سام للخلايا (Cytotoxic)." },
-        { scene: "vCheck", o: { cap: "#e6c229", c: "mtx" }, text: "تأكد من الجرعة والتكرار (أسبوعية أم يومية)، ومن أن المستحضر خالٍ من المادة الحافظة للجرعات العالية." },
+        { scene: "vCheck", o: { cap: "#e6c229", c: "mtx" }, text: "تأكد من الجرعة والتكرار (أسبوعية أم يومية)، ومن أن المستحضر خالٍ من المادة الحافظة للجرعات العالية وفي Intrathecal uses." },
         { scene: "vDraw", o: { cap: "#e6c229", c: "mtx" }, text: "اسحب الجرعة المطلوبة من القنينة." },
         { scene: "bagIn", o: { label: "NS 0.9%", c: "mtx" }, text: "للتسريب: خفّفها في المحلول الملحي 0.9% أو الدكستروز 5%." },
         { scene: "infuse", o: { label: "NS 0.9%", c: "mtx" }, text: "الجرعات المتوسطة تُسرَّب على مدى 10 إلى 15 دقيقة. والجرعات العالية (في علاج الأورام) تُعطى كمحلول وريدي مستمر يمتد من 4 ساعات إلى 24 ساعة حسب البروتوكول الطبي المتبع." }
       ],
       info: [
-        { title: "تنبيهات", items: ["الخطأ بين الجرعة الأسبوعية واليومية قد يكون قاتلًا.", "الجرعات العالية تحتاج إنقاذًا بـ Leucovorin (Folinic Acid).", "وتحتاج Aggressive IV Hydration: كميات كبيرة من السوائل تُعطى عن طريق الوريد لغسل مجرى الدم من الدواء وتسريع تصفيته في الكلى.", "ويحتاج المريض إلى قلونة البول (Urine Alkalinization) بإعطائه Sodium bicarbonate وريديًا لجعل البول قلويًا (pH 7 أو أكثر)، لأن القلوية تزيد كثيرًا من ذوبانية الـ MTX، فتمنع ترسّبه في نبيبات الكلى وتدميرها."] },
+        { title: "تنبيهات", items: ["الخطأ بين الجرعة الأسبوعية واليومية قد يكون قاتلًا.", "الجرعات العالية تحتاج إنقاذًا بـ Leucovorin (Folinic Acid)، وتحتاج Aggressive IV Hydration: كميات كبيرة من السوائل تُعطى عن طريق الوريد لغسل مجرى الدم من الدواء وتسريع تصفيته في الكلى. ويحتاج المريض إلى قلونة البول (Urine Alkalinization) بإعطائه Sodium bicarbonate وريديًا لجعل البول قلويًا (pH 7 أو أكثر)، لأن القلوية تزيد كثيرًا من ذوبانية الـ MTX، فتمنع ترسّبه في نبيبات الكلى وتدميرها."] },
         { title: "القنينات المتوفرة", items: ["50 mg / 2 mL", "250 mg / 10 mL", "500 mg / 20 mL", "1,000 mg (1 g) / 40 mL — تأتي على شكل مسحوق"] },
         { title: "الإذابة (للمسحوق)", items: ["قنينة 1 غ: تُذاب بـ 19.4 مل من محلول خالٍ من المادة الحافظة (التركيز 50 ملغ/مل)، وتُستعمل فورًا."] }
       ]
     },
     {
-      id: "vanco-oral", name: "Vancomycin — Oral", ar: "الفانكومايسين الفموي من القنينة الوريدية", tone: "vial", color: "#4a90d9", draft: true,
+      id: "vanco-oral", name: "Vancomycin — Oral", ar: "الفانكومايسين الفموي من القنينة الوريدية 1 غرام", tone: "vial", color: "#4a90d9", draft: true,
       steps: [
-        { scene: "vAdd", o: { cap: "#4a90d9" }, text: "أذب قنينة الفانكومايسين 500 ملغ بـ 10 مل من الماء المعقّم للحقن (التركيز 50 ملغ/مل)." },
+        { scene: "vAdd", o: { cap: "#4a90d9" }, text: "أذب قنينة الفانكومايسين 1 غرام بـ 20 مل من الماء المعقّم للحقن (التركيز 50 ملغ/مل)." },
         { scene: "vShake", o: { cap: "#4a90d9", gentle: true }, text: "حرّك القنينة حتى يذوب المسحوق تمامًا." },
         { scene: "vDraw", o: { cap: "#4a90d9" }, text: "اسحب الجرعة الموصوفة بحقنة (مثلًا 125 ملغ = 2.5 مل)." },
         { scene: "oral", text: "خفّفها في 30 مل من الماء (ويجوز إضافة شراب منكّه)، وأعطها للمريض ليشربها أو عبر الأنبوب الأنفي المعدي." }
       ],
       info: [
         { title: "الجرعة", items: ["لالتهاب القولون بـ C. difficile: عادةً 125 ملغ 4 مرات في اليوم لمدة 10 أيام — حسب وصفة الطبيب."] },
-        { title: "الثبات والحفظ", items: ["المحلول المذاب: حتى 14 يومًا في الثلاجة (2–8°م)."] },
+        { title: "الثبات والحفظ", items: ["لكل شركة ثباتيتها وظروف تخزينها الخاصة بعد إذابة الجرعة."] },
         { title: "ملاحظة", items: ["الفانكومايسين الفموي لا يُمتص من الأمعاء؛ يعمل داخلها فقط."] }
       ]
     },
     {
       id: "lactulose-enema", name: "Lactulose Enema", ar: "حقنة اللاكتولوز الشرجية", tone: "vial", color: "#c9a227", draft: true,
       steps: [
-        { scene: "jug", text: "اخلط 300 مل من شراب اللاكتولوز مع 700 مل من الماء أو المحلول الملحي (المجموع 1 لتر)." },
-        { scene: "enema", text: "أعطه شرجيًا باستخدام قسطرة شرجية ذات بالون." },
-        { scene: "retain", o: {}, text: "يحتفظ المريض به 30–60 دقيقة." },
-        { scene: "retain", o: { repeat: true }, text: "يمكن تكراره كل 4–6 ساعات؛ وإن خرج بسرعة يُعاد فورًا." }
+        { scene: "jug", text: "اخلط بنسبة 30% لاكتولوز و70% ماء معقّم أو محلول ملحي مثل NaCl 0.9%." },
+        { scene: "enema", text: "ثقّف مرافق المريض أو المريض: يأخذ المحلول المخلوط ويعبّئه في حقنة شرجية قابلة للعصر، ثم يعطيها شرجيًا." },
+        { scene: "retain", o: {}, text: "يحتفظ به المريض داخل أمعائه 30 إلى 60 دقيقة." },
+        { scene: "retain", o: { repeat: true }, text: "يمكن تكرار العملية كل 4 إلى 6 ساعات." }
       ],
       info: [
         { title: "تنبيهات", items: ["لا تستعمل معه محاليل الصابون أو المواد القلوية (تُبطل مفعوله)."] }
