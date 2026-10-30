@@ -3005,3 +3005,15 @@ html[data-theme="dark"] .mn-warn { background: #4a3d0a; color: #ffe27a; }
 
 /* «مواقف الوزارة» is for the supreme admin only for now: the per-pharmacist button in user management stays hidden until it is opened to them */
 .btn-user-flag[data-flag="can_ministry"] { display: none !important; }
+
+/* «إيقاف» on the medicine card + the stopped-medicines list */
+.med-stop { flex: none; height: 32px; padding: 0 12px; border-radius: var(--r-sm); border: 0; background: var(--danger-soft); color: var(--danger); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.med-stop:active { transform: scale(0.94); background: #FECACA; }
+.stopped-meds { margin: 8px 0 4px; }
+.stopped-wrap { border: 1px dashed var(--border-strong, var(--border)); border-radius: 12px; padding: 6px 10px; background: var(--surface); }
+.stopped-wrap > summary { cursor: pointer; font-size: 13px; font-weight: 800; color: var(--text-muted); padding: 4px 0; }
+.stopped-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); opacity: .85; }
+.stopped-info { flex: 1; min-width: 0; }
+.stopped-name { font-size: 14px; font-weight: 800; color: var(--text); }
+.stopped-info small { color: var(--text-muted); font-size: 11.5px; }
+.stopped-resume { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--fill, var(--primary)); color: #fff; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }

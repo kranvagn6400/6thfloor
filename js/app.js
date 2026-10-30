@@ -2701,19 +2701,23 @@
         refreshPatientViewOnly();
         return;
       }
-      const del = e.target.closest('[data-action="delete-med"]');
+      const del = e.target.closest('[data-action="stop-med"]');
       if (!del || !state.currentBed) return;
       const idx = parseInt(del.dataset.medIndex, 10);
       const p = state.patients[state.currentBed.key];
       if (!p || !Array.isArray(p.medications)) return;
       const removedMed = p.medications[idx];
       const removedName = removedMed && (removedMed.nameTrade || removedMed.nameAr || removedMed.id) || "(دواء)";
+      // «إيقاف»: the medicine leaves the list (so it leaves every order / sheet / chart) but stays in the patient's record
       p.medications.splice(idx, 1);
-      // Audit log — record the med-delete action
+      if (!p.labs || typeof p.labs !== "object") p.labs = {};
+      if (!Array.isArray(p.labs._stopped)) p.labs._stopped = [];
+      p.labs._stopped.push(Object.assign({}, removedMed, { stoppedAt: Clinical.todayISO() }));
+      // Audit log — record the med-stop action
       if (Auth && Auth.auditLog) {
         const roomBed = global.PharmacyWard.bedText(state.currentBed.key);
-        Auth.auditLog("med_deleted",
-          `حذف دواء "${removedName}" من المريض "${p.name || "(بدون اسم)"}" في ${roomBed}`);
+        Auth.auditLog("med_stopped",
+          `إيقاف دواء "${removedName}" عند المريض "${p.name || "(بدون اسم)"}" في ${roomBed}`);
       }
       // Note: the 5cc Syringe is now injected at print-time only
       // (in ui.js buildChartReport), not stored on the patient. So
@@ -2721,8 +2725,30 @@
       persistPatient(state.currentBed.key);
       refreshPatientViewOnly();
       pushNotification("med_changed",
-        `حذف دواء "${removedName}" من ${p.name || "(بدون اسم)"} — ${global.PharmacyWard.roomTitle(state.currentBed.roomId)}`,
+        `إيقاف دواء "${removedName}" عند ${p.name || "(بدون اسم)"} — ${global.PharmacyWard.roomTitle(state.currentBed.roomId)}`,
         p.name || "", `${global.PharmacyWard.roomTitle(state.currentBed.roomId)}`);
+    });
+    // the stopped medicines (under the list): bring one back, or erase it for good
+    $("stopped-meds").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-action]");
+      if (!b || !state.currentBed) return;
+      const p = state.patients[state.currentBed.key];
+      const list = p && p.labs && Array.isArray(p.labs._stopped) ? p.labs._stopped : null;
+      const i = parseInt(b.dataset.i, 10);
+      if (!list || !(i >= 0 && i < list.length)) return;
+      const m = list[i], name = m.nameTrade || m.nameAr || m.id || "(دواء)";
+      if (b.dataset.action === "resume-med") {
+        const back = Object.assign({}, m); delete back.stoppedAt;
+        list.splice(i, 1); (p.medications = p.medications || []).push(back);
+        if (Auth && Auth.auditLog) Auth.auditLog("med_resumed", `استئناف دواء "${name}" عند المريض "${p.name || "(بدون اسم)"}"`);
+        pushNotification("med_changed", `استئناف دواء "${name}" عند ${p.name || "(بدون اسم)"} — ${global.PharmacyWard.roomTitle(state.currentBed.roomId)}`, p.name || "", `${global.PharmacyWard.roomTitle(state.currentBed.roomId)}`);
+      } else if (b.dataset.action === "delete-stopped") {
+        if (!confirm("حذف «" + name + "» نهائيًا من سجل المريض؟")) return;
+        list.splice(i, 1);
+        if (Auth && Auth.auditLog) Auth.auditLog("med_deleted", `حذف دواء موقوف "${name}" من المريض "${p.name || "(بدون اسم)"}"`);
+      } else return;
+      persistPatient(state.currentBed.key);
+      refreshPatientViewOnly();
     });
     $("meds-list").addEventListener("input", (e) => {
       const t = e.target;

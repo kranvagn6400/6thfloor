@@ -527,6 +527,7 @@
     const Clinical = global.PharmacyClinical;
     const alerts = (Clinical && patient) ? Clinical.medAlerts(patient) : null;
     renderClinicalAlerts(alerts);
+    renderStoppedMeds(patient);
 
     if (meds.length === 0) {
       medsList.hidden = true;
@@ -540,6 +541,29 @@
         renderMedCard(m, idx, alerts ? (alerts.byMed.get(idx) || []) : [], patient)
       ));
     }
+  }
+
+  // The medicines the patient no longer takes (stopped with «إيقاف»): kept in labs._stopped so they leave every order / sheet / chart
+  // but stay in the patient's record (the Ministry's antibiotics status reads them). «استئناف» brings one back, ✕ erases it.
+  function renderStoppedMeds(patient) {
+    const box = document.getElementById("stopped-meds");
+    if (!box) return;
+    const list = (patient && patient.labs && Array.isArray(patient.labs._stopped)) ? patient.labs._stopped : [];
+    box.innerHTML = "";
+    box.hidden = !list.length;
+    if (!list.length) return;
+    const wrap = h("details", { class: "stopped-wrap" }, [h("summary", {}, "الأدوية الموقوفة (" + list.length + ")")]);
+    list.forEach((m, i) => {
+      wrap.appendChild(h("div", { class: "stopped-row" }, [
+        h("div", { class: "stopped-info" }, [
+          h("div", { class: "stopped-name" }, primaryName(m)),
+          h("small", {}, (m.startDate ? "من " + m.startDate : "") + (m.stoppedAt ? " — أُوقف " + m.stoppedAt : ""))
+        ]),
+        h("button", { type: "button", class: "stopped-resume", dataset: { action: "resume-med", i: String(i) } }, "استئناف"),
+        h("button", { type: "button", class: "med-del", dataset: { action: "delete-stopped", i: String(i) }, title: "حذف نهائي" }, "✕")
+      ]));
+    });
+    box.appendChild(wrap);
   }
 
   // Origin floor selector (مريض الردهة / ط10 / ط9 / ط8 / ط7)
@@ -727,11 +751,11 @@
       h("div", { class: "med-card-head" }, [
         nameBlock,
         h("button", {
-          class: "med-del",
+          class: "med-stop",
           type: "button",
-          dataset: { medIndex: index, action: "delete-med" },
-          title: "حذف"
-        }, "✕")
+          dataset: { medIndex: index, action: "stop-med" },
+          title: "إيقاف الدواء (يخرج من الطلبية ويبقى في سجل المريض)"
+        }, "إيقاف")
       ]),
       alertsBlock,
       h("div", { class: "med-fields" }, [
