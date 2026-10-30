@@ -18,7 +18,7 @@
   // forms with NO editor: everything comes from the patient's card (the pharmacist enters it there); a press sends it, and a
   // missing piece of data stops it with the list of what the card lacks
   const AUTO = { albumin: true };
-  const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "الحالة المطابقة في استمارة الألبومين (أو التشخيص)" };
+  const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "الحالة المطابقة في استمارة الألبومين (علّمها عند طباعة الاستمارة)" };
 
   // The albumin condition the pharmacist ticks when he prints the albumin form (patient-forms.js, item n) → the Ministry's own
   // group + choice (index in that group's list, js/ministry-forms.js). A condition with no counterpart is sent under «Others» with its own text.
@@ -40,7 +40,7 @@
     16: ["part1", 1],     // malnutrition syndrome
     17: ["part4", 3]      // second line in hypovolemic shock
   };
-  // → { branch, dx } for the albumin form from the patient's ticked condition, else his diagnosis text (Others), else empty
+  // → { branch, dx } for the albumin form from the patient's ticked condition (else empty: the card's diagnosis is NOT used here)
   function albuminDx(p) {
     const f = MF.FORMS.albumin.fields.find((x) => x.t === "branch"), PFm = global.PharmacyPatientForms;
     const ticks = (p.labs && p.labs._forms && p.labs._forms.albumin && p.labs._forms.albumin.ticks) || [];
@@ -51,8 +51,8 @@
       const it = PFm && PFm.FORMS && PFm.FORMS.albumin.items.find((x) => x.n === n);
       if (it && (it.text || it.label)) return { branch: "others", dx: String(it.text || it.label) };
     }
-    const own = String(p.diagnosis || "").trim();
-    return own ? { branch: "others", dx: own } : { branch: "others", dx: "" };
+    // no condition ticked: nothing is guessed — the card's diagnosis belongs to the printed albumin form, not to this one
+    return { branch: "others", dx: "" };
   }
 
   function allowed() { const A = global.PharmacyAuth; return !!(A && A.canMinistry && A.canMinistry()); }
