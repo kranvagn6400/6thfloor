@@ -2968,3 +2968,37 @@ html[data-theme="dark"] .pl-warn { background: #4a3d0a; color: #ffe27a; }
 
 /* the course-day chip once its 3-day correction window is over: no pencil, no pointer */
 .abx-day-chip.is-locked { cursor: default; }
+
+/* Ministry «مواقف» page (ministry.js) */
+.mn-note { margin: 8px 0 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); }
+.mn-title { margin: 6px 0 2px; font-size: 17px; font-weight: 800; color: var(--text); direction: ltr; text-align: start; }
+.mn-sub { margin: 0 0 10px; font-size: 12.5px; color: var(--text-muted); }
+.mn-back { margin: 4px 0; padding: 4px 10px; border: 0; border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.mn-card, .mn-pt { display: flex; flex-direction: column; gap: 2px; width: 100%; margin: 8px 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); color: var(--text); font: inherit; text-align: start; cursor: pointer; position: relative; }
+.mn-card b { font-size: 15px; font-weight: 800; text-align: start; }
+.mn-card small, .mn-pt small { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.mn-card span { position: absolute; top: 12px; inset-inline-end: 14px; padding: 1px 10px; border-radius: 999px; background: var(--primary-soft); font-size: 12px; font-weight: 800; }
+.mn-st { position: absolute; top: 12px; inset-inline-end: 14px; padding: 1px 10px; border-radius: 999px; background: var(--bg); font-size: 12px; font-weight: 800; color: var(--text-muted); }
+.mn-st.ok { background: #1b8a3a; color: #fff; }
+.mn-empty { padding: 18px; text-align: center; color: var(--text-muted); font-size: 13px; }
+.mn-form { display: flex; flex-direction: column; gap: 4px; }
+.mn-form label { margin-top: 8px; font-size: 12px; font-weight: 800; color: var(--text-muted); }
+.mn-form input, .mn-form select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--border-strong, var(--border)); background: var(--bg); color: var(--text); font: inherit; }
+.mn-fixed { padding: 10px; border-radius: 10px; background: var(--primary-soft); color: var(--text); font-weight: 800; font-size: 14px; text-align: center; }
+.mn-two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mn-send { margin-top: 14px; height: 48px; border: 0; border-radius: 14px; background: var(--fill, var(--primary)); color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.mn-send:disabled { opacity: .6; }
+
+/* Ministry page, round 2: the generic form (two columns, chips) */
+.mn-form { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.mn-fld { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mn-fld.full, .mn-fixed.full { grid-column: 1 / -1; }
+.mn-form label { margin-top: 6px; }
+.mn-oth { margin-top: 6px; }
+.mn-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mn-chip { display: inline-flex; align-items: center; gap: 4px; margin: 0 !important; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); font-size: 12.5px !important; font-weight: 700 !important; color: var(--text) !important; cursor: pointer; direction: ltr; }
+.mn-chip input { width: auto; margin: 0; }
+.mn-chip:has(input:checked) { background: var(--primary-soft); border-color: var(--primary); }
+.mn-warn { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: #fff3bf; color: #4a3600; font-size: 13px; font-weight: 700; }
+html[data-theme="dark"] .mn-warn { background: #4a3d0a; color: #ffe27a; }
+.mn-send { grid-column: 1 / -1; width: 100%; }

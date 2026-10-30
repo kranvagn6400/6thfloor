@@ -757,6 +757,8 @@
     // Medication availability list: editable by pharmacists + admin
     const availBtn = $("settings-availability-btn");
     if (availBtn) availBtn.hidden = !isOrderingRole;
+    const ministryBtn = $("settings-ministry-btn");
+    if (ministryBtn) ministryBtn.hidden = !(Auth && Auth.canMinistry && Auth.canMinistry());      // the admin + the pharmacists he allowed
     const sendlogBtn = $("settings-sendlog-btn");
     if (sendlogBtn) sendlogBtn.hidden = !isOrderingRole;
 
@@ -4633,7 +4635,7 @@
         const on = !flagBtn.dataset.on;
         const what = flagBtn.dataset.flag === "can_exit_patients"
           ? "تسجيل الخروج والوفاة والعودة إلى الطابق"
-          : "إدارة مقولات شاشة العرض";
+          : flagBtn.dataset.flag === "can_ministry" ? "رفع مواقف وزارة الصحة" : "إدارة مقولات شاشة العرض";
         if (!confirm((on ? "السماح لـ «" : "إلغاء سماح «") + flagBtn.dataset.name + "» بـ" + what + "؟")) return;
         const res = await Auth.setUserFlag(flagBtn.dataset.uid, flagBtn.dataset.flag, on);
         flashHint(res.ok ? (on ? "✓ تم منح الصلاحية (تظهر بعد تسجيل الدخول من جديد)" : "أُلغيت الصلاحية") : "تعذّر الحفظ: " + res.error);
@@ -4809,7 +4811,7 @@
         </div>
         <div class="admin-user-actions">
           <button class="btn-user-reset" data-uid="${uid}" data-name="${cleanName}" type="button">🔑 كلمة مرور</button>
-          ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الخروج والوفاة والعودة" : "الخروج والوفاة والعودة"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button>` : ""}
+          ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الخروج والوفاة والعودة" : "الخروج والوفاة والعودة"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button><button class="btn-user-catalog btn-user-flag${u.can_ministry ? " is-on" : ""}" data-flag="can_ministry" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_ministry ? "1" : ""}" type="button">${u.can_ministry ? "✓ مواقف الوزارة" : "مواقف الوزارة"}</button>` : ""}
           <button class="btn-user-toggle" data-uid="${uid}" data-active="${u.active}" type="button">${u.active === false ? "تفعيل" : "تعطيل"}</button>
           <button class="btn-user-delete" data-uid="${uid}" data-username="${uname}" data-name="${cleanName}" type="button">🗑 حذف</button>
         </div>

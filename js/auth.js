@@ -63,6 +63,7 @@
         canEditCatalog: !!account.canEditCatalog,
         canExitPatients: !!account.canExitPatients,
         canEditQuotes: !!account.canEditQuotes,
+        canMinistry: !!account.canMinistry,
         limitedAdmin: !!account.limitedAdmin
       }));
       return true;
@@ -124,7 +125,8 @@
     return m;
   }
 
-  const PERM_COLS = ", can_edit_catalog, can_exit_patients, can_edit_quotes, limited_admin";
+  const PERM_COLS_OLD = ", can_edit_catalog, can_exit_patients, can_edit_quotes, limited_admin";
+  const PERM_COLS = PERM_COLS_OLD + ", can_ministry";           // features.sql §28 (a database without it keeps working on the old columns)
 
   // Build the UI account from a profiles row. display_name may carry a
   // '|male' / '|female' suffix used by the welcome message.
@@ -139,6 +141,7 @@
       canEditCatalog: row.can_edit_catalog === true,     // features.sql §19
       canExitPatients: row.can_exit_patients === true,   // features.sql §22
       canEditQuotes: row.can_edit_quotes === true,       // features.sql §22
+      canMinistry: row.can_ministry === true,            // features.sql §28
       limitedAdmin: row.limited_admin === true           // features.sql §23 (مسؤولة الطابق)
     };
   }
@@ -147,9 +150,9 @@
     // the permission columns come with features.sql §19 / §22 — read without them until then
     const base = "id, username, display_name, role, active";
     let res;
-    for (const cols of [base + PERM_COLS, base + ", can_edit_catalog", base]) {
+    for (const cols of [base + PERM_COLS, base + PERM_COLS_OLD, base + ", can_edit_catalog", base]) {
       res = await client.from("profiles").select(cols).eq("id", userId).maybeSingle();
-      if (!res.error || !/can_edit_catalog|can_exit_patients|can_edit_quotes|limited_admin/.test(res.error.message || "")) break;
+      if (!res.error || !/can_edit_catalog|can_exit_patients|can_edit_quotes|limited_admin|can_ministry/.test(res.error.message || "")) break;
     }
     if (res.error) throw res.error;
     return res.data;
@@ -255,6 +258,10 @@
         .from("profiles")
         .select("id, username, display_name, role, active, created_by, created_at" + PERM_COLS)
         .order("created_at", { ascending: true });
+      if (error && /can_ministry/.test(error.message || "")) {
+        const r0 = await client.from("profiles").select("id, username, display_name, role, active, created_by, created_at" + PERM_COLS_OLD).order("created_at", { ascending: true });
+        if (!r0.error) return { ok: true, users: r0.data || [], noMinistryColumn: true };
+      }
       if (error && /can_exit_patients|can_edit_quotes/.test(error.message || "")) {
         const r1 = await client.from("profiles").select("id, username, display_name, role, active, created_by, created_at, can_edit_catalog").order("created_at", { ascending: true });
         if (!r1.error) return { ok: true, users: r1.data || [], noPermColumns: true };
@@ -358,12 +365,12 @@
   }
   // Admin: give / take a permission flag (can_exit_patients, can_edit_quotes — features.sql §22)
   async function setUserFlag(userId, column, allowed) {
-    if (column !== "can_exit_patients" && column !== "can_edit_quotes") return { ok: false, error: "صلاحية غير معروفة" };
+    if (column !== "can_exit_patients" && column !== "can_edit_quotes" && column !== "can_ministry") return { ok: false, error: "صلاحية غير معروفة" };
     const { client, error: cErr } = getClientOrError();
     if (!client) return { ok: false, error: cErr };
     try {
       const { error } = await client.from("profiles").update({ [column]: !!allowed }).eq("id", userId);
-      if (error) return { ok: false, error: new RegExp(column).test(error.message || "") ? "شغّل القسم 22 من features.sql في Supabase" : translateError(error.message) };
+      if (error) return { ok: false, error: new RegExp(column).test(error.message || "") ? (column === "can_ministry" ? "شغّل القسم 28 من features.sql في Supabase" : "شغّل القسم 22 من features.sql في Supabase") : translateError(error.message) };
       return { ok: true };
     } catch (e) {
       return { ok: false, error: translateError(errMsg(e)) };
@@ -376,6 +383,11 @@
     return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canExitPatients)));
   }
   // The ward-display sayings: the admin, or a pharmacist the admin allowed
+  // The Ministry «مواقف» forms: the admin, or a pharmacist the admin allowed (features.sql §28)
+  function canMinistry() {
+    const s = loadSession();
+    return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canMinistry)));
+  }
   function canEditQuotes() {
     const s = loadSession();
     return !!(s && (s.role === "admin" || (s.role === "pharmacist" && s.canEditQuotes)));
@@ -474,7 +486,7 @@
     // session
     loadSession, saveSession, clearSession, verifySession,
     isLoggedIn, getCurrentUser, isAdmin, isPharmacist, isDoctor, isTv, isLimitedAdmin, isSuperAdmin, canEditCatalog, setCatalogEditor,
-    canExitPatients, canEditQuotes, setUserFlag,
+    canExitPatients, canEditQuotes, canMinistry, setUserFlag,
     // login / logout
     login, logout,
     changeOwnPassword,

@@ -5,6 +5,9 @@
     },
     "api/drug-prices.js": {
       "maxDuration": 15
+    },
+    "api/ministry-send.js": {
+      "maxDuration": 30
     }
   }
 }

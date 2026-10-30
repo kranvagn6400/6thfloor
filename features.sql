@@ -867,3 +867,7 @@ update public.profiles set can_edit_catalog = false where can_edit_catalog = tru
 -- إن تغيّر سعر الدواء في الموقع أو زال تظهر علامة صفراء عليه في الكتالوج.
 alter table public.medications add column if not exists price_ref text;
 alter table public.medications add column if not exists price_seen numeric;
+
+-- ---------- 28) صلاحية «مواقف وزارة الصحة» ----------
+-- المسؤول يمنحها لصيدلاني أو أكثر من إدارة المستخدمين؛ المسؤول نفسه يملكها دائمًا.
+alter table public.profiles add column if not exists can_ministry boolean not null default false;
