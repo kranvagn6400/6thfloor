@@ -17,7 +17,7 @@
   let S = { screen: "list", form: "", key: "", v: null, busy: false };
   // forms with NO editor: everything comes from the patient's card (the pharmacist enters it there); a press sends it, and a
   // missing piece of data stops it with the list of what the card lacks
-  const AUTO = { albumin: true };
+  const AUTO = { albumin: true, meronem: true };
   // Fields the editor does NOT show (the pharmacist enters them on the patient's card, or the app fixes them). A missing one stops the send
   // with «لم تكتمل المعلومات الآتية في سرير المريض».
   const HIDE = {
@@ -27,7 +27,11 @@
   };
   const hiddenMissing = (formId, v) => (MF.FORMS[formId].fields || []).filter((fl) => (HIDE[formId] || []).indexOf(fl.k) >= 0 && fl.t !== "fixed" && fl.req)
     .filter((fl) => !String(v[fl.k] == null ? "" : v[fl.k]).trim()).map((fl) => fl.label);
-  const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "الحالة المطابقة في استمارة الألبومين (علّمها عند طباعة الاستمارة)" };
+  // what each auto form needs from the card / the printed forms (a missing one stops the send, naming it)
+  const NEEDS = {
+    albumin: { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "الحالة المطابقة في استمارة الألبومين (علّمها عند طباعة الاستمارة)" },
+    meronem: { name: "اسم المريض", age: "العمر", gender: "الجنس", dx: "الحالة المطابقة في استمارة الميرونيم (علّمها عند طباعة الاستمارة)", dose: "جرعة الميرونيم", freq: "تكرار الميرونيم", days: "مدة الصرف 7 أو 14 يومًا (في استمارة الميرونيم)", pharm: "اسم الصيدلاني" }
+  };
 
   // The albumin condition the pharmacist ticks when he prints the albumin form (patient-forms.js, item n) → the Ministry's own
   // group + choice (index in that group's list, js/ministry-forms.js). A condition with no counterpart is sent under «Others» with its own text.
@@ -123,7 +127,7 @@
       const hit = dxOpts.find((o) => norm(o) === norm(text) || norm(text).indexOf(norm(o).slice(0, 18)) === 0);
       v.dx = hit || (note || text.replace(/^others\s*\(specify\)$/i, "").trim());
     } else v.dx = "";
-    v.sens = st.culture === "after" || st.culture === "before" ? "نعم" : st.culture === "none" ? "كلا" : "";
+    v.sens = "كلا";                                   // the user's rule: the sensitivity test is always «كلا»
     const A = global.PharmacyAuth, u = A && A.getCurrentUser ? A.getCurrentUser() : null;
     v.pharm = String((u && (u.displayName || u.username)) || "").trim();
     // dose / frequency from the first meropenem medicine; vials = the day's quantity × the days so far, per vial size
@@ -142,7 +146,11 @@
     });
     v.dose = f.fields.find((y) => y.k === "dose").opts.indexOf(dose) >= 0 ? dose : "";
     v.freq = f.fields.find((y) => y.k === "freq").opts.indexOf(freq) >= 0 ? freq : "";
-    v.days = String(days); v.v1 = String(v1 * days); v.v05 = String(v05 * days);
+    // the treatment period = the dispensing period (7 / 14 days) chosen on the printed meronem form: today's file, else the last issued one
+    const last = (st.hist || [])[(st.hist || []).length - 1];
+    const per = parseInt((st.pending && st.pending.dur) || (last && last.dur) || (st.vals && st.vals.durDays), 10) || 0;
+    v.days = per > 0 ? String(per) : "";
+    v.v1 = String(v1 * (per || 0)); v.v05 = String(v05 * (per || 0));
     v.timestamp = (x.meds[0].pm.startDate ? new Date(x.meds[0].pm.startDate + "T08:00:00").toISOString() : new Date().toISOString());
     return v;
   }
@@ -300,7 +308,7 @@
     }).join("\n");
   }
   // → the card data an auto form lacks (Arabic names)
-  function missingOf(formId, v) { return Object.keys(NEEDS).filter((k) => !String(v[k] == null ? "" : v[k]).trim()).map((k) => NEEDS[k]); }
+  function missingOf(formId, v) { const nd = NEEDS[formId] || {}; return Object.keys(nd).filter((k) => !String(v[k] == null ? "" : v[k]).trim()).map((k) => nd[k]); }
   async function send() {
     if (S.busy) return;
     if (!AUTO[S.form]) readEditor();
@@ -309,7 +317,8 @@
     if (bad) { App().flashHint(bad); return; }
     const x = App().state.patients[S.key];
     if (x && sentToday(x, S.form) && !confirm(f.once ? "أُرسل سجل هذا المريض من قبل (" + ((sentRec(x, S.form) || {}).date || "") + ") — إرساله ثانية يضيف صفًا جديدًا في الجدول. هل ترسله؟" : "أُرسل نموذج هذا المريض اليوم من قبل. هل ترسله مرة ثانية؟")) return;
-    const shown = AUTO[S.form] ? v.name + " — طبلة " + v.plate + "\nالفيالات: " + v.vials + "\n" + f.fields.find((x) => x.t === "branch").branches[v.branch].label + ": " + v.dx : summary(f, v);
+    const shown = S.form === "meronem" ? v.name + "\n" + v.dx + "\n" + v.dose + " كل " + v.freq + " ساعة — " + v.days + " يومًا\nفيالات 1 غ: " + v.v1 + " · 0.5 غ: " + v.v05
+      : AUTO[S.form] ? v.name + " — طبلة " + v.plate + "\nالفيالات: " + v.vials + "\n" + f.fields.find((x) => x.t === "branch").branches[v.branch].label + ": " + v.dx : summary(f, v);
     if (!confirm("إرسال إلى وزارة الصحة — " + f.title + ":\n\n" + shown + "\n\nهل تريد الإرسال؟")) return;
     S.busy = true; if (!AUTO[S.form]) drawEditor();
     let r, body = {};
