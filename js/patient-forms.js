@@ -766,6 +766,7 @@
   }
   // what the app fills by itself (shown, not editable)
   function autoCard(form, eff) {
+    return "";                         // the «من بطاقة المريض» card is not shown (the user asked): the preview shows what is filled
     const autos = form.fields.filter(f => f.auto);
     if (!autos.length) return "";
     const row = (f) => { const v = String(eff[f.k] == null ? "" : eff[f.k]).trim(); return '<div class="pfs-auto"><span>' + esc(f.label) + "</span><b>" + (v ? esc(f.k === "date" ? slash(v) : v) : "—") + "</b></div>"; };
