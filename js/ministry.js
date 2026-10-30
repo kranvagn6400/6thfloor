@@ -18,7 +18,42 @@
   // forms with NO editor: everything comes from the patient's card (the pharmacist enters it there); a press sends it, and a
   // missing piece of data stops it with the list of what the card lacks
   const AUTO = { albumin: true };
-  const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "التشخيص" };
+  const NEEDS = { name: "اسم المريض", doctor: "اسم الطبيب (الأخصائي)", plate: "رقم الطبلة", gender: "الجنس", age: "العمر", dx: "الحالة المطابقة في استمارة الألبومين (أو التشخيص)" };
+
+  // The albumin condition the pharmacist ticks when he prints the albumin form (patient-forms.js, item n) → the Ministry's own
+  // group + choice (index in that group's list, js/ministry-forms.js). A condition with no counterpart is sent under «Others» with its own text.
+  const ALB_MAP = {
+    1: ["part1", 0],      // cirrhosis + paracentesis > 4 L
+    3: ["part1", 2],      // ascites not responsive to diuretics
+    4: ["part2", 1],      // hepatorenal syndrome (cirrhosis)
+    5: ["part2", 7],      // high-risk spontaneous bacterial peritonitis
+    6: ["part1", 6],      // severe oedema with serum albumin < 2
+    7: ["part3", 0],      // acute nephrotic syndrome
+    8: ["part2", 0],      // therapeutic plasmapheresis
+    9: ["part4", 1],      // ARDS
+    10: ["part2", 6],     // post cardio-pulmonary bypass
+    11: ["part2", 6],     // extensive intestinal resection
+    12: ["part2", 8],     // > 40% liver resection
+    13: ["part2", 9],     // post liver transplant
+    14: ["part1", 3],     // burns
+    15: ["part1", 4],     // hyperbilirubinemia of the newborn
+    16: ["part1", 1],     // malnutrition syndrome
+    17: ["part4", 3]      // second line in hypovolemic shock
+  };
+  // → { branch, dx } for the albumin form from the patient's ticked condition, else his diagnosis text (Others), else empty
+  function albuminDx(p) {
+    const f = MF.FORMS.albumin.fields.find((x) => x.t === "branch"), PFm = global.PharmacyPatientForms;
+    const ticks = (p.labs && p.labs._forms && p.labs._forms.albumin && p.labs._forms.albumin.ticks) || [];
+    const n = ticks.slice().sort((a, b) => a - b)[0];
+    if (n) {
+      const m = ALB_MAP[n];
+      if (m && f.branches[m[0]] && f.branches[m[0]].opts[m[1]]) return { branch: m[0], dx: f.branches[m[0]].opts[m[1]] };
+      const it = PFm && PFm.FORMS && PFm.FORMS.albumin.items.find((x) => x.n === n);
+      if (it && (it.text || it.label)) return { branch: "others", dx: String(it.text || it.label) };
+    }
+    const own = String(p.diagnosis || "").trim();
+    return own ? { branch: "others", dx: own } : { branch: "others", dx: "" };
+  }
 
   function allowed() { const A = global.PharmacyAuth; return !!(A && A.canMinistry && A.canMinistry()); }
 
@@ -77,8 +112,8 @@
     set("name", String(p.name || "").trim()); set("doctor", String(p.doctor || "").trim());
     set("plate", digits(p.plateNumber || "")); set("gender", sex); set("age", num(p.age));
     if (formId === "ivig" || formId === "albumin") { set("vials", String(dailyQty(x))); set("branch", ""); set("dx", ""); }
-    // albumin: the lost quantity is always 0, and the diagnosis is the card's own text, sent under «Others» (a free-text branch of the form)
-    if (formId === "albumin") { set("waste", "0"); v.branch = "others"; v.dx = dx; }
+    // albumin: the lost quantity is always 0; the Ministry's group + choice come from the condition ticked on the albumin form
+    if (formId === "albumin") { set("waste", "0"); const d = albuminDx(p); v.branch = d.branch; v.dx = d.dx; }
     if (formId === "tigecycline") {
       const m0 = x.meds[0].pm, nm = MATCH.tigecycline, fr = (global.PharmacyMedications && global.PharmacyMedications.parseFreq) ? global.PharmacyMedications.parseFreq(m0.frequency || x.meds[0].c.defaultFrequency || "") : null;
       set("ward", "الباطنية"); set("dx", dx); set("creat", creat);
@@ -211,7 +246,7 @@
     if (bad) { App().flashHint(bad); return; }
     const x = App().state.patients[S.key];
     if (x && sentToday(x, S.form) && !confirm("أُرسل نموذج هذا المريض اليوم من قبل. هل ترسله مرة ثانية؟")) return;
-    const shown = AUTO[S.form] ? v.name + " — طبلة " + v.plate + "\nالفيالات: " + v.vials + "\nالتشخيص: " + v.dx : summary(f, v);
+    const shown = AUTO[S.form] ? v.name + " — طبلة " + v.plate + "\nالفيالات: " + v.vials + "\n" + f.fields.find((x) => x.t === "branch").branches[v.branch].label + ": " + v.dx : summary(f, v);
     if (!confirm("إرسال إلى وزارة الصحة — " + f.title + ":\n\n" + shown + "\n\nهل تريد الإرسال؟")) return;
     S.busy = true; if (!AUTO[S.form]) drawEditor();
     let r, body = {};
