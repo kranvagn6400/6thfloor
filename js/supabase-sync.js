@@ -756,6 +756,29 @@
     } catch (e) { /* offline / RPC missing: keep the last offset */ }
   }
 
+  // Light poll: which beds changed in the cloud? Returns { rows: full rows to fetch, same: bed keys whose
+  // local copy has the cloud's version }, or null (older DB without version/pid, or any error) → full pull.
+  async function fetchChangedRows(client, local) {
+    const head = await client.from("patients").select("bed_key, version, pid");
+    if (head.error || !Array.isArray(head.data)) return null;
+    const dels = Local.loadLocalDeletions ? Local.loadLocalDeletions() : {};
+    const same = [], need = [];
+    head.data.forEach(h => {
+      if (!h.bed_key) return;
+      const lp = local[h.bed_key];
+      if (lp && !dels[h.bed_key] && Number.isInteger(h.version) && lp.version === h.version &&
+          (lp.pid || null) === (h.pid || null)) same.push(h.bed_key);
+      else need.push(h.bed_key);
+    });
+    let rows = [];
+    if (need.length) {
+      const full = await client.from("patients").select("*").in("bed_key", need);
+      if (full.error || !Array.isArray(full.data)) return null;
+      rows = full.data;
+    }
+    return { rows, same };
+  }
+
   async function pullPatients(opts) {
     if (!SB || !SB.isConfigured()) return { ok: false, error: "غير مُهيّأ" };
     const client = SB.getClient();
@@ -763,11 +786,19 @@
 
     try {
       await syncServerClock(client);
-      const { data, error } = await client
-        .from("patients")
-        .select("*");
-      if (error) return { ok: false, error: error.message };
-      if (!Array.isArray(data)) return { ok: false, error: "استجابة غير متوقعة" };
+      // The 15 s poll (opts.light) asks only for bed_key + version + pid of every bed, then for the full
+      // rows of the beds whose version differs from this device's copy — the rest are taken from the local
+      // copy (same version = same content, the DB bumps it on every save). Any problem → the full pull below.
+      let light = null;
+      if (opts && opts.light) light = await fetchChangedRows(client, Local.loadPatients());
+      let data = null;
+      if (light) data = light.rows;
+      else {
+        const res = await client.from("patients").select("*");
+        if (res.error) return { ok: false, error: res.error.message };
+        if (!Array.isArray(res.data)) return { ok: false, error: "استجابة غير متوقعة" };
+        data = res.data;
+      }
 
       // Build the remote map (bed_key → patient)
       const remote = {};
@@ -775,6 +806,10 @@
         if (!row.bed_key) return;
         remote[row.bed_key] = cloudPatient(row);
       });
+      if (light) {
+        const mine = Local.loadPatients();
+        light.same.forEach(k => { if (mine[k]) remote[k] = mine[k]; });
+      }
 
       // The admin wiped every patient (app_settings 'patients_wiped'): drop
       // this device's cards — named or not — once, so none comes back

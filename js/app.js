@@ -296,6 +296,7 @@
   }
   async function pollOnce() {
     if (!SB || !SBSync || !SB.isConfigured()) return;
+    if (document.hidden) return;   // nobody is looking: no traffic (visibilitychange polls at once on return)
     if (global.PharmacyMedAvailability) global.PharmacyMedAvailability.refreshFromCloud();
     try {
       // Only pull patients if we're NOT currently viewing a patient.
@@ -308,7 +309,7 @@
         // While a patient is open, the other beds still update; the open
         // bed keeps its local copy (it is saved on blur / back, and
         // Realtime merges cloud edits into it safely).
-        const pres = await SBSync.pullPatients(state.currentBed ? { keepBed: state.currentBed.key } : undefined);
+        const pres = await SBSync.pullPatients(state.currentBed ? { keepBed: state.currentBed.key, light: true } : { light: true });
         if (pres && pres.ok) {
           const openKey = state.currentBed && state.currentBed.key;
           const openObj = openKey && state.patients[openKey];
