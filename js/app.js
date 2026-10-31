@@ -1886,6 +1886,34 @@
     }
   }
 
+  // «Notes»: a free note on the patient, kept in patient.labs._notes (travels with the labs JSON — no column)
+  let _notesKey = null;
+  function setNotesOpen(open) {
+    const panel = $("patient-notes-panel"), btn = $("notes-toggle-btn");
+    if (panel) panel.hidden = !open;
+    if (btn) { btn.setAttribute("aria-expanded", open ? "true" : "false"); btn.classList.toggle("is-new", !!open); }
+  }
+  function loadNotes(p, key) {
+    _notesKey = key || null;
+    const ta = $("patient-notes-input"), btn = $("notes-toggle-btn");
+    const note = p && p.labs && typeof p.labs._notes === "string" ? p.labs._notes : "";
+    if (ta) ta.value = note;
+    if (btn) btn.classList.toggle("has-note", !!note.trim());
+  }
+  // saves the note of the patient it BELONGS to (a late timer never writes to another patient); nothing is written unless the text changed
+  function saveNotes() {
+    const key = _notesKey, ta = $("patient-notes-input"), btn = $("notes-toggle-btn");
+    if (!key || !ta) return;
+    const p = state.patients[key];
+    if (!p) return;
+    const text = ta.value, cur = p.labs && typeof p.labs._notes === "string" ? p.labs._notes : "";
+    if (btn) btn.classList.toggle("has-note", !!text.trim());
+    if (text === cur || (!text.trim() && !cur)) return;
+    if (!p.labs || typeof p.labs !== "object") p.labs = {};
+    if (text.trim()) p.labs._notes = text; else delete p.labs._notes;
+    persistPatient(key);
+  }
+
   function ensurePatient(bedKey) {
     if (!state.patients[bedKey]) state.patients[bedKey] = { name: "", plateNumber: "", medications: [] };
     if (!Array.isArray(state.patients[bedKey].medications)) {
@@ -2581,6 +2609,18 @@
     // Doctors' labs section: hidden until «عرض التحاليل» is pressed
     const labsToggle = $("labs-toggle-btn");
     if (labsToggle) labsToggle.addEventListener("click", () => setLabsOpen(!$("patient-header").classList.contains("labs-open")));
+    // «Notes»: the panel opens / closes with the button; typing saves after 800 ms, leaving the field saves at once
+    const notesBtn = $("notes-toggle-btn"), notesInput = $("patient-notes-input");
+    let notesTimer = null;
+    if (notesBtn) notesBtn.addEventListener("click", () => {
+      const panel = $("patient-notes-panel"), open = !!(panel && panel.hidden);
+      setNotesOpen(open);
+      if (open && notesInput) notesInput.focus(); else saveNotes();
+    });
+    if (notesInput) {
+      notesInput.addEventListener("input", () => { clearTimeout(notesTimer); notesTimer = setTimeout(saveNotes, 800); });
+      notesInput.addEventListener("blur", () => { clearTimeout(notesTimer); saveNotes(); });
+    }
     // Enter in a lab field records it
     document.addEventListener("keydown", (e) => {
       const t = e.target;
@@ -2708,6 +2748,7 @@
       if (!p || !Array.isArray(p.medications)) return;
       const removedMed = p.medications[idx];
       const removedName = removedMed && (removedMed.nameTrade || removedMed.nameAr || removedMed.id) || "(دواء)";
+      if (!confirm("إيقاف دواء «" + removedName + "»؟\nيخرج من الطلبية ويبقى في سجل المريض (يمكن استئنافه من «الأدوية الموقوفة»).")) return;
       // «إيقاف»: the medicine leaves the list (so it leaves every order / sheet / chart) but stays in the patient's record
       p.medications.splice(idx, 1);
       if (!p.labs || typeof p.labs !== "object") p.labs = {};
@@ -6078,6 +6119,7 @@
   }
   function openPatient({ key, roomId, bed }) {
     if (!(state.currentBed && state.currentBed.key === key) && blockedByLock(key)) return;
+    saveNotes();                                   // the previous patient's pending note, before the field is reused
     // Flush any pending changes from the previously-open patient
     // (if any) BEFORE switching to the new one. This ensures the
     // gender toggle / lab values on the previous patient are saved
@@ -6086,8 +6128,10 @@
     if (isPendingExit(key)) commitPendingExit();     // the old patient's delete first, so a new one never lands on his row
     state.currentBed = { key, roomId, bed };
     setLabsOpen(false);   // each patient opens with the labs folded (doctors)
+    setNotesOpen(false);
     closeLabsPrintPanel();
     const p = state.patients[key] || null;
+    loadNotes(p, key);
     UI.renderPatientView(p, roomId, bed);
     updatePlateDupWarning(false);
     UI.showView("patient");

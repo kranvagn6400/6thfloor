@@ -172,6 +172,9 @@
     ${S}.t.b { font-weight: 700; }
     ${S}.t.w { line-height: 1.2; padding: 0 8pt; justify-content: flex-start; }
     ${S}.t.w .wp { width: 100%; text-align: right; white-space: pre-line; }
+    ${S}.t.m { white-space: nowrap; }
+    ${S}.sp { display: inline-block; width: 0.3em; }
+    ${S}.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; white-space: nowrap; }
     ${S}.k { position: absolute; border: 2pt solid #000; }
     ${S}.l { position: absolute; background: #bdbdbd; }
     ${S}.d { position: absolute; background: #6b6b6b; }
@@ -220,7 +223,10 @@
     return lines ? Math.max(1, Math.ceil((lines * 14.4 + 1) / ROW_H)) : 0;
   }
   // the medicine cell is one line: smaller type for a long name
-  const medSize = (t) => (String(t).length <= 24 ? 12 : String(t).length <= 28 ? 10.5 : String(t).length <= 34 ? 9 : 7.5);
+  const medSize = (t) => { const x = String(t); return Math.max(7, Math.min(12, 142 / (0.56 * x.length + 0.3 * (x.split(" ").length - 1)))); };
+  // Latin / number runs are isolated left-to-right; EVERY space outside them becomes an explicit .sp span (a space beside an inline-block is collapsed otherwise)
+  const rtlSafe = (txt) => String(txt).replace(/([A-Za-z0-9][A-Za-z0-9 .,%/+×()-]*[A-Za-z0-9%)]|[A-Za-z0-9])|([^A-Za-z0-9]+)/g,
+    (m, l, o) => l ? '<span class="ltr">' + esc(l) + "</span>" : esc(o).replace(/ /g, '<span class="sp"></span>'));
 
   function pageHtml(v, alb, oth) {
     let h = '<div class="pg">';
@@ -262,9 +268,9 @@
       const top = T2.top + row * ROW_H;
       h += box("", COL.name[0] + 1, COL.name[1] - 1, top, ROW_H, esc(r.name), fitSize(r.name, 12));
       h += box("", COL.room[0] + 1, COL.room[1] - 1, top, ROW_H, esc(r.room), roomSize(r.room));
-      h += box("", COL.mid[0] + 1, COL.mid[1] - 1, top, ROW_H, esc(r.med), medSize(r.med));
+      h += box("m", COL.mid[0] + 1, COL.mid[1] - 1, top, ROW_H, esc(r.med), medSize(r.med));
       if (r.time) h += box("", COL.time[0] + 1, COL.time[1] - 1, top, ROW_H, esc(r.time), fitSize(r.time, 12));
-      if (r.p) h += box("w", COL.time[0] + 1, COL.name[1] - 1, top + ROW_H, r.p * ROW_H, '<div class="wp">' + esc(r.prep) + "</div>", 12);
+      if (r.p) h += box("w", COL.time[0] + 1, COL.name[1] - 1, top + ROW_H, r.p * ROW_H, '<div class="wp">' + rtlSafe(r.prep) + "</div>", 12);
       row += r.k;
     });
     return h + "</div></div>";

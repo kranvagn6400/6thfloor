@@ -3015,3 +3015,9 @@ html[data-theme="dark"] .mn-warn { background: #4a3d0a; color: #ffe27a; }
 .stopped-name { font-size: 14px; font-weight: 800; color: var(--text); }
 .stopped-info small { color: var(--text-muted); font-size: 11.5px; }
 .stopped-resume { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--fill, var(--primary)); color: #fff; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+
+/* «Notes» on the patient card (labs._notes) */
+.doc-labs-btn.has-note::after { content: " ●"; font-size: 10px; color: var(--primary); }
+.doc-labs-btn.is-new.has-note::after { color: #fff; }
+.patient-notes-panel { flex-basis: 100%; margin-top: 8px; }
+.patient-notes-input { width: 100%; min-height: 110px; padding: 10px; border-radius: 12px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text); font: inherit; font-size: 14px; line-height: 1.6; resize: vertical; }
