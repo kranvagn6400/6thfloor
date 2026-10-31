@@ -433,7 +433,7 @@
     font-family: 'Helvetica Neue', Helvetica, 'Geeza Pro', 'GeezaPro', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; color: #111; }
     ${S} .pg { position: relative; overflow: hidden; background: #fff; }
     ${S} .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 12pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #000; }
+    ${S} .t { position: absolute; display: flex; align-items: center; justify-content: flex-start; text-align: right; font-size: 11pt; font-weight: 400; line-height: 1.3; white-space: nowrap; color: #000; }
     ${S} .t.c { justify-content: center; text-align: center; }
     ${S} .t.l { direction: ltr; justify-content: flex-start; text-align: left; }
     ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #000; }
@@ -458,9 +458,9 @@
       const words = String(text).split(" ");
       if (words.length !== f.kashida.at.length) return text;
       const cv = document.createElement("canvas").getContext("2d");
-      cv.font = "16px " + FONT_STACK;                                    // 12 pt
+      cv.font = "14.67px " + FONT_STACK;                                // 11 pt
       const tat = cv.measureText("ـ").width || 4;
-      const base = cv.measureText(words.join(" ")).width + 16 * 0.32 * (words.length - 1);
+      const base = cv.measureText(words.join(" ")).width + 14.67 * 0.32 * (words.length - 1);
       const target = (f.x1 - f.x0) * K * (96 / 72) * 0.94;
       const n = Math.floor((target - base) / tat);
       if (n < words.length) return text;
@@ -484,15 +484,15 @@
     const [w, h] = form.px;
     let o = '<div class="pg" style="width:' + pt(w) + ";height:" + pt(h) + '"><img class="bg" src="' + form.bg + '" alt="">';
     const nameField = form.fields.find(x => x.k === "name");
-    const BIG = 14;
-    const nameFs = nameField && vals.name ? sizeFor(String(vals.name).trim(), nameField.x0, nameField.x1, form.id === "albumin" ? BIG : 12) : 12;
+    const BIG = 13;
+    const nameFs = nameField && vals.name ? sizeFor(String(vals.name).trim(), nameField.x0, nameField.x1, form.id === "albumin" ? BIG : 11) : 11;
     form.fields.forEach(f => {
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
       let text = f.k === "date" ? slash(v) : v;
       if (f.kashida) text = kashida(text, f);
       // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form only a little)
-      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : form.id === "albumin" && ALB_DY[f.k] != null ? ALB_DY[f.k] : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 12 : (form.id === "albumin" && f.k === "ward") ? nameFs : (form.id === "albumin" && f.k === "words") ? sizeFor(text, f.x0, f.x1, BIG) : sizeFor(text, f.x0, f.x1, form.id === "albumin" && f.k === "name" ? BIG : 12));
+      o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : form.id === "albumin" && ALB_DY[f.k] != null ? ALB_DY[f.k] : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 11 : (form.id === "albumin" && f.k === "ward") ? nameFs : (form.id === "albumin" && f.k === "words") ? sizeFor(text, f.x0, f.x1, BIG) : sizeFor(text, f.x0, f.x1, form.id === "albumin" && f.k === "name" ? BIG : 11));
     });
     form.items.forEach(it => {
       if (st.ticks.indexOf(it.n) < 0) return;
