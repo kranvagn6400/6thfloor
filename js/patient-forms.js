@@ -437,7 +437,7 @@
     ${S} .t.c { justify-content: center; text-align: center; }
     ${S} .t.l { direction: ltr; justify-content: flex-start; text-align: left; }
     ${S} .t.k { justify-content: center; font-size: 17pt; font-weight: 700; color: #000; }
-    ${S} .ring { position: absolute; border: 3.2pt solid #000; border-radius: 6pt; background: transparent; }
+    ${S} .ring { position: absolute; border: 5pt solid #000; border-radius: 6pt; background: transparent; }
     ${S} .sp { display: inline-block; width: 0.32em; flex: none; }
   `;
   }
@@ -448,7 +448,7 @@
     return '<div class="t ' + cls + '" style="left:' + pt(x0) + ";width:" + pt(x1 - x0) + ";top:" + pt(cy - h / 2) + ";height:" + pt(h) + (fs ? ";font-size:" + fs + "pt" : "") + '">' + spaced(html) + "</div>";
   }
   // the chosen condition = its cell outlined (a tick would run over the printed text)
-  const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 + 1) + ";top:" + pt(r.y0 + 1) + ";width:" + pt(r.x1 - r.x0 - 2) + ";height:" + pt(r.y1 - r.y0 - 2) + '"></div>';
+  const ring = (r) => '<div class="ring" style="left:' + pt(r.x0 - 0.8) + ";top:" + pt(r.y0 - 0.8) + ";width:" + pt(r.x1 - r.x0 + 1.6) + ";height:" + pt(r.y1 - r.y0 + 1.6) + '"></div>';
   // The fonts of the paper (also the stack the page CSS uses, so the measure matches what is drawn)
   const FONT_STACK = "'Helvetica Neue', Helvetica, 'Geeza Pro', 'GeezaPro', 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif";
   // «مدينة الطب» → «مـــدينة الـــطب»: tatweels are put after the letter index at[i] of each word, so the whole text just fills the

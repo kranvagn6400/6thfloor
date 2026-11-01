@@ -2684,7 +2684,7 @@
     $("back-btn").addEventListener("click", () => {
       flushPendingPatientChanges();
       state.currentBed = null;
-      UI.showView("home");
+      UI.showView(_patientBackView);   // the page the patient was opened from (rooms or the patients list)
     });
 
     // Open sheet (in patient view) — single binding
@@ -3381,7 +3381,7 @@
         const pf = Meds && Meds.parseFreq ? Meds.parseFreq(item.frequency) : null;
         return pf ? pf.n : 1; // default 1
       })();
-      const MULTS = [0.5, 1, 1.5, 2, 3, 4, 5, 6];
+      const MULTS = [0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6];
 
       let newCount;
       if (currentCount === -1) {
@@ -6123,7 +6123,9 @@
     flashHint(msg);
     return true;
   }
+  let _patientBackView = "home";
   function openPatient({ key, roomId, bed }) {
+    { const from = UI.currentView && UI.currentView(); if (from && from !== "patient") _patientBackView = from === "patients" ? "patients" : "home"; }
     if (!(state.currentBed && state.currentBed.key === key) && blockedByLock(key)) return;
     saveNotes();                                   // the previous patient's pending note, before the field is reused
     // Flush any pending changes from the previously-open patient
