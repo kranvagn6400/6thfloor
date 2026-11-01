@@ -388,14 +388,14 @@
       else if ((mm = /^(\d{4,})(?:iu|units?)?$/.exec(t))) mg = Number(mm[1]) / 1e6 * 80;
       const perDay = nm0 && nm0.m ? nm0.m : 1, daily = mg > 0 ? Math.round(mg * perDay * 10) / 10 : 0;
       return { name: String(p.name || "").trim(), sex: p.gender === "female" ? "أنثى" : p.gender === "male" ? "ذكر" : "", age: String(p.age || "").trim(), ward: unit,
-        plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(), date: (hit && hit.pm.startDate) || todayISO(), weight: labs.weight || p.weight || "",
+        plate: String(p.plateNumber || "").trim(), diag: "", date: (hit && hit.pm.startDate) || todayISO(), weight: labs.weight || p.weight || "",
         dose: strength ? strength + (nm0 ? " x " + nm0.m : "") + (daily ? " = " + daily + " mg" : "") : "", days: "", scr: latestLab(p, "creatinine"), culture: "" };
     }
     if (formId === "tigecycline") {
       const strength = hit ? String(hit.pm.dose || hit.c.defaultDose || "").trim() : "";
       const nm0 = hit && global.PharmacyMedications && global.PharmacyMedications.parseFreq ? global.PharmacyMedications.parseFreq(hit.pm.frequency || hit.c.defaultFrequency || "") : null;
       return { name: String(p.name || "").trim(), sex: p.gender === "female" ? "أنثى" : p.gender === "male" ? "ذكر" : "", age: String(p.age || "").trim(), ward: unit,
-        plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(), date: (hit && hit.pm.startDate) || todayISO(), weight: labs.weight || p.weight || "",
+        plate: String(p.plateNumber || "").trim(), diag: "", date: (hit && hit.pm.startDate) || todayISO(), weight: labs.weight || p.weight || "",
         dose: strength && nm0 ? strength + " x " + nm0.m : strength, days: "", scr: latestLab(p, "creatinine"), culture: "" };
     }
     // the dose as the ward writes it: «1g x 3» / «500mg x 2» (the strength × the times a day, from the card)
