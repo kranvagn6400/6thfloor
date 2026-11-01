@@ -640,13 +640,8 @@ html.role-doctor #view-patient .patient-origin-row { display: none !important; }
   box-shadow: 0 0 0 4px rgba(194, 65, 45, 0.12) !important;
 }
 
-/* Pharmacist account: only patient name, plate number, specialist and
-   origin floor in the patient header (the meds section stays). */
-html.role-pharmacist #view-patient .patient-allergy-row,
-html.role-pharmacist #view-patient .patient-diagnosis-row,
-html.role-pharmacist #view-patient .previous-admission-banner {
-  display: none !important;
-}
+/* Pharmacists see the same patient-card fields as the admin (allergy, diagnosis,
+   previous-admission banner); the diagnosis stays read-only for them (app.js). */
 
 .bed-btn .bed-boarder-badge {
   position: absolute;
@@ -2024,6 +2019,9 @@ html.role-pharmacist #view-patient .patient-origin-row { order: 4; }
 /* age + sex and weight + height are shown to pharmacists too (after the origin row) */
 html.role-pharmacist #view-patient .patient-demographics-row { order: 4; }
 html.role-pharmacist #view-patient .patient-body-row { order: 4; }
+html.role-pharmacist #view-patient .patient-diagnosis-row { order: 5; }
+html.role-pharmacist #view-patient .patient-allergy-row { order: 6; }
+html.role-pharmacist #view-patient .previous-admission-banner { order: 7; }
 
 /* Dark mode on phones: search fields (type=search) get the system's own white
    background on iOS / some Android browsers — light text on white. Tell the
