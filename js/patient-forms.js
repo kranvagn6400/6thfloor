@@ -527,6 +527,7 @@
     st.textContent = `
     #pf-editor .pfs-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     #pf-editor .pfs-tab { border: 1.5px solid var(--border, #dbe2e8); background: var(--surface, #fff); color: var(--text, #14211f); border-radius: 14px; padding: 12px 8px; font: inherit; font-weight: 800; font-size: 14.5px; cursor: pointer; text-align: center; }
+    #pf-editor .pfs-tab:last-child:nth-child(odd) { grid-column: 1 / -1; }
     #pf-editor .pfs-tab small { display: block; margin-top: 3px; font-weight: 700; font-size: 11.5px; color: var(--text-muted, #5c6b73); }
     #pf-editor .pfs-tab.is-on { background: var(--fill, var(--primary, #1f6f9f)); border-color: var(--fill, var(--primary, #1f6f9f)); color: #fff; }
     #pf-editor .pfs-tab.is-on small { color: rgba(255,255,255,.85); }
@@ -544,9 +545,7 @@
     #pf-editor .pfs-acts { display: flex; gap: 8px; margin-top: 10px; }
     #pf-editor .pfs-acts button { flex: 1; height: 42px; border: 0; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
     #pf-editor .pfs-acts .pfs-done { margin-top: 0; width: auto; }
-    #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { background: #c2412d; color: #fff; animation: pfsRejBlink .9s ease-in-out infinite; }
-    @keyframes pfsRejBlink { 0%, 100% { background: #d92d2d; } 50% { background: #5a0f0f; } }
-    @media (prefers-reduced-motion: reduce) { #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { animation: none; } }
+    #pf-editor .pfs-rej, #pf-editor .pfs-rej-sm { background: #c2412d; color: #fff; }
     #pf-editor .pfs-unrej, #pf-editor .pfs-unrej-sm { background: var(--bg, #eef2f6); color: var(--text, #14211f); }
     #pf-editor .pfs-rej-sm, #pf-editor .pfs-unrej-sm { flex: none; height: 38px; padding: 0 14px; border: 0; border-radius: 12px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; margin-inline-start: 8px; }
     #pf-editor .pfs-st.rej { background: #fde2e0; color: #a02315; }
@@ -606,15 +605,24 @@
   }
 
   // ---- list ----
+  // how many forms of this kind are required now
+  function dueCount(id) {
+    return patients().filter(x => { const d = dueInfo(id, x.p); return d.state === "due" || d.state === "late"; }).length;
+  }
   function openList() {
     V = V && V.view ? V : null;
-    V = { view: "list", form: (V && V.form) || "albumin", all: false, q: "" };
+    const keep = V && V.form;
+    // start on the remembered kind only while it still has a form required, else on the first kind that has one
+    const form = keep && dueCount(keep) > 0 ? keep : (Object.keys(FORMS).find(id => dueCount(id) > 0) || keep || "albumin");
+    V = { view: "list", form, all: false, q: "" };
     drawList();
   }
   function drawList() {
     const el = shell();
     const tabs = Object.keys(FORMS).map(id => {
-      const n = patients().filter(x => { const d = dueInfo(id, x.p); return d.state === "due" || d.state === "late"; }).length;
+      const n = dueCount(id);
+      // a kind with no form required is not shown (the one open stays, so a form just printed can still be taken back)
+      if (!n && V.form !== id) return "";
       return '<button type="button" class="pfs-tab' + (V.form === id ? " is-on" : "") + '" data-f="' + id + '">' + esc(FORMS[id].short) + "<small>" + (n ? n + " مطلوبة" : "لا مطلوب") + "</small></button>";
     }).join("");
     el.innerHTML =
