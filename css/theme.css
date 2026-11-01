@@ -3070,9 +3070,9 @@ html[data-theme="dark"] .oe-btn.oe-add, html[data-theme="dark"] .oe-btn.oe-send 
   position: relative; display: inline-flex; align-items: center; justify-content: center;
   min-width: 168px; padding: 7px 26px; border-radius: 999px;
   font: 700 14px/1.2 "Segoe UI", system-ui, sans-serif; letter-spacing: .06em; color: #fff;
-  background: linear-gradient(180deg, #2c6a5f 0%, #17433D 55%, #0F302B 100%);
-  border: 1.5px solid #C09A4E;
-  box-shadow: 0 2px 6px rgba(15, 48, 43, .28), inset 0 -3px 5px rgba(0, 0, 0, .22);
+  background: linear-gradient(180deg, var(--hdr1, #2c6a5f) 0%, var(--hdr2, #17433D) 55%, var(--hdr3, #0F302B) 100%);   /* follows the colour theme (emerald = the fallbacks) */
+  border: 1.5px solid var(--pal-accent, #C09A4E);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--hdr3, #0F302B) 55%, transparent), inset 0 -3px 5px rgba(0, 0, 0, .22);
   overflow: hidden;
 }
 .login-edition-pill::before {
