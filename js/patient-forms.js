@@ -101,7 +101,7 @@
       hint: "",
       fields: [
         // like the meronem form: everything comes from the card (auto = shown, never typed) — except the diagnosis, which the
-        // pharmacist's card does not show, so it stays a field (filled from the card when there is one)
+        // card's own «Diagnoses and History» field is a separate thing now: this one is typed here only, kept in labs._forms for everyone
         F("name", "اسم المريض", 628, 806, 129, "r", { auto: true, dy: -4 }), F("plate", "رقم الطبلة", 430, 552, 129, "r", { num: true, auto: true }),
         F("diag", "Diagnosis", 184, 425, 129, "l", { full: true }),
         F("ward", "الطابق والردهة", 430, 786, 170, "r", { auto: true }), F("alb", "Serum albumin", 226, 540, 170, "l", { auto: true }),
@@ -373,7 +373,7 @@
         const c = catalog().find(m => m && m.id === pm.id) || {};
         if (global.PharmacyClinical.isAlbumin(Object.assign({}, pm, c)) && Bridge && Bridge.dailyQuantity) qty += Bridge.dailyQuantity(pm.id, pm.frequency || c.defaultFrequency || "", c.form) || 0;
       });
-      return { name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), diag: String(p.diagnosis || "").trim(),
+      return { name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), diag: "",
         ward: "السادس - " + unit, alb: latestLab(p, "albumin"), count: qty ? String(qty) : "", words: qty ? words(qty) : "",
         day: day ? ordinal(day) : "", weight: labs.weight || "", creat: latestLab(p, "creatinine") };
     }
