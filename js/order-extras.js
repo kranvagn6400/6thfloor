@@ -222,9 +222,11 @@
     box.appendChild(s);
     return s;
   }
-  function line(parent, name, qty, cls) {
+  function line(parent, name, qty, cls, note) {
     const r = el("div", "oe-line" + (cls ? " " + cls : ""));
-    r.appendChild(el("span", "oe-name", name));
+    const n = el("span", "oe-name", name);
+    if (note) n.appendChild(el("small", "oe-note", note));
+    r.appendChild(n);
     r.appendChild(el("span", "oe-qty", qty));
     parent.appendChild(r);
   }
@@ -249,8 +251,8 @@
 
     if (b.add.length || b.manual.length) {
       const add = section(box, "أُضيف بعد الطلبية", "is-add");
-      b.add.forEach(x => line(add, x.name, "+" + x.qty + (x.isNew ? "" : " (من " + (x.total - x.qty) + " إلى " + x.total + ")"), "is-add"));
-      b.manual.forEach(x => line(add, x.name, x.qty + " — تُدخل يدويًا", "is-manual"));
+      b.add.forEach(x => line(add, x.name, "+" + x.qty, "is-add", x.isNew ? "" : "من " + (x.total - x.qty) + " إلى " + x.total));
+      b.manual.forEach(x => line(add, x.name, x.qty, "is-manual", "تُدخل يدويًا"));
     }
     if (b.sent.length) {
       const sent = section(box, "أُرسلت إلى الجارت الإضافي", "is-sent");

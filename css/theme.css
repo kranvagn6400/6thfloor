@@ -3059,3 +3059,8 @@ html[data-theme="dark"] .mn-warn { background: #4a3d0a; color: #ffe27a; }
 html[data-theme="dark"] .oe-chip, html[data-theme="dark"] .oe-warn { background: #2A1D0B; color: #F2C078; }
 html[data-theme="dark"] .oe-btn.oe-ok { color: #7FE0BE; }
 html[data-theme="dark"] .oe-btn.oe-add, html[data-theme="dark"] .oe-btn.oe-send { background: var(--fill, #1F5A51); color: #fff; }
+.bed-btn .bed-extras-mark, .oe-line .oe-qty { direction: ltr; unicode-bidi: isolate; }
+.oe-line .oe-name { display: flex; flex-direction: column; }
+.oe-note { direction: rtl; text-align: right; color: var(--text-muted, #567); font-size: 12px; }
+.unit-head { flex-wrap: wrap; }
+.oe-chip { order: 3; flex: 1 0 100%; text-align: center; }
