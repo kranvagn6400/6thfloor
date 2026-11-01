@@ -130,10 +130,13 @@
     saveDay(CHECK_KEY, v);
   }
 
-  // ---------- who sees it ----------
+  // ---------- who sees it, and until when ----------
+  // the chart app's extra chart closes at 2 pm: from then on the icons, the chip and the send are gone (back after the next morning send)
+  const CLOSE_HOUR = 14;
+  const open = () => new Date().getHours() < CLOSE_HOUR;
   function enabled() {
     const A = global.PharmacyAuth;
-    return !!(A && A.isLoggedIn && A.isLoggedIn() && A.isSuperAdmin && A.isSuperAdmin());
+    return !!(A && A.isLoggedIn && A.isLoggedIn() && A.isSuperAdmin && A.isSuperAdmin() && open());
   }
 
   // ---------- the analysis (every occupied bed that is in an order) ----------
@@ -346,6 +349,9 @@
         openBed(mk.dataset.extrasKey, parseInt(mk.dataset.roomId, 10), parseInt(mk.dataset.bed, 10));
       }, true);
     }
+    // 2 pm: take the icons away without waiting for the next redraw
+    const left = new Date().setHours(CLOSE_HOUR, 0, 1, 0) - Date.now();
+    if (left > 0) setTimeout(() => { closePopup(); cache = null; if (global.PharmacyApp && global.PharmacyApp.redrawRooms) global.PharmacyApp.redrawRooms(); }, left);
     // a morning send that just finished makes the icons appear / refresh at once
     const Log = global.PharmacyChartLog;
     if (Log && Log.setResult && !Log._oeWrapped) {
