@@ -238,7 +238,6 @@
     const f = MF.FORMS[formId], p = x.p, now = new Date(), v = {};
     const sex = p.gender === "female" ? (formId === "tigecycline" ? "أنثى" : "انثى") : p.gender === "male" ? "ذكر" : "";
     const creat = num(p.labs && p.labs.creatinine);
-    const dx = String(p.diagnosis || "").trim();
     f.fields.forEach((fl) => { if (fl.t === "fixed") v[fl.k] = fl.v; });
     const set = (k, val) => { if (f.fields.some((fl) => fl.k === k)) v[k] = val; };
     const seasonField = f.fields.find((fl) => fl.k === "season"), monthField = f.fields.find((fl) => fl.k === "month");
@@ -254,7 +253,7 @@
       // from the ward's tigecycline form (the paper printed on day 1): diagnosis, days, culture result and the ticked condition
       const tf = (p.labs && p.labs._forms && p.labs._forms.tigecycline) || {}, tv = tf.vals || {};
       const tick = (tf.ticks || []).slice().sort((a, b) => a - b)[0];
-      set("ward", "الباطنية"); set("dx", String(tv.diag || dx || "").trim()); set("creat", creat);
+      set("ward", "الباطنية"); set("dx", String(tv.diag || "").trim()); set("creat", creat);
       set("dose", m0.dose ? m0.dose + (fr && fr.m ? " × " + fr.m : "") : ""); void nm;
       set("days", String(tv.days || "").trim()); set("culture", String(tv.culture || "").trim());
       set("indication", tick === 1 ? "complicated skin and soft tissue infections" : tick === 2 ? "complicated intraabdominal infections" : "");
