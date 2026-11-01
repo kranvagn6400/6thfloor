@@ -53,6 +53,10 @@
     moveBed: (fromKey, toKey) => moveBed(fromKey, toKey),
     swapBeds: (aKey, bKey) => swapBeds(aKey, bKey),
     flashHint: (msg) => flashHint(msg),
+    // «ما أُضيف بعد الطلبية» (order-extras.js): the patients as they are ordered, redraw the rooms, add a medicine to a bed
+    orderingState: () => orderingState(),
+    redrawRooms: () => refreshStatsAndRooms(),
+    addMedFor: (bedRef) => { openPatient(bedRef); setTimeout(openSheetFromPatientView, 300); },
     // the price-link module: save the catalogue after it changed the links, and redraw the admin list
     catalogChanged: () => { Storage.saveMedications(state.medications); return pushCatalogAfterEdit(); },
     redrawAdminMeds: () => UI.renderAdminMedList(state.medications, state.admin.selectedId),
@@ -99,6 +103,7 @@
     global.PharmacyBedDrag.init();
     global.PharmacyMedAvailability.init();
     global.PharmacyChartLog.init();
+    if (global.PharmacyOrderExtras) global.PharmacyOrderExtras.init();
     global.PharmacyTarbeet.init();
     // Show login overlay if not logged in, otherwise show the app
     if (Auth && Auth.isLoggedIn()) {

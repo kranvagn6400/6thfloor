@@ -168,6 +168,8 @@
     container.dataset.drawn = "1";
     // Built off-screen and swapped in at once (the grid never collapses)
     const out = document.createDocumentFragment();
+    const OE = global.PharmacyOrderExtras;
+    if (OE && OE.enabled()) OE.refresh();     // «ما أُضيف بعد الطلبية» (the supreme admin only)
 
     // The unit's heading with the عام / خاص switch: one kind of rooms at a time
     {
@@ -175,7 +177,11 @@
       const sw = h("span", { class: "kind-toggle", role: "group", "aria-label": "عام / خاص" },
         [["general", "عام"], ["private", "خاص"]].map(([k, t]) =>
           h("button", { type: "button", class: "kind-btn" + (currentKind === k ? " is-on" : ""), dataset: { kind: k } }, t)));
-      out.appendChild(h("div", { class: "unit-head" }, [h("span", {}, unit.name + " (" + unit.label + ")"), sw]));
+      const pend = OE && OE.enabled() ? OE.pendingPatients() : 0;
+      const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
+      if (pend) kids.push(h("button", { type: "button", class: "oe-chip", dataset: { extrasAll: "1" } }, "إضافات بعد الطلبية: " + pend));
+      kids.push(sw);
+      out.appendChild(h("div", { class: "unit-head" }, kids));
     }
     global.PharmacyWard.ROOMS.filter(r => r.unit === currentUnit && r.kind === currentKind).forEach(room => {
       const occupied = room.beds.filter(b => {
@@ -290,6 +296,14 @@
       if (B && B.isBoarder(patient)) {
         boarderClass = " is-boarder" + (B.isNoOrder(patient) ? " is-no-order" : "");
         children.push(h("span", { class: "bed-boarder-badge", title: B.label(patient) }, B.badge(patient)));
+      }
+      // «ما أُضيف بعد الطلبية»: the small icon (supreme admin only) — a tap opens the comparison popup
+      const OEx = global.PharmacyOrderExtras;
+      const ex = OEx && OEx.enabled() ? OEx.bedState(key) : null;
+      if (ex) {
+        const mk = h("span", { class: "bed-extras-mark is-" + ex.state, title: ex.state === "pending" ? "إضافات بعد الطلبية" : ex.state === "checked" ? "تمت المطابقة" : "مطابقة الطلبية", dataset: { extrasKey: key, roomId: room.id, bed: bed.number } });
+        mk.innerHTML = ex.state === "pending" ? "+" + ex.n : OEx.ICON;     // static markup + a number
+        children.push(mk);
       }
       return h("button", {
         class: `bed-btn state-${status}${alertClass}${boarderClass}`,

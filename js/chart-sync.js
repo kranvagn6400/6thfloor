@@ -127,10 +127,10 @@
   // Send a table (TSV) into today's ward chart. Asks for the account the
   // first time (or after a wrong password). → { ok, summary | message }
   // date: the chart's day ("YYYY-MM-DD"), today when empty
-  async function send(tsv, onProgress, date, unit) {
+  async function send(tsv, onProgress, date, unit, action) {
     let acc = getAccount();                         // personal override, if any
     const day = /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : todayISO();
-    const payload = (a) => Object.assign({ action: "send", date: day, tsv, unit: unit || "1" }, a ? { username: a.username, password: a.password } : {});
+    const payload = (a) => Object.assign({ action: action || "send", date: day, tsv, unit: unit || "1" }, a ? { username: a.username, password: a.password } : {});
     if (onProgress) onProgress("جارٍ الإرسال إلى الجارت… قد يستغرق دقيقة إذا كان موقع الجارت نائماً");
     let r = await call(payload(acc));
     // No shared account on the server, or a wrong personal one → ask once
@@ -142,6 +142,9 @@
     }
     return r;
   }
+
+  // The additions made after the morning order: REPLACES the ward's «الجارت الإضافي» with this table (api/chart-sync.js "extra")
+  const sendExtra = (tsv, onProgress, date, unit) => send(tsv, onProgress, date, unit, "extra");
 
   // Which of our medicine names the chart app does NOT double on Thursdays.
   // Cached for the day (the list rarely changes; reading it logs in to the chart).
@@ -176,5 +179,5 @@
     return t;
   }
 
-  global.PharmacyChartSync = { send, noDouble, askAccount, getAccount, clearAccount, describe, todayISO };
+  global.PharmacyChartSync = { send, sendExtra, noDouble, askAccount, getAccount, clearAccount, describe, todayISO };
 })(window);

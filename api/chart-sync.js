@@ -99,7 +99,8 @@ const chartQuery = (slot, date, w = WARD) => "?" + new URLSearchParams({ floor: 
 async function saveSlot(slot, got, data, catalogue, cookie, date, mergeOpts, w = WARD) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const chart = got.body.chart;
-    const { body, summary, overflow } = Merge.merge(chart, data, catalogue, mergeOpts);
+    // mergeOpts.replace: write the table into an EMPTY chart (the old content of that chart is dropped)
+    const { body, summary, overflow } = Merge.merge(mergeOpts && mergeOpts.replace ? null : chart, data, catalogue, mergeOpts);
     const put = await chartFetch("/chart", cookie, {
       method: "PUT",
       body: JSON.stringify(Object.assign({ floor: w.floor, ward: w.ward, slot, date }, body,
@@ -148,8 +149,8 @@ module.exports = async function handler(req, res) {
     return res.status(412).json({ ok: false, needAccount: true, message: "لم يُضبط حساب الجارت المشترك — أدخل حساب الجارت" });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return fail(res, 400, "تاريخ غير صالح");
-  const data = action === "send" ? Merge.parseTsv(tsv) : null;
-  if (action === "send" && (!data || !data.rows.length)) return fail(res, 400, "لا توجد بيانات مرضى للإرسال");
+  const data = action === "send" || action === "extra" ? Merge.parseTsv(tsv) : null;
+  if ((action === "send" || action === "extra") && (!data || !data.rows.length)) return fail(res, 400, "لا توجد بيانات مرضى للإرسال");
 
   // 1) log in (the chart app may be waking up — first request can be slow)
   let cookie = "";
@@ -188,6 +189,20 @@ module.exports = async function handler(req, res) {
       const noDouble = ours.filter(n => { const c = known.get(n); return c && flagged.has(Merge.norm(c)); });
       return res.status(200).json({ ok: true, noDouble });
     }
+    // «إرسال الإضافات»: the additions made after the morning order REPLACE the ward's extra chart
+    if (action === "extra") {
+      const gotX = await chartFetch("/chart" + chartQuery("extra", date, ward), cookie);
+      if (!gotX.ok) return fail(res, 502, (gotX.body && gotX.body.message) || "تعذّر قراءة الجارت الإضافي");
+      const lockX = gotX.body.lock;
+      if (lockX && lockX.held && !lockX.mine) return fail(res, 423, "الجارت الإضافي مفتوح للتعديل الآن عند آخر — أعد الإرسال بعد قليل");
+      const medsX = await chartFetch("/medicines", cookie);
+      const catalogueX = medsX.ok && medsX.body && Array.isArray(medsX.body.medicines) ? medsX.body.medicines.map(m => m.name) : null;
+      if (!catalogueX) return fail(res, 502, "تعذّر قراءة قائمة أدوية الجارت");
+      const ex = await saveSlot("extra", gotX, data, catalogueX, cookie, date, { replace: true }, ward);
+      if (!ex.ok) return fail(res, 502, ex.message);
+      return res.status(200).json({ ok: true, complete: !!ex.complete, summary: ex.summary });
+    }
+
     let got = await chartFetch("/chart" + q, cookie);
     if (!got.ok) return fail(res, 502, (got.body && got.body.message) || "تعذّر قراءة الجارت");
 
