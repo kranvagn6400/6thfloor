@@ -3062,3 +3062,21 @@ html[data-theme="dark"] .oe-btn.oe-add, html[data-theme="dark"] .oe-btn.oe-send 
 .oe-note { direction: rtl; text-align: right; color: var(--text-muted, #567); font-size: 12px; }
 .unit-head { flex-wrap: wrap; }
 .oe-chip { order: 3; flex: 1 0 100%; text-align: center; }
+
+/* Login screen: the edition name in an elongated capsule, the word «الإصدار» above it (outside) */
+.login-edition { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 18px; }
+.login-edition-label { font-size: 12px; letter-spacing: .04em; color: var(--text-muted, #5B6966); }
+.login-edition-pill {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  min-width: 168px; padding: 7px 26px; border-radius: 999px;
+  font: 700 14px/1.2 "Segoe UI", system-ui, sans-serif; letter-spacing: .06em; color: #fff;
+  background: linear-gradient(180deg, #2c6a5f 0%, #17433D 55%, #0F302B 100%);
+  border: 1.5px solid #C09A4E;
+  box-shadow: 0 2px 6px rgba(15, 48, 43, .28), inset 0 -3px 5px rgba(0, 0, 0, .22);
+  overflow: hidden;
+}
+.login-edition-pill::before {
+  content: ""; position: absolute; left: 14px; right: 14px; top: 3px; height: 38%;
+  border-radius: 999px; background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
