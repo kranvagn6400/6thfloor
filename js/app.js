@@ -6174,14 +6174,13 @@
       const isPharm = Auth && Auth.isPharmacist && Auth.isPharmacist();
       pillsOneBtn.hidden = !(isAdmin || (isPharm && !(cur && global.PharmacyBoarders.isNoOrder(cur))));
     }
-    // Diagnosis field: editable by doctors + admins only.
-    // Pharmacists see it (read-only) so they can read the diagnosis
-    // but not modify it.
+    // «Diagnoses and History» field: editable by doctors, pharmacists and the admin.
     const diagnosisInput = $("patient-diagnosis-input");
     if (diagnosisInput) {
       const isDoctor = Auth && Auth.isDoctor && Auth.isDoctor();
       const isAdmin = Auth && Auth.isAdmin && Auth.isAdmin();
-      diagnosisInput.disabled = !(isAdmin || isDoctor);
+      const isPharm = Auth && Auth.isPharmacist && Auth.isPharmacist();
+      diagnosisInput.disabled = !(isAdmin || isDoctor || isPharm);
     }
     // Lab fields: admin + pharmacists (+ doctors) record results
     const canLabs = !!(Auth && ((Auth.isAdmin && Auth.isAdmin()) || (Auth.isPharmacist && Auth.isPharmacist()) || (Auth.isDoctor && Auth.isDoctor())));
