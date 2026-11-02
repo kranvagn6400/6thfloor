@@ -2775,7 +2775,8 @@
         flashHint("أضف اسم المريض أولاً");
         return;
       }
-      printPatientSheet(p, state.currentBed);
+      // «Bird Vision» is for looking only: the preview has no print button
+      global.PharmacyPrintSheets.preview([{ patient: p, currentBed: state.currentBed }], { viewOnly: true, title: "Bird Vision" });
     });
 
     // Meds list — delete & edit (event delegation)

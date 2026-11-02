@@ -274,7 +274,7 @@
 
   // In-app preview of the sheets (same HTML, no print), then print.
   // Resolves { printed: true | false } — false when the window was blocked.
-  // opts.viewOnly: just look at the sheet (pharmacist) — no print button
+  // opts.viewOnly: just look at the sheet — no print button; opts.title replaces «ورقة العلاج» in its heading
   function preview(entries, opts) {
     const viewOnly = !!(opts && opts.viewOnly);
     if (!Array.isArray(entries) || entries.length === 0) return Promise.resolve({ cancelled: true });
@@ -289,7 +289,7 @@
       box.setAttribute("aria-modal", "true");
       const head = el("div", "pills-preview-head");
       head.appendChild(el("h3", null, entries.length === 1
-        ? (viewOnly ? "ورقة العلاج — " : "معاينة Bird Vision — ") + String(entries[0].patient.name || "").trim()
+        ? ((viewOnly ? ((opts && opts.title) || "ورقة العلاج") : "معاينة الورقة") + " — ") + String(entries[0].patient.name || "").trim()
         : "معاينة أوراق المرضى (" + entries.length + ")"));
       const x = el("button", "pills-preview-x", "✕");
       x.type = "button";
