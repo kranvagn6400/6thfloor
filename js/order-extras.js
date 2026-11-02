@@ -201,8 +201,9 @@
 
   // ---------- who sees it, and until when ----------
   // the chart app's extra chart closes at 2 pm: from then on the icons, the chip and the send are gone (back after the next morning send)
-  const CLOSE_HOUR = 14;
-  const open = () => new Date().getHours() < CLOSE_HOUR;
+  const OPEN_HOUR = 8, CLOSE_HOUR = 14;               // the button / icons / send show from 8 am to 2 pm
+  const TEST_ALWAYS_OPEN = true;                      // TESTING: always open — set to false to bring the hours back
+  const open = () => TEST_ALWAYS_OPEN || (new Date().getHours() >= OPEN_HOUR && new Date().getHours() < CLOSE_HOUR);
   function enabled() {
     const A = global.PharmacyAuth;
     return !!(A && A.isLoggedIn && A.isLoggedIn() && (A.isAdmin() || (A.isPharmacist && A.isPharmacist())) && open());
@@ -485,6 +486,8 @@
     if (enabled()) fetchShared(true);
     // 2 pm: take the icons away without waiting for the next redraw
     const left = new Date().setHours(CLOSE_HOUR, 0, 1, 0) - Date.now();
+    const toOpen = new Date().setHours(OPEN_HOUR, 0, 1, 0) - Date.now();      // and at 8 am they come back by themselves
+    if (toOpen > 0) setTimeout(() => { cache = null; if (global.PharmacyApp && global.PharmacyApp.redrawRooms) global.PharmacyApp.redrawRooms(); }, toOpen);
     if (left > 0) setTimeout(() => { closePopup(); cache = null; if (global.PharmacyApp && global.PharmacyApp.redrawRooms) global.PharmacyApp.redrawRooms(); }, left);
     // a morning send that just finished makes the icons appear / refresh at once
     const Log = global.PharmacyChartLog;
