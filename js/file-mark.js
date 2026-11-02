@@ -6,7 +6,7 @@
    back in an hour or two, or only tomorrow) the bed is marked here, so the
    patient is not forgotten: an orange file mark on the bed in the rooms view
    and a counter «لم تُقارَن: n» above the rooms with the list.
-   «تمت المقارنة» clears it (who / when is kept). The mark does NOT reset at the
+   «رجعت الطبلة» clears it (who / when is kept). The mark does NOT reset at the
    end of the day — it stays until the comparison is done.
    Kept in patient.labs._cmp = { missing, at, by, doneAt, doneBy } (labs JSON —
    no new column; shared like the rest of the patient).
@@ -73,8 +73,8 @@
     if (btn.hidden) return;
     const miss = isMissing(cur.key);
     btn.classList.toggle("is-on", miss);
-    btn.innerHTML = miss ? "✓ تمت المقارنة" : '<span aria-hidden="true">' + FILE_OFF + "</span> الطبلة غير موجودة";
-    btn.title = miss ? "الطبلة ظهرت وتمت مقارنة العلاج" : "الطبلة غير موجودة الآن — علّم المريض لتقارن علاجه لاحقًا";
+    btn.innerHTML = miss ? "✓ رجعت الطبلة" : '<span aria-hidden="true">' + FILE_OFF + "</span> الطبلة غير موجودة";
+    btn.title = miss ? "رجعت الطبلة — أزل العلامة" : "الطبلة غير موجودة الآن — علّم المريض لتقارن علاجه لاحقًا";
   }
 
   // ---------- the list popup ----------
@@ -99,7 +99,7 @@
       row.appendChild(info);
       const open = el("button", "fm-btn", "فتح"); open.type = "button";
       open.addEventListener("click", () => { close(); App().openPatient({ key, roomId: parseInt(m[1], 10), bed: parseInt(m[2], 10) }); });
-      const done = el("button", "fm-btn ok", "تمت المقارنة"); done.type = "button";
+      const done = el("button", "fm-btn ok", "رجعت الطبلة"); done.type = "button";
       done.addEventListener("click", () => { setMissing(key, false); openList(); });
       row.appendChild(open); row.appendChild(done);
       box.appendChild(row);
