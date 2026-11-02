@@ -362,13 +362,15 @@
       // iframe, which gets its own touch events — the listeners go on the dialog's area AND on the iframe's document.
       const addPinch = (target) => {
         let d0 = 0, z0 = 1;
-        const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+        // screen coordinates: the sheet's own (scaled) coordinates would change with the zoom itself and make it shake
+        const dist = (t) => Math.hypot(t[0].screenX - t[1].screenX, t[0].screenY - t[1].screenY);
+        let raf = 0, want = 1;
         target.addEventListener("touchstart", (e) => { if (e.touches.length === 2) { d0 = dist(e.touches); z0 = zoom; } }, { passive: true });
         target.addEventListener("touchmove", (e) => {
           if (e.touches.length !== 2 || !d0) return;
           e.preventDefault();
-          zoom = Math.max(0.5, Math.min(3, Math.round(z0 * dist(e.touches) / d0 * 20) / 20));
-          fit();
+          want = Math.max(0.5, Math.min(3, Math.round(z0 * dist(e.touches) / d0 * 20) / 20));
+          if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (want !== zoom) { zoom = want; fit(); } });     // one redraw per frame
         }, { passive: false });
         target.addEventListener("touchend", (e) => { if (e.touches.length < 2) d0 = 0; }, { passive: true });
       };
