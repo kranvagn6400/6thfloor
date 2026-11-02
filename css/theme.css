@@ -3139,3 +3139,27 @@ html[data-theme="dark"] .gen-ward-btn.is-on { background: color-mix(in srgb, var
 .oe-step { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text); font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
 .oe-step.oe-drop { color: var(--danger, #C2412D); }
 .oe-num { width: 46px; height: 30px; text-align: center; border-radius: 9px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text); font: inherit; font-weight: 800; }
+
+/* the editable lines of the extra chart window: the name on one side, the quantity pill + one icon button on the other, all the same height */
+.oe-line.oe-edit { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.oe-line.oe-edit:last-child { border-bottom: 0; }
+.oe-ctl { display: inline-flex; align-items: center; gap: 8px; direction: ltr; }
+.oe-stepper { display: inline-flex; align-items: stretch; height: 34px; border: 1px solid var(--border-strong, var(--border)); border-radius: 12px; overflow: hidden; background: var(--surface, #fff); }
+.oe-stepper .oe-step { width: 34px; height: 100%; border: 0; border-radius: 0; background: transparent; font-size: 18px; line-height: 1; }
+.oe-stepper .oe-num { width: 40px; height: 100%; border: 0; border-radius: 0; border-inline: 1px solid var(--border); background: transparent; text-align: center; -moz-appearance: textfield; appearance: textfield; }
+.oe-stepper .oe-num::-webkit-outer-spin-button, .oe-stepper .oe-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.oe-icon-btn { width: 34px; height: 34px; display: grid; place-items: center; padding: 0; border-radius: 12px; border: 1px solid var(--border-strong, var(--border)); background: transparent; color: var(--text-muted); cursor: pointer; }
+.oe-icon-btn.oe-drop { color: var(--danger, #C2412D); border-color: color-mix(in srgb, var(--danger, #C2412D) 35%, var(--border)); }
+.oe-line.oe-edit.is-off .oe-stepper { opacity: .45; }
+
+/* the extra chart window is wide and tall: many added medicines fit, the list scrolls inside, the buttons stay at the bottom */
+.oe-box.oe-wide { width: min(760px, 100%); height: min(92vh, 900px); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; }
+.oe-box.oe-wide .oe-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-inline-end: 4px; }
+.oe-box.oe-wide .oe-foot { flex: none; border-top: 1px solid var(--border); padding-top: 8px; }
+.oe-box.oe-wide .oe-foot .oe-warn { margin-top: 0; }
+.oe-box.oe-wide .oe-line { font-size: 15px; }
+@media (max-width: 520px) { .oe-box.oe-wide { height: 94vh; max-height: 94vh; border-radius: 16px; } }
+@media (max-width: 520px) {
+  .oe-box.oe-wide .oe-actions .oe-btn { flex: 1 1 40%; text-align: center; }
+  .oe-box.oe-wide .oe-actions .oe-send { flex: 1 0 100%; }
+}

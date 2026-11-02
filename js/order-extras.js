@@ -337,17 +337,11 @@
     return b;
   }
 
-  // what the comparison stands on: the day and which morning charts were found (helps to see why nothing shows)
-  function basisLine(a) {
-    return el("div", "oe-sub oe-basis", "يوم المقارنة: " + a.day + " — " + GROUPS.map(g => GROUP_NAME[g] + (a.ready && a.ready[g] ? " ✓" : " ✗")).join(" · ") + " (✓ = وُجد جارت صباح مرسَل)");
-  }
-
   function openBed(key, roomId, bed) {
     const a = get();
     const b = a && a.beds[key];
     if (!b) return;
     const box = openOverlay(b.name, (b.plate ? "طبلة " + b.plate + " · " : "") + "الطلبية الصباحية الساعة " + fmtTime(b.at));
-    box.appendChild(basisLine(a));
 
     const morning = section(box, "الطلبية الصباحية");
     const names = b.morning ? Object.keys(b.morning) : [];
@@ -357,7 +351,7 @@
 
     if (b.add.length || b.manual.length) {
       const add = section(box, "أُضيف بعد الطلبية", "is-add");
-      b.add.forEach(x => line(add, x.name, "+" + x.qty, "is-add", x.isNew ? "" : "من " + (x.total - x.qty) + " إلى " + x.total));
+      b.add.forEach(x => line(add, x.name, "+" + x.qty, "is-add"));
       b.manual.forEach(x => line(add, x.name, x.qty, "is-manual", "تُدخل يدويًا"));
     }
     if (b.sent.length) {
@@ -376,6 +370,8 @@
 
   // «الجارت الإضافي»: every addition of the day per chart, EDITABLE before it is sent (quantity − / + / typed, ✕ to leave one out,
   // ↺ to bring it back); what was already sent today; the send button; a link to the chart app
+  const OE_TRASH = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+  const OE_UNDO = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>';
   let edits = {};                                   // "pk|medicine" → the quantity the user chose (0 = left out)
   const editKey = (pk, med) => pk + "|" + med;
   function effAdd(r) {
@@ -387,15 +383,18 @@
   }
   function openAll() {
     const box = openOverlay("الجارت الإضافي", "راجع الإضافات وعدّلها قبل الإرسال");
+    // a wide window: the list scrolls by itself, the warning and the buttons stay at the bottom, always in sight
+    box.classList.add("oe-wide");
     const body = el("div", "oe-body");
+    const foot = el("div", "oe-foot");
     box.appendChild(body);
+    box.appendChild(foot);
     const draw = () => {
       body.innerHTML = "";
+      foot.innerHTML = "";
       const a = get();
       const rowsAll = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.add.length) : [];
       const anyReady = a && a.ready && GROUPS.some(g => a.ready[g]);
-      // what the comparison stands on: the day and which morning charts were found (helps to see why nothing shows)
-      if (a) body.appendChild(basisLine(a));
       if (!anyReady) body.appendChild(el("div", "oe-empty", "لم يُرسل جارت الصباح اليوم بعد — لا توجد طلبية للمقارنة."));
       else if (!rowsAll.length) body.appendChild(el("div", "oe-empty", "لا توجد إضافات غير مرسلة"));
       GROUPS.forEach(g => {
@@ -409,7 +408,6 @@
             const q = k in edits ? edits[k] : x.qty;
             const row = el("div", "oe-line oe-edit is-add" + (q > 0 ? "" : " is-off"));
             const n = el("span", "oe-name", x.name);
-            if (!x.isNew) n.appendChild(el("small", "oe-note", "من " + (x.total - x.qty) + " إلى " + x.total));
             row.appendChild(n);
             const ctl = el("span", "oe-ctl");
             const set = (v) => { edits[k] = Math.max(0, Math.min(99, v | 0)); draw(); };
@@ -418,8 +416,15 @@
             const num = document.createElement("input");
             num.type = "number"; num.min = "0"; num.max = "99"; num.inputMode = "numeric"; num.className = "oe-num"; num.value = String(q);
             num.addEventListener("change", () => set(parseInt(num.value, 10) || 0));
-            ctl.appendChild(minus); ctl.appendChild(num); ctl.appendChild(plus);
-            ctl.appendChild(q > 0 ? btn("✕", "oe-step oe-drop", () => set(0)) : btn("↺", "oe-step", () => { delete edits[k]; draw(); }));
+            // the quantity as one pill:  −  [2]  +   and, apart, a trash (leave it out) or an undo (bring it back) button
+            const pill = el("span", "oe-stepper");
+            pill.appendChild(minus); pill.appendChild(num); pill.appendChild(plus);
+            ctl.appendChild(pill);
+            const icon = q > 0 ? btn("", "oe-icon-btn oe-drop", () => set(0)) : btn("", "oe-icon-btn", () => { delete edits[k]; draw(); });
+            icon.innerHTML = q > 0 ? OE_TRASH : OE_UNDO;                    // static icon markup
+            icon.title = q > 0 ? "استبعاد من الإرسال" : "إعادته";
+            icon.setAttribute("aria-label", icon.title);
+            ctl.appendChild(icon);
             row.appendChild(ctl);
             s.appendChild(row);
           });
@@ -435,7 +440,7 @@
         });
       }
       const sendable = rowsAll.some(r => effAdd(r).length);
-      body.appendChild(el("div", "oe-warn", "⚠ الإرسال يستبدل محتوى الجارت الإضافي الحالي بهذه الإضافات فقط."));
+      foot.appendChild(el("div", "oe-warn", "⚠ الإرسال يستبدل محتوى الجارت الإضافي الحالي بهذه الإضافات فقط."));
       const actions = el("div", "oe-actions");
       const send = btn("إرسال الإضافات", "oe-send", async () => {
         send.disabled = true;
@@ -445,9 +450,8 @@
       });
       send.disabled = !sendable;
       actions.appendChild(send);
-      actions.appendChild(btn("فتح الجارت الإضافي", "", () => { const B = global.PharmacyChartBridge; if (B && B.openChart) B.openChart(); }));
       actions.appendChild(btn("إغلاق", "", closePopup));
-      body.appendChild(actions);
+      foot.appendChild(actions);
     };
     draw();
   }
