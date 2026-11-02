@@ -490,6 +490,7 @@
       const v = String(vals[f.k] == null ? "" : vals[f.k]).trim();
       if (!v) return;
       let text = f.k === "date" ? slash(v) : v;
+      if (form.id === "albumin" && f.k === "alb" && !/d\s*l/i.test(text)) text += " g/dL";      // the albumin value is printed with its unit on the right
       if (f.kashida) text = kashida(text, f);
       // typed in the paper's own fonts at the label's size (11 pt), lowered onto the label's line (the first row of the meronem form only a little)
       o += tbox(f.center ? "c" : f.side === "l" ? "l" : "", f.x0, f.x1, f.cy + (f.cy === 244 ? 0 : form.id === "albumin" && ALB_DY[f.k] != null ? ALB_DY[f.k] : 2), f.side === "l" ? esc(text) : (f.num ? '<span style="direction:ltr;unicode-bidi:isolate;display:inline-block">' + esc(text) + "</span>" : ltrWrap(text)), f.kashida ? 11 : (form.id === "albumin" && f.k === "ward") ? nameFs : (form.id === "albumin" && f.k === "words") ? sizeFor(text, f.x0, f.x1, BIG) : sizeFor(text, f.x0, f.x1, form.id === "albumin" && f.k === "name" ? BIG : 11));

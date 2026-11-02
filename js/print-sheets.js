@@ -54,9 +54,9 @@
     const chosen = Array.isArray(labs._print) && labs._print.length ? labs._print : null;
     const printed = (key) => !chosen || chosen.indexOf(key) >= 0;
     const labHistory = ((patient && patient.labHistory) ? patient.labHistory : []).filter(h => h && printed(h.key));
-    const labRows = LAB_DEFS.filter(([, key]) => printed(key)).map(([label, key]) => {
-      const val = labs[key];
-      const shown = (val != null && String(val).trim() !== "") ? escapeHtml(String(val)) : "";   // empty: written by hand (no dash)
+    // only the labs that have a result: an empty one is not printed (no blank row)
+    const labRows = LAB_DEFS.filter(([, key]) => printed(key) && labs[key] != null && String(labs[key]).trim() !== "").map(([label, key]) => {
+      const shown = escapeHtml(String(labs[key]));
       return `<div class="ps-lab-row"><span class="ps-lab-val">${shown}</span><span class="ps-lab-label">${label}</span></div>`;
     }).join("");
 
