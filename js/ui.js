@@ -179,6 +179,8 @@
           h("button", { type: "button", class: "kind-btn" + (currentKind === k ? " is-on" : ""), dataset: { kind: k } }, t)));
       const pend = OE && OE.enabled() ? OE.pendingPatients() : 0;
       const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
+      const FM = global.PharmacyFileMark, fmN = FM && FM.enabled() ? FM.count() : 0;
+      if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "لم تُقارَن (الملف غير موجود): " + fmN));
       if (pend) kids.push(h("button", { type: "button", class: "oe-chip", dataset: { extrasAll: "1" } }, "إضافات بعد الطلبية: " + pend));
       kids.push(sw);
       out.appendChild(h("div", { class: "unit-head" }, kids));
@@ -296,6 +298,13 @@
       if (B && B.isBoarder(patient)) {
         boarderClass = " is-boarder" + (B.isNoOrder(patient) ? " is-no-order" : "");
         children.push(h("span", { class: "bed-boarder-badge", title: B.label(patient) }, B.badge(patient)));
+      }
+      // «الملف غير موجود»: the paper file was not there in the morning round, the medicines are not compared yet (supreme admin only for now)
+      const FMk = global.PharmacyFileMark;
+      if (FMk && FMk.enabled() && FMk.isMissing(key)) {
+        const fm = h("span", { class: "bed-fm-mark", title: "الملف غير موجود — لم تتم المقارنة", dataset: { fmKey: key } });
+        fm.innerHTML = FMk.ICON;     // static icon markup
+        children.push(fm);
       }
       // «ما أُضيف بعد الطلبية»: the small icon (supreme admin only) — a tap opens the comparison popup
       const OEx = global.PharmacyOrderExtras;

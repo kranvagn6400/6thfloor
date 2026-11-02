@@ -56,6 +56,8 @@
     // «ما أُضيف بعد الطلبية» (order-extras.js): the patients as they are ordered, redraw the rooms, add a medicine to a bed
     orderingState: () => orderingState(),
     redrawRooms: () => refreshStatsAndRooms(),
+    // «الملف غير موجود» (file-mark.js): change one patient and save it
+    editPatient: (bedKey, fn) => { const p = state.patients[bedKey]; if (!p) return; fn(p); persistPatient(bedKey); },
     addMedFor: (bedRef) => { openPatient(bedRef); setTimeout(openSheetFromPatientView, 300); },
     // the price-link module: save the catalogue after it changed the links, and redraw the admin list
     catalogChanged: () => { Storage.saveMedications(state.medications); return pushCatalogAfterEdit(); },
@@ -104,6 +106,7 @@
     global.PharmacyMedAvailability.init();
     global.PharmacyChartLog.init();
     if (global.PharmacyOrderExtras) global.PharmacyOrderExtras.init();
+    if (global.PharmacyFileMark) global.PharmacyFileMark.init();
     global.PharmacyTarbeet.init();
     // Show login overlay if not logged in, otherwise show the app
     if (Auth && Auth.isLoggedIn()) {
@@ -6186,6 +6189,7 @@
     const canLabs = !!(Auth && ((Auth.isAdmin && Auth.isAdmin()) || (Auth.isPharmacist && Auth.isPharmacist()) || (Auth.isDoctor && Auth.isDoctor())));
     document.querySelectorAll(".lab-input").forEach(el => { el.disabled = !canLabs; });
     document.querySelectorAll(".lab-add-btn").forEach(btn => { btn.hidden = !canLabs; });
+    if (global.PharmacyFileMark) global.PharmacyFileMark.updateCardButton();
     applyPlateRules();
   }
 
