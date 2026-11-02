@@ -3121,11 +3121,12 @@ html[data-theme="dark"] .gen-ward-btn.is-on { background: color-mix(in srgb, var
 
 /* The patient card's action buttons: a grid of small tiles (icon over a short label); «إضافة علاج» is the wide button under them */
 .meds-head { display: block; }
-.meds-head-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); gap: 8px; width: 100%; }
+.meds-head-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: stretch; gap: 8px; width: 100%; }     /* a row with fewer tiles stays centred */
 .meds-head-actions .patient-print-btn {
   flex-direction: column; justify-content: center; align-items: center; gap: 3px;
   min-height: 60px; padding: 8px 4px; border-radius: 14px; font-size: 11.5px; line-height: 1.25; text-align: center; align-self: stretch; height: auto;
+  flex: 0 0 calc((100% - 24px) / 4); min-width: 74px;     /* four to a row, as wide as the card allows */
 }
 .meds-head-actions .patient-print-btn > span[aria-hidden] { font-size: 20px; line-height: 1; }
 .meds-head-actions .patient-print-btn svg { width: 20px; height: 20px; }
-.meds-head-actions #open-med-sheet { grid-column: 1 / -1; justify-content: center; padding: 12px 14px; font-size: 15px; }
+.meds-head-actions #open-med-sheet { flex: 0 0 100%; justify-content: center; padding: 12px 14px; font-size: 15px; }
