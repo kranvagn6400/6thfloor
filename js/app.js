@@ -2389,6 +2389,7 @@
       if (!state.currentBed) return;
       const p = ensurePatient(state.currentBed.key);
       p.name = e.target.value;
+      updateGeneralBtn();      // «من الجناح العام» shows as soon as a name is typed in a private bed
       // NOTE: We intentionally do NOT call persistPatient() here.
       // The name + info sync happens only on blur (when the user
       // leaves the patient page). This prevents the app from
