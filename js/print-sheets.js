@@ -6,7 +6,7 @@
 
    Opens a print window with one A4 page per patient:
      - Header: patient, attending doctor, room, date (+ allergies)
-     - Right column (RTL): vitals + current labs + previous labs
+     - Right column (RTL): lab test results + previous results (with their dates)
      - Left column: medications, LTR, sorted by form (vials first),
        dose shown as the per-dose total from sumDose(), D# badge for
        antibiotics (per-med course day), form abbreviation box.
@@ -21,7 +21,7 @@
 
   // Version marker printed faintly at the bottom of each page so the
   // running code version can be verified on paper. Bump on layout changes.
-  const SHEET_VERSION = "v1.4-kufi";
+  const SHEET_VERSION = "v1.5-kufi";
 
   const FORM_ORDER_PRINT = [
     "vial", "ampule", "prefilled-syringe", "solution",
@@ -47,7 +47,7 @@
     } catch (e) { return dateStr; }
   }
 
-  // ---- Right column: vitals (empty, filled by hand) + labs ----
+  // ---- Right column: «Lab Test Results» (the current labs) with the previous results and their dates under it ----
   function buildLabsVitalsHtml(patient) {
     const labs = (patient && patient.labs) ? patient.labs : {};
     // labs._print = the labs chosen for the sheet (doctor / admin); none = all
@@ -78,14 +78,8 @@
 
     return `
       <div class="ps-labs-section">
-        <div class="ps-labs-title">Vitals</div>
-        <div class="ps-lab-row"><span class="ps-lab-val"></span><span class="ps-lab-label">BP</span></div>
-        <div class="ps-lab-row"><span class="ps-lab-val"></span><span class="ps-lab-label">O₂ Sat</span></div>
-        <div class="ps-lab-row"><span class="ps-lab-val"></span><span class="ps-lab-label">PR</span></div>
-        <div class="ps-lab-row"><span class="ps-lab-val"></span><span class="ps-lab-label">UOP</span></div>
-        <div class="ps-lab-row"><span class="ps-lab-val"></span><span class="ps-lab-label">Temp</span></div>
+        <div class="ps-labs-title">Lab Test Results</div>
         ${weightRows}
-        <div class="ps-labs-title" style="margin-top:10px;">Lab Results</div>
         ${labRows}
         ${historyRows ? `<div class="ps-labs-title" style="margin-top:10px;">Previous Results</div>${historyRows}` : ""}
       </div>`;
@@ -295,7 +289,7 @@
       box.setAttribute("aria-modal", "true");
       const head = el("div", "pills-preview-head");
       head.appendChild(el("h3", null, entries.length === 1
-        ? (viewOnly ? "ورقة العلاج — " : "معاينة ورقة المريض — ") + String(entries[0].patient.name || "").trim()
+        ? (viewOnly ? "ورقة العلاج — " : "معاينة التحاليل السابقة — ") + String(entries[0].patient.name || "").trim()
         : "معاينة أوراق المرضى (" + entries.length + ")"));
       const x = el("button", "pills-preview-x", "✕");
       x.type = "button";

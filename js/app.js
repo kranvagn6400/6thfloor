@@ -1886,7 +1886,7 @@
     panel.innerHTML = "";
     const hint = document.createElement("div");
     hint.className = "labs-print-hint";
-    hint.textContent = "التحاليل التي تظهر في ورقة المريض:";
+    hint.textContent = "التحاليل التي تظهر في الورقة:";
     panel.appendChild(hint);
     const list = document.createElement("div");
     list.className = "labs-print-list";
