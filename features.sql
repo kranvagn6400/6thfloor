@@ -892,3 +892,24 @@ create policy "settings_ministry_sent" on public.app_settings
   for all to authenticated
   using (key = 'ministry_abx_sent' and public.app_can_ministry())
   with check (key = 'ministry_abx_sent' and public.app_can_ministry());
+
+-- ---------- 30) «ما أُضيف بعد الطلبية»: حالة اليوم مشتركة بين الأجهزة ----------
+-- بدونه تبقى المقارنة على الجهاز الذي أُرسل منه جارت الصباح فقط. ثلاثة أنواع من الصفوف لكل يوم:
+--   order = ما أُرسل إلى الجارت صباحًا (جارت 1 / 3 / p)، extra = ما أُرسل للجارت الإضافي لكل مريض، check = تعليم «مطابق» لكل سرير.
+create table if not exists public.order_sync (
+  day         date not null,
+  kind        text not null check (kind in ('order', 'extra', 'check')),
+  k           text not null,
+  data        jsonb not null default '{}'::jsonb,
+  updated_by  uuid default auth.uid(),
+  updated_at  timestamptz not null default now(),
+  primary key (day, kind, k)
+);
+alter table public.order_sync enable row level security;
+revoke all on public.order_sync from anon;
+grant select, insert, update, delete on public.order_sync to authenticated;
+drop policy if exists "order_sync_staff" on public.order_sync;
+create policy "order_sync_staff" on public.order_sync
+  for all to authenticated
+  using (public.app_role() in ('pharmacist', 'admin'))
+  with check (public.app_role() in ('pharmacist', 'admin'));

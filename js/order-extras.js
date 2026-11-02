@@ -112,6 +112,74 @@
   }
   if (typeof window === "undefined") return;
 
+  // ---------- the day's state shared by every device (Supabase table order_sync, features.sql §30) ----------
+  // rows (day, kind, k): kind "order" k = the chart (1 / 3 / p) → { date, sends: [{ tsv, at }] } — the morning order that was sent;
+  //                      kind "extra" k = a patient → { meds: { name: total sent as extra } };
+  //                      kind "check" k = a bed → { at } (the «مطابق» ticks).
+  // Without the table (the SQL not run yet) everything stays on this device, as before.
+  let shared = { orders: [], extras: {}, checks: {}, at: 0, sig: "" };
+  let sharedOff = false, sharedBusy = false, sharedClean = false;
+  const sbClient = () => { const SB = global.PharmacySupabase; return SB && SB.isConfigured && SB.isConfigured() ? SB.getClient() : null; };
+  const tableMissing = (err) => !!err && /order_sync|does not exist|schema cache|relation/i.test(String(err.message || ""));
+  async function fetchShared(force) {
+    const c = sbClient();
+    if (!c || sharedOff || sharedBusy) return;
+    if (!force && Date.now() - shared.at < 45000) return;
+    sharedBusy = true;
+    try {
+      const day = todayISO();
+      const r = await c.from("order_sync").select("kind,k,data").eq("day", day);
+      if (r.error) { if (tableMissing(r.error)) sharedOff = true; return; }
+      const next = { orders: [], extras: {}, checks: {}, at: Date.now(), sig: "" };
+      (r.data || []).forEach(row => {
+        const d = row.data || {};
+        if (row.kind === "order") (d.sends || []).forEach(s => next.orders.push({ tsv: s.tsv, unit: row.k, date: d.date || day, at: s.at, result: { ok: true, at: s.at } }));
+        else if (row.kind === "extra") next.extras[row.k] = d.meds || {};
+        else if (row.kind === "check") next.checks[row.k] = d.at || "1";
+      });
+      next.sig = JSON.stringify([next.orders.map(o => o.unit + o.at), next.extras, next.checks]);
+      const changed = next.sig !== shared.sig;
+      shared = next;
+      if (changed) redraw();
+      if (!sharedClean) {            // once a session: drop the rows of old days
+        sharedClean = true;
+        const old = new Date(Date.now() - 7 * 864e5);
+        const cut = old.getFullYear() + "-" + pad(old.getMonth() + 1) + "-" + pad(old.getDate());
+        c.from("order_sync").delete().lt("day", cut).then(() => {}, () => {});
+      }
+    } catch (e) { /* offline: keep what we have */ }
+    finally { sharedBusy = false; }
+  }
+  async function putShared(kind, k, data, day) {
+    const c = sbClient();
+    if (!c || sharedOff) return;
+    try {
+      const r = await c.from("order_sync").upsert({ day: day || todayISO(), kind, k, data, updated_at: new Date().toISOString() }, { onConflict: "day,kind,k" });
+      if (r.error && tableMissing(r.error)) sharedOff = true;
+      else shared.at = 0;            // the next redraw reads it back
+    } catch (e) { /* stays on this device */ }
+  }
+  async function delShared(kind, k) {
+    const c = sbClient();
+    if (!c || sharedOff) return;
+    try { await c.from("order_sync").delete().eq("day", todayISO()).eq("kind", kind).eq("k", k); shared.at = 0; } catch (e) { /* ignore */ }
+  }
+  // a chart send that succeeded → its table is added to the shared morning order of that chart
+  async function shareOrder(entry) {
+    const c = sbClient();
+    if (!c || sharedOff || !entry || !entry.result || !entry.result.ok) return;
+    const day = entry.date || localISO(entry.at);
+    const unit = entry.unit || "1";
+    try {
+      const r0 = await c.from("order_sync").select("data").eq("day", day).eq("kind", "order").eq("k", unit).maybeSingle();
+      if (r0.error && tableMissing(r0.error)) { sharedOff = true; return; }
+      const when = entry.result.at || entry.at;
+      const sends = ((r0.data && r0.data.data && r0.data.data.sends) || []).filter(s => s && s.at !== when);
+      sends.push({ tsv: entry.tsv, at: when });
+      await putShared("order", unit, { date: day, sends: sends.slice(-6) }, day);
+    } catch (e) { /* stays on this device */ }
+  }
+
   // ---------- storage (this device) ----------
   const todayISO = () => (global.PharmacyChartSync && global.PharmacyChartSync.todayISO ? global.PharmacyChartSync.todayISO() : localISO(new Date().toISOString()));
   function loadDay(key, shape) {
@@ -123,11 +191,12 @@
   }
   function saveDay(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* blocked */ } }
 
-  const isChecked = (bedKey) => !!loadDay(CHECK_KEY, { keys: {} }).keys[bedKey];
+  const isChecked = (bedKey) => !!loadDay(CHECK_KEY, { keys: {} }).keys[bedKey] || !!shared.checks[bedKey];
   function setChecked(bedKey, on) {
     const v = loadDay(CHECK_KEY, { keys: {} });
     if (on) v.keys[bedKey] = new Date().toISOString(); else delete v.keys[bedKey];
     saveDay(CHECK_KEY, v);
+    if (on) putShared("check", bedKey, { at: v.keys[bedKey] }); else { delete shared.checks[bedKey]; delShared("check", bedKey); }
   }
 
   // ---------- who sees it, and until when ----------
@@ -158,8 +227,13 @@
     const Log = global.PharmacyChartLog, Bridge = global.PharmacyChartBridge, App = global.PharmacyApp;
     if (!Log || !Bridge || !App || !App.orderingState) return null;
     const day = todayISO();
-    const entries = Log.load();
-    const over = loadDay(OVERLAY_KEY, { byPk: {} });
+    const entries = Log.load().concat(shared.orders);        // this device's send log + the sends of the other devices
+    const over0 = loadDay(OVERLAY_KEY, { byPk: {} });
+    const over = { byPk: {} };                                 // what was sent as extras: this device + the others (the larger total wins)
+    [over0.byPk, shared.extras].forEach(src => Object.keys(src || {}).forEach(pk => {
+      const o = over.byPk[pk] || (over.byPk[pk] = {});
+      Object.keys(src[pk] || {}).forEach(m => { if (!(+o[m] >= +src[pk][m])) o[m] = src[pk][m]; });
+    }));
     const base = {};
     GROUPS.forEach(g => { base[g] = baselineFor(entries, g, day); });
     const beds = {};
@@ -175,7 +249,7 @@
     return { day, beds, patients };
   }
   function get() { return cache || (cache = analyze()); }
-  function refresh() { cache = null; return enabled() ? get() : null; }
+  function refresh() { cache = null; if (!enabled()) return null; fetchShared(); return get(); }
 
   function bedState(key) {
     const a = enabled() ? get() : null;
@@ -309,6 +383,11 @@
       r.add.forEach(x => { o[x.name] = x.total; });
     });
     saveDay(OVERLAY_KEY, over);
+    rows.forEach(r => {                    // shared: the other devices must not send the same addition again
+      const merged = Object.assign({}, shared.extras[r.pk] || {}, over.byPk[r.pk] || {});
+      shared.extras[r.pk] = merged;
+      putShared("extra", r.pk, { meds: merged });
+    });
   }
 
   async function sendAll() {
@@ -341,14 +420,18 @@
       grid.addEventListener("click", (e) => {
         if (!enabled()) return;
         const all = e.target.closest("[data-extras-all]");
-        if (all) { e.stopPropagation(); e.preventDefault(); refresh(); openAll(); return; }
+        if (all) { e.stopPropagation(); e.preventDefault(); fetchShared(true); refresh(); openAll(); return; }
         const mk = e.target.closest("[data-extras-key]");
         if (!mk) return;
         e.stopPropagation(); e.preventDefault();
+        fetchShared(true);
         refresh();
         openBed(mk.dataset.extrasKey, parseInt(mk.dataset.roomId, 10), parseInt(mk.dataset.bed, 10));
       }, true);
     }
+    // coming back to the page / the first draw: read what the other devices did
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && enabled()) fetchShared(true); });
+    if (enabled()) fetchShared(true);
     // 2 pm: take the icons away without waiting for the next redraw
     const left = new Date().setHours(CLOSE_HOUR, 0, 1, 0) - Date.now();
     if (left > 0) setTimeout(() => { closePopup(); cache = null; if (global.PharmacyApp && global.PharmacyApp.redrawRooms) global.PharmacyApp.redrawRooms(); }, left);
@@ -356,8 +439,9 @@
     const Log = global.PharmacyChartLog;
     if (Log && Log.setResult && !Log._oeWrapped) {
       const orig = Log.setResult;
-      Log.setResult = function () {
+      Log.setResult = function (id) {
         const r = orig.apply(this, arguments);
+        try { const e = Log.load().find(x => x.id === id); if (e && e.result && e.result.ok) shareOrder(e); } catch (err) { /* local only */ }
         if (enabled()) redraw();
         return r;
       };
