@@ -3113,4 +3113,4 @@ html[data-theme="dark"] .gen-ward-btn.is-on { background: color-mix(in srgb, var
 
 /* every occupied bed card has the same height (the size of a card with name + specialist + plate), private and general alike;
    only a very long name that wraps to two lines can make one taller */
-.bed-btn.state-occupied { min-height: 108px; }
+.bed-btn:not(.state-empty) { min-height: 108px; }     /* occupied = state-occupied (no medicines) or state-meds */
