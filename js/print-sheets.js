@@ -289,7 +289,7 @@
       box.setAttribute("aria-modal", "true");
       const head = el("div", "pills-preview-head");
       head.appendChild(el("h3", null, entries.length === 1
-        ? (viewOnly ? "ورقة العلاج — " : "معاينة التحاليل السابقة — ") + String(entries[0].patient.name || "").trim()
+        ? (viewOnly ? "ورقة العلاج — " : "معاينة Bird Vision — ") + String(entries[0].patient.name || "").trim()
         : "معاينة أوراق المرضى (" + entries.length + ")"));
       const x = el("button", "pills-preview-x", "✕");
       x.type = "button";
