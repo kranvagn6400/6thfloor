@@ -6207,11 +6207,12 @@
     if (printBtn) {
       const isDoctor = Auth && Auth.isDoctor && Auth.isDoctor();
       const isAdmin = Auth && Auth.isAdmin && Auth.isAdmin();
-      printBtn.hidden = !(isAdmin || isDoctor);
+      const isPharm = Auth && Auth.isPharmacist && Auth.isPharmacist();
+      printBtn.hidden = !(isAdmin || isDoctor || isPharm);      // «Bird Vision»: everyone
     }
-    // View-only sheet button: pharmacists (the admin + doctors have the print one)
+    // The old «ورقة العلاج» button of the pharmacists is replaced by «Bird Vision» (same sheet, view only)
     const viewSheetBtn = $("view-patient-sheet-btn");
-    if (viewSheetBtn) viewSheetBtn.hidden = !(Auth && Auth.isPharmacist && Auth.isPharmacist());
+    if (viewSheetBtn) viewSheetBtn.hidden = true;
     // «استمارة خروج الخاص»: private-room patients, pharmacists + admin
     const privFormBtn = $("private-form-btn");
     if (privFormBtn) privFormBtn.hidden = !(Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist())) && global.PharmacyPrivateForm && global.PharmacyPrivateForm.isPrivateBed(state.currentBed && state.currentBed.key) && !isGeneralInPrivate(state.patients[state.currentBed && state.currentBed.key]));

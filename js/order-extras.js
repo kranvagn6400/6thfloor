@@ -11,7 +11,7 @@
        only the difference) is an «إضافة»; stopped / lowered ones are ignored;
      - «إرسال الإضافات» REPLACES the chart app's «الجارت الإضافي» of that ward with the additions only
        (api/chart-sync.js action "extra"); what was sent is remembered on this device so it is not sent twice.
-   Everything is local to this device (localStorage) and visible to the supreme admin only (Auth.isSuperAdmin).
+   Everything is local to this device (localStorage) and visible to the admin and the pharmacists (until 2 PM).
    ============================================================ */
 
 (function (global) {
@@ -136,7 +136,7 @@
   const open = () => new Date().getHours() < CLOSE_HOUR;
   function enabled() {
     const A = global.PharmacyAuth;
-    return !!(A && A.isLoggedIn && A.isLoggedIn() && A.isSuperAdmin && A.isSuperAdmin() && open());
+    return !!(A && A.isLoggedIn && A.isLoggedIn() && (A.isAdmin() || (A.isPharmacist && A.isPharmacist())) && open());
   }
 
   // ---------- the analysis (every occupied bed that is in an order) ----------

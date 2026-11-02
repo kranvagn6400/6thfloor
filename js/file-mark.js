@@ -10,7 +10,7 @@
    end of the day — it stays until the comparison is done.
    Kept in patient.labs._cmp = { missing, at, by, doneAt, doneBy } (labs JSON —
    no new column; shared like the rest of the patient).
-   For now: the supreme admin only (Auth.isSuperAdmin) — to test it first.
+   Visible to the admin and the pharmacists (the doctors do not do the morning round).
    ============================================================ */
 
 (function (global) {
@@ -20,7 +20,7 @@
   const App = () => global.PharmacyApp;
   const enabled = () => {
     const A = Auth();
-    return !!(A && A.isLoggedIn && A.isLoggedIn() && A.isSuperAdmin && A.isSuperAdmin());
+    return !!(A && A.isLoggedIn && A.isLoggedIn() && (A.isAdmin() || (A.isPharmacist && A.isPharmacist())));
   };
   const FILE_OFF = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><polyline points="14 3 14 8 19 8"/><line x1="4" y1="4" x2="20" y2="20"/></svg>';
 
