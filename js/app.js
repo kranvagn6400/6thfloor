@@ -707,7 +707,7 @@
     const doctorField = $("patient-doctor-input");
     if (doctorField) doctorField.placeholder = isAdmin ? "الطبيب المعالج" : "اسم الأخصائي";
     const plateField = $("patient-plate-input");
-    if (plateField) plateField.placeholder = (isDoctor || isAdmin) ? "رقم الطبلة (6 أرقام — اختياري)" : "رقم الطبلة (6 أرقام) *";
+    if (plateField) plateField.placeholder = (isDoctor || isAdmin) ? "رقم الطبلة" : "رقم الطبلة *";
 
     // Update the role class on <html> so the pre-paint CSS gate
     // shows the correct header buttons. The pre-paint script in
@@ -1766,11 +1766,11 @@
     const len = currentPlateLen();
     field.maxLength = len;
     updateGeneralBtn();
-    if (len === 5) field.placeholder = "رقم الطبلة (5 أرقام) *";
+    if (len === 5) field.placeholder = "رقم الطبلة *";
     else {
       const Auth = global.PharmacyAuth;
       const optional = !!(Auth && ((Auth.isDoctor && Auth.isDoctor()) || (Auth.isAdmin && Auth.isAdmin())));
-      field.placeholder = optional ? "رقم الطبلة (6 أرقام — اختياري)" : "رقم الطبلة (6 أرقام) *";
+      field.placeholder = optional ? "رقم الطبلة" : "رقم الطبلة *";
     }
   }
 
