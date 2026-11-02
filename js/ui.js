@@ -317,7 +317,7 @@
         children.push(mk);
       }
       return h("button", {
-        class: `bed-btn state-${status}${alertClass}${boarderClass}`,
+        class: `bed-btn state-${status}${alertClass}${boarderClass}${patient.labs && patient.labs._gen === true ? " is-gen-ward" : ""}`,
         dataset: { roomId: room.id, bed: bed.number, key: key },
         type: "button"
       }, children);
