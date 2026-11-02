@@ -84,7 +84,7 @@
 
     return `
       <div class="ps-labs-section">
-        <div class="ps-labs-title">Lab Test Results</div>
+        <div class="ps-labs-title">Lab Tests and Calculations</div>
         ${weightRows}
         ${labRows}
         ${renalRows}
