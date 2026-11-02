@@ -1749,7 +1749,7 @@
     const r = cur && global.PharmacyWard && global.PharmacyWard.roomById(cur.roomId);
     const Auth = global.PharmacyAuth;
     const allowed = !!(Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist()) || (Auth.isDoctor && Auth.isDoctor())));
-    btn.hidden = !(allowed && r && r.kind === "private" && p && p.name && p.name.trim());
+    btn.hidden = !(allowed && r && r.kind === "private");     // always there in a private bed (even before a name is typed)
     if (btn.hidden) return;
     const on = isGeneralInPrivate(p);
     btn.classList.toggle("is-on", on);
@@ -2389,7 +2389,6 @@
       if (!state.currentBed) return;
       const p = ensurePatient(state.currentBed.key);
       p.name = e.target.value;
-      updateGeneralBtn();      // «من الجناح العام» shows as soon as a name is typed in a private bed
       // NOTE: We intentionally do NOT call persistPatient() here.
       // The name + info sync happens only on blur (when the user
       // leaves the patient page). This prevents the app from
@@ -2424,7 +2423,8 @@
       const p = ensurePatient(state.currentBed.key);
       p.labs = p.labs || {};
       if (isGeneralInPrivate(p)) delete p.labs._gen; else p.labs._gen = true;
-      persistPatient(state.currentBed.key);
+      // a bed that has no name yet: the flag waits in the card and is saved with the patient when the name is saved
+      if (p.name && p.name.trim()) persistPatient(state.currentBed.key);
       applyPlateRules();
       const f = $("patient-plate-input"), len = currentPlateLen();
       if (f.value && !isValidPlate(f.value, len)) {
