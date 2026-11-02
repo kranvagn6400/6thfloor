@@ -1844,7 +1844,7 @@
     // the date of the results: «تاريخ النتيجة» (today unless an earlier day was picked) — local day, never a future one
     const today = UI.localToday();
     const di = $("lab-date-input");
-    const day = di && /^d{4}-d{2}-d{2}$/.test(di.value) && di.value <= today ? di.value : today;
+    const day = di && /^\d{4}-\d{2}-\d{2}$/.test(di.value) && di.value <= today ? di.value : today;
     let n = 0;
     (inputs || []).forEach(inp => {
       if (!inp || inp.disabled) return;
