@@ -365,12 +365,12 @@
     const overlay = el("div"); overlay.id = "handover-preview";
     overlay.style.cssText = "position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.72);display:flex;flex-direction:column;";
     const bar = el("div");
-    bar.style.cssText = "display:flex;gap:8px;align-items:center;padding:10px 12px;background:#14211f;color:#fff;flex-wrap:wrap;";
+    bar.style.cssText = "display:flex;gap:8px;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-right,0px) + 12px) 10px calc(env(safe-area-inset-left,0px) + 12px);background:#14211f;color:#fff;flex-wrap:wrap;";
     const title = el("strong", null, "تسليم واستلام — " + v.date);
     title.style.cssText = "flex:1;min-width:140px;font-size:14px;";
     const printBtn = el("button", null, "📄 حفظ PDF");
     const closeBtn = el("button", null, "إغلاق");
-    [printBtn, closeBtn].forEach(b => { b.type = "button"; b.style.cssText = "padding:8px 14px;border-radius:10px;border:0;font:inherit;font-weight:800;cursor:pointer;background:#fff;color:#14211f;"; });
+    [printBtn, closeBtn].forEach(b => { b.type = "button"; b.style.cssText = "min-height:40px;padding:8px 14px;border-radius:10px;border:0;font:inherit;font-weight:800;cursor:pointer;background:#fff;color:#14211f;"; });
     printBtn.style.background = "#f5b301";
     bar.appendChild(title); bar.appendChild(printBtn); bar.appendChild(closeBtn);
     const stage = el("div"); stage.style.cssText = "flex:1;overflow:auto;padding:12px;display:flex;justify-content:center;";
