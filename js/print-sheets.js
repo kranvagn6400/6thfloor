@@ -64,9 +64,12 @@
     if (labHistory.length > 0) {
       const byDate = {};
       labHistory.forEach(h => { const d = h.date || "—"; (byDate[d] = byDate[d] || []).push(h); });
+      // newest day first; under each date a block: the date as a heading, then one row per lab (in the order of the labs above)
+      const order = LAB_DEFS.map(d => d[1]);
       Object.keys(byDate).sort().reverse().forEach(date => {
-        const parts = byDate[date].map(e => `${e.label}: ${e.value}`).join("  ·  ");
-        historyRows += `<div class="ps-lab-row ps-lab-history"><span class="ps-lab-val">${escapeHtml(parts)}</span><span class="ps-lab-label">${escapeHtml(formatDateShortForPrint(date))}</span></div>`;
+        const entries = byDate[date].slice().sort((x, y) => order.indexOf(x.key) - order.indexOf(y.key));
+        historyRows += `<div class="ps-hist-block"><div class="ps-hist-date">${escapeHtml(formatDateShortForPrint(date))}</div>` +
+          entries.map(e => `<div class="ps-lab-row"><span class="ps-lab-val">${escapeHtml(String(e.value))}</span><span class="ps-lab-label">${escapeHtml(String(e.label || e.key || ""))}</span></div>`).join("") + "</div>";
       });
     }
 
@@ -200,6 +203,9 @@
     '.ps-labs-title { font-size: 13px; font-weight: 800; margin-bottom: 6px; text-decoration: underline; }',
     '.ps-lab-row { display: flex; justify-content: space-between; padding: 3px 0; }',
     '.ps-lab-label { font-weight: 700; }',
+    // the previous results: one block per date, the date as a shaded heading, one row per lab
+    '.ps-hist-block { margin-top: 6px; break-inside: avoid; }',
+    '.ps-hist-date { font-size: 12px; font-weight: 800; background: #eee; border-bottom: 1px solid #000; padding: 2px 6px; margin-bottom: 2px; }',
     // Values with units ("70 kg", "28.4 mL/min") read left-to-right
     '.ps-lab-val { font-weight: 800; direction: ltr; unicode-bidi: isolate; }',
     // Meds read left-to-right: "1. Meronem 1g x 2"
