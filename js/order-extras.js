@@ -337,11 +337,17 @@
     return b;
   }
 
+  // what the comparison stands on: the day and which morning charts were found (helps to see why nothing shows)
+  function basisLine(a) {
+    return el("div", "oe-sub oe-basis", "يوم المقارنة: " + a.day + " — " + GROUPS.map(g => GROUP_NAME[g] + (a.ready && a.ready[g] ? " ✓" : " ✗")).join(" · ") + " (✓ = وُجد جارت صباح مرسَل)");
+  }
+
   function openBed(key, roomId, bed) {
     const a = get();
     const b = a && a.beds[key];
     if (!b) return;
     const box = openOverlay(b.name, (b.plate ? "طبلة " + b.plate + " · " : "") + "الطلبية الصباحية الساعة " + fmtTime(b.at));
+    box.appendChild(basisLine(a));
 
     const morning = section(box, "الطلبية الصباحية");
     const names = b.morning ? Object.keys(b.morning) : [];
@@ -391,7 +397,7 @@
       const rowsAll = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.add.length) : [];
       const anyReady = a && a.ready && GROUPS.some(g => a.ready[g]);
       // what the comparison stands on: the day and which morning charts were found (helps to see why nothing shows)
-      if (a) body.appendChild(el("div", "oe-sub oe-basis", "يوم المقارنة: " + a.day + " — " + GROUPS.map(g => GROUP_NAME[g] + (a.ready && a.ready[g] ? " ✓" : " ✗")).join(" · ") + " (✓ = وُجد جارت صباح مرسَل)"));
+      if (a) body.appendChild(basisLine(a));
       if (!anyReady) body.appendChild(el("div", "oe-empty", "لم يُرسل جارت الصباح اليوم بعد — لا توجد طلبية للمقارنة."));
       else if (!rowsAll.length) body.appendChild(el("div", "oe-empty", "لا توجد إضافات غير مرسلة"));
       GROUPS.forEach(g => {
