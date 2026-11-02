@@ -287,6 +287,8 @@
       const box = el("div", "pills-preview-box sheets-preview-box");
       box.setAttribute("role", "dialog");
       box.setAttribute("aria-modal", "true");
+      // «Bird Vision» (viewOnly + a title): no heading, no ✕ and no zoom buttons — the sheet is looked at, pinched with two fingers, and closed with «إغلاق»
+      const bare = viewOnly && !!(opts && opts.title);
       const head = el("div", "pills-preview-head");
       head.appendChild(el("h3", null, entries.length === 1
         ? ((viewOnly ? ((opts && opts.title) || "ورقة العلاج") : "معاينة الورقة") + " — ") + String(entries[0].patient.name || "").trim()
@@ -295,7 +297,7 @@
       x.type = "button";
       x.setAttribute("aria-label", "إغلاق");
       head.appendChild(x);
-      box.appendChild(head);
+      if (!bare) box.appendChild(head);
       // Zoom: − / + around the "fit to width" size, "ملاءمة" goes back to it
       const zoomBar = el("div", "sheets-zoom");
       const zOut = el("button", "sheets-zoom-btn", "−");
@@ -306,7 +308,7 @@
       zOut.setAttribute("aria-label", "تصغير");
       zIn.setAttribute("aria-label", "تكبير");
       zoomBar.appendChild(zOut); zoomBar.appendChild(zLabel); zoomBar.appendChild(zIn); zoomBar.appendChild(zFit);
-      box.appendChild(zoomBar);
+      if (!bare) box.appendChild(zoomBar);
       if (!viewOnly) box.appendChild(el("p", "pills-preview-hint", "للتعديل: أغلق المعاينة، عدّل بطاقة المريض ثم افتحها من جديد."));
       const pagesBox = el("div", "pills-preview-pages sheets-preview-pages");
       const frameWrap = el("div", "sheets-preview-frame");
