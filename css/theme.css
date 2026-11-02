@@ -3130,3 +3130,12 @@ html[data-theme="dark"] .gen-ward-btn.is-on { background: color-mix(in srgb, var
 .meds-head-actions .patient-print-btn > span[aria-hidden] { font-size: 20px; line-height: 1; }
 .meds-head-actions .patient-print-btn svg { width: 20px; height: 20px; }
 .meds-head-actions #open-med-sheet { flex: 0 0 100%; justify-content: center; padding: 12px 14px; font-size: 15px; }
+
+/* «الجارت الإضافي»: the permanent button above the rooms, and the editable list in its window */
+.oe-chip.is-zero { border-color: var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text-muted); }
+.oe-line.oe-edit { align-items: center; }
+.oe-line.oe-edit.is-off .oe-name { text-decoration: line-through; opacity: .5; }
+.oe-ctl { display: inline-flex; align-items: center; gap: 4px; flex: none; direction: ltr; }
+.oe-step { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text); font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; }
+.oe-step.oe-drop { color: var(--danger, #C2412D); }
+.oe-num { width: 46px; height: 30px; text-align: center; border-radius: 9px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text); font: inherit; font-weight: 800; }

@@ -246,7 +246,9 @@
       beds[c.key] = { group: c.group, pk, name: c.name, plate: c.plate, morning: b ? b.meds : null, at: b ? b.at : base[c.group].at, add: d.add, manual: d.manual, sent: d.sent, cur: c.meds };
       if (d.add.length) patients++;
     });
-    return { day, beds, patients };
+    const ready = {};
+    GROUPS.forEach(g => { ready[g] = !!base[g].ready; });
+    return { day, beds, patients, ready };
   }
   function get() { return cache || (cache = analyze()); }
   function refresh() { cache = null; if (!enabled()) return null; fetchShared(); return get(); }
@@ -347,32 +349,80 @@
     box.appendChild(actions);
   }
 
-  // every addition of the day, per chart, with the send button
+  // «الجارت الإضافي»: every addition of the day per chart, EDITABLE before it is sent (quantity − / + / typed, ✕ to leave one out,
+  // ↺ to bring it back); what was already sent today; the send button; a link to the chart app
+  let edits = {};                                   // "pk|medicine" → the quantity the user chose (0 = left out)
+  const editKey = (pk, med) => pk + "|" + med;
+  function effAdd(r) {
+    return r.add.map(x => {
+      const k = editKey(r.pk, x.name);
+      const q = k in edits ? edits[k] : x.qty;
+      return { name: x.name, qty: q, total: (x.total - x.qty) + q };
+    }).filter(x => x.qty > 0);
+  }
   function openAll() {
-    const a = get();
-    const box = openOverlay("إضافات بعد الطلبية", "تُرسل إلى الجارت الإضافي");
-    const withAdd = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.add.length) : [];
-    if (!withAdd.length) { box.appendChild(el("div", "oe-empty", "لا توجد إضافات غير مرسلة")); return; }
-    GROUPS.forEach(g => {
-      const rows = withAdd.filter(x => x.group === g);
-      if (!rows.length) return;
-      const s = section(box, GROUP_NAME[g]);
-      rows.forEach(r => {
-        s.appendChild(el("div", "oe-patient", r.name));
-        r.add.forEach(x => line(s, x.name, "+" + x.qty, "is-add"));
+    const box = openOverlay("الجارت الإضافي", "راجع الإضافات وعدّلها قبل الإرسال");
+    const body = el("div", "oe-body");
+    box.appendChild(body);
+    const draw = () => {
+      body.innerHTML = "";
+      const a = get();
+      const rowsAll = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.add.length) : [];
+      const anyReady = a && a.ready && GROUPS.some(g => a.ready[g]);
+      if (!anyReady) body.appendChild(el("div", "oe-empty", "لم يُرسل جارت الصباح اليوم بعد — لا توجد طلبية للمقارنة."));
+      else if (!rowsAll.length) body.appendChild(el("div", "oe-empty", "لا توجد إضافات غير مرسلة"));
+      GROUPS.forEach(g => {
+        const rows = rowsAll.filter(x => x.group === g);
+        if (!rows.length) return;
+        const s = section(body, GROUP_NAME[g]);
+        rows.forEach(r => {
+          s.appendChild(el("div", "oe-patient", r.name));
+          r.add.forEach(x => {
+            const k = editKey(r.pk, x.name);
+            const q = k in edits ? edits[k] : x.qty;
+            const row = el("div", "oe-line oe-edit is-add" + (q > 0 ? "" : " is-off"));
+            const n = el("span", "oe-name", x.name);
+            if (!x.isNew) n.appendChild(el("small", "oe-note", "من " + (x.total - x.qty) + " إلى " + x.total));
+            row.appendChild(n);
+            const ctl = el("span", "oe-ctl");
+            const set = (v) => { edits[k] = Math.max(0, Math.min(99, v | 0)); draw(); };
+            const minus = btn("−", "oe-step", () => set(q - 1));
+            const plus = btn("+", "oe-step", () => set(q + 1));
+            const num = document.createElement("input");
+            num.type = "number"; num.min = "0"; num.max = "99"; num.inputMode = "numeric"; num.className = "oe-num"; num.value = String(q);
+            num.addEventListener("change", () => set(parseInt(num.value, 10) || 0));
+            ctl.appendChild(minus); ctl.appendChild(num); ctl.appendChild(plus);
+            ctl.appendChild(q > 0 ? btn("✕", "oe-step oe-drop", () => set(0)) : btn("↺", "oe-step", () => { delete edits[k]; draw(); }));
+            row.appendChild(ctl);
+            s.appendChild(row);
+          });
+        });
       });
-    });
-    box.appendChild(el("div", "oe-warn", "⚠ الإرسال يستبدل محتوى الجارت الإضافي الحالي بهذه الإضافات فقط."));
-    const actions = el("div", "oe-actions");
-    const send = btn("إرسال الإضافات", "oe-send", async () => {
-      send.disabled = true;
-      const r = await sendAll();
-      send.disabled = false;
-      if (r && r.ok) { closePopup(); redraw(); } else if (r && r.cancelled) { /* stay */ }
-    });
-    actions.appendChild(send);
-    actions.appendChild(btn("إغلاق", "", closePopup));
-    box.appendChild(actions);
+      // what was already sent today
+      const sentRows = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.sent.length) : [];
+      if (sentRows.length) {
+        const s = section(body, "أُرسلت اليوم إلى الجارت الإضافي", "is-sent");
+        sentRows.forEach(r => {
+          s.appendChild(el("div", "oe-patient", r.name + " · " + GROUP_NAME[r.group]));
+          r.sent.forEach(x => line(s, x.name, "+" + x.qty, "is-sent"));
+        });
+      }
+      const sendable = rowsAll.some(r => effAdd(r).length);
+      body.appendChild(el("div", "oe-warn", "⚠ الإرسال يستبدل محتوى الجارت الإضافي الحالي بهذه الإضافات فقط."));
+      const actions = el("div", "oe-actions");
+      const send = btn("إرسال الإضافات", "oe-send", async () => {
+        send.disabled = true;
+        const r = await sendAll();
+        send.disabled = false;
+        if (r && r.ok) { edits = {}; closePopup(); redraw(); } else if (r && r.cancelled) { /* stay */ }
+      });
+      send.disabled = !sendable;
+      actions.appendChild(send);
+      actions.appendChild(btn("فتح الجارت الإضافي", "", () => { const B = global.PharmacyChartBridge; if (B && B.openChart) B.openChart(); }));
+      actions.appendChild(btn("إغلاق", "", closePopup));
+      body.appendChild(actions);
+    };
+    draw();
   }
 
   // ---------- sending ----------
@@ -393,7 +443,8 @@
   async function sendAll() {
     const Sync = global.PharmacyChartSync;
     const a = get();
-    const withAdd = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.add.length) : [];
+    // the additions as the user edited them (quantities changed, some left out)
+    const withAdd = a ? Object.keys(a.beds).map(k => a.beds[k]).filter(x => x.add.length).map(x => Object.assign({}, x, { add: effAdd(x) })).filter(x => x.add.length) : [];
     if (!Sync || !Sync.sendExtra || !withAdd.length) return { ok: false, message: "لا توجد إضافات" };
     const groups = GROUPS.filter(g => withAdd.some(x => x.group === g));
     if (!confirm("سيُستبدل الجارت الإضافي (" + groups.map(g => GROUP_NAME[g]).join("، ") + ") بالإضافات فقط، ويُحذف ما فيه الآن.\nمتابعة؟")) return { ok: false, cancelled: true };
