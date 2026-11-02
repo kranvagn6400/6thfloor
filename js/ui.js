@@ -180,7 +180,7 @@
       const pend = OE && OE.enabled() ? OE.pendingPatients() : 0;
       const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
       const FM = global.PharmacyFileMark, fmN = FM && FM.enabled() ? FM.count() : 0;
-      if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "لم تُقارَن (الطبلة غير موجودة): " + fmN));
+      if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "الطبلات الغير موجودة اثناء الجارت (" + fmN + ")"));
       if (pend) kids.push(h("button", { type: "button", class: "oe-chip", dataset: { extrasAll: "1" } }, "إضافات بعد الطلبية: " + pend));
       kids.push(sw);
       out.appendChild(h("div", { class: "unit-head" }, kids));
