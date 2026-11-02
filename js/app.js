@@ -705,7 +705,7 @@
     // Patient-header wording per role: pharmacists record the specialist;
     // the plate number is mandatory for pharmacists + admin, not doctors.
     const doctorField = $("patient-doctor-input");
-    if (doctorField) doctorField.placeholder = isAdmin ? "الطبيب المعالج (اختياري)" : "اسم الأخصائي (اختياري)";
+    if (doctorField) doctorField.placeholder = isAdmin ? "الطبيب المعالج" : "اسم الأخصائي";
     const plateField = $("patient-plate-input");
     if (plateField) plateField.placeholder = (isDoctor || isAdmin) ? "رقم الطبلة (6 أرقام — اختياري)" : "رقم الطبلة (6 أرقام) *";
 
@@ -1753,7 +1753,7 @@
     if (btn.hidden) return;
     const on = isGeneralInPrivate(p);
     btn.classList.toggle("is-on", on);
-    btn.textContent = on ? "✓ من الجناح العام (طبلة 6 أرقام)" : "من الجناح العام";
+    btn.textContent = on ? "✓ من الجناح العام" : "من الجناح العام";
   }
   function toPlateDigits(v, len) {
     return String(v || "").replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/\D/g, "").slice(0, len || 6);
