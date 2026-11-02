@@ -358,12 +358,28 @@
       zOut.addEventListener("click", () => setZoom(zoom - 0.25));
       zIn.addEventListener("click", () => setZoom(zoom + 0.25));
       zFit.addEventListener("click", () => setZoom(1));
+      // Two fingers: pinch to zoom (the page itself is not scalable, so the preview does it). The sheet sits inside an
+      // iframe, which gets its own touch events — the listeners go on the dialog's area AND on the iframe's document.
+      const addPinch = (target) => {
+        let d0 = 0, z0 = 1;
+        const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+        target.addEventListener("touchstart", (e) => { if (e.touches.length === 2) { d0 = dist(e.touches); z0 = zoom; } }, { passive: true });
+        target.addEventListener("touchmove", (e) => {
+          if (e.touches.length !== 2 || !d0) return;
+          e.preventDefault();
+          zoom = Math.max(0.5, Math.min(3, Math.round(z0 * dist(e.touches) / d0 * 20) / 20));
+          fit();
+        }, { passive: false });
+        target.addEventListener("touchend", (e) => { if (e.touches.length < 2) d0 = 0; }, { passive: true });
+      };
+      addPinch(pagesBox);
       const fitLines = () => {
         const doc = frame.contentDocument;
         if (!doc) return;
         try { new Function("doc", FIT_MED_LINES + ";fitMedLines(doc);")(doc); } catch (e) { /* layout only */ }
       };
       frame.addEventListener("load", () => {
+        try { addPinch(frame.contentDocument); } catch (e) { /* the buttons still work */ }
         fitLines(); fit();
         setTimeout(() => { fitLines(); fit(); }, 600);       // after the web font arrives
       });
