@@ -278,7 +278,7 @@
     const a = enabled() ? get() : null;
     const b = a && a.beds[key];
     if (!b) return null;
-    return { state: b.add.length ? "pending" : isChecked(key) ? "checked" : "clear", n: b.add.length };
+    return b.add.length ? { state: "pending", n: b.add.length } : null;       // only the pending additions show (no «compared» state)
   }
   const pendingPatients = () => { const a = enabled() ? get() : null; return a ? a.patients : 0; };
 
@@ -366,8 +366,6 @@
     }
 
     const actions = el("div", "oe-actions");
-    const checked = isChecked(key);
-    actions.appendChild(btn(checked ? "✓ مطابق — إلغاء" : "✓ مطابق", "oe-ok" + (checked ? " is-on" : ""), () => { setChecked(key, !checked); closePopup(); redraw(); }));
     actions.appendChild(btn("＋ إضافة دواء", "oe-add", () => {
       closePopup();
       if (global.PharmacyApp && global.PharmacyApp.addMedFor) global.PharmacyApp.addMedFor({ key, roomId, bed });

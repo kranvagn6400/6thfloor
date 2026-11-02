@@ -308,7 +308,15 @@
         fm.innerHTML = FMk.ICON;     // static icon markup
         children.push(fm);
       }
-      // (no comparison icon on the bed any more: the additions are read from the «الجارت الإضافي» button above the rooms)
+      // the orange «+n» badge: n medicines were added to this bed after the morning order (a tap opens its window).
+      // There is no «matches» / «compared» badge any more — only the pending additions show.
+      const OEx = global.PharmacyOrderExtras;
+      const ex = OEx && OEx.enabled() ? OEx.bedState(key) : null;
+      if (ex && ex.state === "pending") {
+        const mk = h("span", { class: "bed-extras-mark is-pending", title: "إضافات بعد الطلبية", dataset: { extrasKey: key, roomId: String(room.id), bed: String(bed.number) } });
+        mk.textContent = "+" + ex.n;
+        children.push(mk);
+      }
       return h("button", {
         class: `bed-btn state-${status}${alertClass}${boarderClass}${patient.labs && patient.labs._gen === true ? " is-gen-ward" : ""}`,
         dataset: { roomId: room.id, bed: bed.number, key: key },
