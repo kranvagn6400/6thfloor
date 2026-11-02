@@ -360,19 +360,39 @@
       zFit.addEventListener("click", () => setZoom(1));
       // Two fingers: pinch to zoom (the page itself is not scalable, so the preview does it). The sheet sits inside an
       // iframe, which gets its own touch events — the listeners go on the dialog's area AND on the iframe's document.
-      const addPinch = (target) => {
-        let d0 = 0, z0 = 1;
-        // screen coordinates: the sheet's own (scaled) coordinates would change with the zoom itself and make it shake
+      const addPinch = (target, inFrame) => {
+        let d0 = 0, z0 = 1, raf = 0, want = 1, anchor = null, mid = { x: 0, y: 0 };
+        // screen coordinates for the distance: the sheet's own (scaled) coordinates would change with the zoom itself and make it shake
         const dist = (t) => Math.hypot(t[0].screenX - t[1].screenX, t[0].screenY - t[1].screenY);
-        let raf = 0, want = 1;
-        target.addEventListener("touchstart", (e) => { if (e.touches.length === 2) { d0 = dist(e.touches); z0 = zoom; } }, { passive: true });
+        // the middle between the two fingers, in the dialog's viewport coordinates (touches inside the iframe are in its scaled coordinates)
+        const midOf = (t) => {
+          let x = (t[0].clientX + t[1].clientX) / 2, y = (t[0].clientY + t[1].clientY) / 2;
+          if (inFrame) { const r = frame.getBoundingClientRect(), k = r.width / (frame.offsetWidth || A4); x = r.left + x * k; y = r.top + y * k; }
+          return { x, y };
+        };
+        target.addEventListener("touchstart", (e) => {
+          if (e.touches.length !== 2) return;
+          d0 = dist(e.touches); z0 = zoom; mid = midOf(e.touches);
+          // the point of the sheet under the fingers, in the sheet's own pixels — it must stay under them while zooming
+          const r = frameWrap.getBoundingClientRect(), s0 = (r.width / A4) || 1;
+          anchor = { x: (mid.x - r.left) / s0, y: (mid.y - r.top) / s0 };
+        }, { passive: true });
         target.addEventListener("touchmove", (e) => {
           if (e.touches.length !== 2 || !d0) return;
           e.preventDefault();
           want = Math.max(0.5, Math.min(3, Math.round(z0 * dist(e.touches) / d0 * 20) / 20));
-          if (!raf) raf = requestAnimationFrame(() => { raf = 0; if (want !== zoom) { zoom = want; fit(); } });     // one redraw per frame
+          mid = midOf(e.touches);
+          if (!raf) raf = requestAnimationFrame(() => {      // one redraw per frame
+            raf = 0;
+            if (want !== zoom) { zoom = want; fit(); }
+            if (anchor) {                                      // scroll so the anchor point is under the fingers again
+              const r = frameWrap.getBoundingClientRect(), s1 = (r.width / A4) || 1;
+              pagesBox.scrollLeft += r.left + anchor.x * s1 - mid.x;
+              pagesBox.scrollTop += r.top + anchor.y * s1 - mid.y;
+            }
+          });
         }, { passive: false });
-        target.addEventListener("touchend", (e) => { if (e.touches.length < 2) d0 = 0; }, { passive: true });
+        target.addEventListener("touchend", (e) => { if (e.touches.length < 2) { d0 = 0; anchor = null; } }, { passive: true });
       };
       addPinch(pagesBox);
       const fitLines = () => {
@@ -381,7 +401,7 @@
         try { new Function("doc", FIT_MED_LINES + ";fitMedLines(doc);")(doc); } catch (e) { /* layout only */ }
       };
       frame.addEventListener("load", () => {
-        try { addPinch(frame.contentDocument); } catch (e) { /* the buttons still work */ }
+        try { addPinch(frame.contentDocument, true); } catch (e) { /* the buttons still work */ }
         fitLines(); fit();
         setTimeout(() => { fitLines(); fit(); }, 600);       // after the web font arrives
       });
