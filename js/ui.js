@@ -181,7 +181,7 @@
       const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
       const FM = global.PharmacyFileMark, fmN = FM && FM.enabled() ? FM.count() : 0;
       if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "الطبلات الغير موجودة اثناء الجارت (" + fmN + ")"));
-      if (OE && OE.enabled()) kids.push(h("button", { type: "button", class: "oe-chip" + (pend ? "" : " is-zero"), dataset: { extrasAll: "1" } }, "الجارت الإضافي" + (pend ? " (" + pend + ")" : "")));
+      if (OE && OE.enabled()) kids.push(h("button", { type: "button", class: "oe-chip" + (pend ? " is-glow" : " is-zero"), dataset: { extrasAll: "1" } }, "الجارت الإضافي" + (pend ? " (" + pend + ")" : "")));
       kids.push(sw);
       out.appendChild(h("div", { class: "unit-head" }, kids));
     }
