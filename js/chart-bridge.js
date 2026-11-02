@@ -137,11 +137,20 @@
      list — same way the med-summary modal does it. */
   // unit "1" / "3" = that unit's general rooms; "p1" / "p3" = that unit's private rooms (they go to ردهة الخاص);
   // "p" = the private rooms of both units; empty = everything
-  function roomMatches(r, unit) {
+  // A general-ward patient lying in a private bed (labs._gen, «من الجناح العام») is ordered with the GENERAL chart of the bed's unit,
+  // never with ردهة الخاص: roomMayMatch picks the rooms to look at, bedMatches decides per patient.
+  function roomMayMatch(r, unit) {
     if (!unit) return true;
     if (unit === "p") return r.kind === "private";
     if (unit === "p1" || unit === "p3") return r.kind === "private" && r.unit === unit.slice(1);
-    return r.unit === unit && r.kind === "general";
+    return r.unit === unit;
+  }
+  function bedMatches(r, unit, p) {
+    if (!unit) return true;
+    const kind = r.kind === "private" && p && p.labs && p.labs._gen === true ? "general" : r.kind;
+    if (unit === "p") return kind === "private";
+    if (unit === "p1" || unit === "p3") return kind === "private" && r.unit === unit.slice(1);
+    return r.unit === unit && kind === "general";
   }
 
   // Albumin sometimes needs Lasix ampoules with it (a few more than the patient's own Lasix order):
@@ -185,11 +194,12 @@
 
     const out = [];
     // unit "1" / "3" = that unit's general rooms; "p" = the private rooms of both units (ردهة الخاص)
-    Ward.ROOMS.filter(r => roomMatches(r, unit)).forEach(room => {
+    Ward.ROOMS.filter(r => roomMayMatch(r, unit)).forEach(room => {
       room.beds.forEach(bed => {
         const key = Ward.bedKey(room.id, bed.number);
         const p = state.patients[key];
         if (!p || !p.name || !p.name.trim()) return;
+        if (!bedMatches(room, unit, p)) return;
 
         const meds = (Array.isArray(p.medications) ? p.medications : [])
           .filter(pm => pm && pm.id !== "syringe-5cc")
@@ -411,6 +421,7 @@
 
   /* ---- Exports ---- */
   global.PharmacyChartBridge = {
+    bedMatches,
     sendChart,
     sendTsv,
     medQty,

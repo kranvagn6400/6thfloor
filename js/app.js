@@ -1579,9 +1579,11 @@
     const all = orderedPatientsMap();
     if (!_flowUnit) return all;
     const out = {};
-    global.PharmacyWard.ROOMS.filter(r => _flowUnit === "p" ? r.kind === "private" : (r.unit === _flowUnit && r.kind === "general")).forEach(room => room.beds.forEach(b => {
+    const CB = global.PharmacyChartBridge;
+    // a general-ward patient in a private bed (labs._gen) belongs to the general order of that unit
+    global.PharmacyWard.ROOMS.filter(r => _flowUnit === "p" ? r.kind === "private" : r.unit === _flowUnit).forEach(room => room.beds.forEach(b => {
       const k = global.PharmacyWard.bedKey(room.id, b.number);
-      if (all[k]) out[k] = all[k];
+      if (all[k] && (!CB || !CB.bedMatches || CB.bedMatches(room, _flowUnit, all[k]))) out[k] = all[k];
     }));
     return out;
   }
@@ -1732,11 +1734,27 @@
   }
 
   // رقم الطبلة: exactly 6 digits; the private rooms (خاص) use exactly 5 digits, mandatory
-  function plateLenFor(roomId) {
+  // — unless the patient is from the general ward (labs._gen, the «من الجناح العام» button): 6 digits even in a private bed
+  const isGeneralInPrivate = (p) => !!(p && p.labs && p.labs._gen === true);
+  function plateLenFor(roomId, patient) {
     const r = global.PharmacyWard && global.PharmacyWard.roomById(roomId);
-    return r && r.kind === "private" ? 5 : 6;
+    return r && r.kind === "private" && !isGeneralInPrivate(patient) ? 5 : 6;
   }
-  function currentPlateLen() { return state.currentBed ? plateLenFor(state.currentBed.roomId) : 6; }
+  function currentPlateLen() { return state.currentBed ? plateLenFor(state.currentBed.roomId, state.patients[state.currentBed.key]) : 6; }
+  // the button «من الجناح العام» shows in the card of a patient lying in a private bed
+  function updateGeneralBtn() {
+    const btn = $("general-ward-btn");
+    if (!btn) return;
+    const cur = state.currentBed, p = cur && state.patients[cur.key];
+    const r = cur && global.PharmacyWard && global.PharmacyWard.roomById(cur.roomId);
+    const Auth = global.PharmacyAuth;
+    const allowed = !!(Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist()) || (Auth.isDoctor && Auth.isDoctor())));
+    btn.hidden = !(allowed && r && r.kind === "private" && p && p.name && p.name.trim());
+    if (btn.hidden) return;
+    const on = isGeneralInPrivate(p);
+    btn.classList.toggle("is-on", on);
+    btn.textContent = on ? "✓ من الجناح العام (طبلة 6 أرقام)" : "من الجناح العام";
+  }
   function toPlateDigits(v, len) {
     return String(v || "").replace(/[٠-٩]/g, d => String("٠١٢٣٤٥٦٧٨٩".indexOf(d))).replace(/\D/g, "").slice(0, len || 6);
   }
@@ -1747,6 +1765,7 @@
     if (!field || !state.currentBed) return;
     const len = currentPlateLen();
     field.maxLength = len;
+    updateGeneralBtn();
     if (len === 5) field.placeholder = "رقم الطبلة (5 أرقام) *";
     else {
       const Auth = global.PharmacyAuth;
@@ -2388,6 +2407,20 @@
       if (isValidPlate(digits, len)) e.target.classList.remove("is-required-missing");
       updatePlateDupWarning(false);
       // NOTE: No persistPatient() on input — only on blur.
+    });
+    // «من الجناح العام»: a general-ward patient in a private bed — the plate number is 6 digits, not 5
+    $("general-ward-btn").addEventListener("click", () => {
+      if (!state.currentBed) return;
+      const p = ensurePatient(state.currentBed.key);
+      p.labs = p.labs || {};
+      if (isGeneralInPrivate(p)) delete p.labs._gen; else p.labs._gen = true;
+      persistPatient(state.currentBed.key);
+      applyPlateRules();
+      const f = $("patient-plate-input"), len = currentPlateLen();
+      if (f.value && !isValidPlate(f.value, len)) {
+        f.classList.add("is-required-missing");
+        flashHint("رقم الطبلة صار " + len + " أرقام — عدّل الرقم");
+      } else f.classList.remove("is-required-missing");
     });
     $("patient-plate-input").addEventListener("blur", (e) => {
       if (!state.currentBed) return;
@@ -5667,7 +5700,8 @@
 
     // «خرجوا» and «وفيات»: two sections — الخاص (private rooms) and العام
     const PF = global.PharmacyPrivateForm;
-    const isPriv = (r) => !!(PF && PF.isPrivateRoom(r.roomNumber));
+    // a general-ward patient who lay in a private bed (labs._gen) is archived with the general ones
+    const isPriv = (r) => !!(PF && PF.isPrivateRoom(r.roomNumber)) && !(r.labs && r.labs._gen === true);
     const groups = archiveKind(tab) === "transferred"
       ? [[null, records]]
       : [["الخاص", records.filter(isPriv)], ["العام", records.filter(r => !isPriv(r))]];
@@ -6167,7 +6201,7 @@
     if (viewSheetBtn) viewSheetBtn.hidden = !(Auth && Auth.isPharmacist && Auth.isPharmacist());
     // «استمارة خروج الخاص»: private-room patients, pharmacists + admin
     const privFormBtn = $("private-form-btn");
-    if (privFormBtn) privFormBtn.hidden = !(Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist())) && global.PharmacyPrivateForm && global.PharmacyPrivateForm.isPrivateBed(state.currentBed && state.currentBed.key));
+    if (privFormBtn) privFormBtn.hidden = !(Auth && (Auth.isAdmin() || (Auth.isPharmacist && Auth.isPharmacist())) && global.PharmacyPrivateForm && global.PharmacyPrivateForm.isPrivateBed(state.currentBed && state.currentBed.key) && !isGeneralInPrivate(state.patients[state.currentBed && state.currentBed.key]));
     // Pills form for this patient: admin + pharmacists (not doctors), and
     // not for 7th-floor hematology patients on a pharmacist account (never ordered)
     const pillsOneBtn = $("print-patient-pills-btn");
