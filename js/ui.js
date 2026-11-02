@@ -308,14 +308,7 @@
         fm.innerHTML = FMk.ICON;     // static icon markup
         children.push(fm);
       }
-      // «ما أُضيف بعد الطلبية»: the small icon (supreme admin only) — a tap opens the comparison popup
-      const OEx = global.PharmacyOrderExtras;
-      const ex = OEx && OEx.enabled() ? OEx.bedState(key) : null;
-      if (ex) {
-        const mk = h("span", { class: "bed-extras-mark is-" + ex.state, title: ex.state === "pending" ? "إضافات بعد الطلبية" : ex.state === "checked" ? "تمت المطابقة" : "مطابقة الطلبية", dataset: { extrasKey: key, roomId: room.id, bed: bed.number } });
-        mk.innerHTML = ex.state === "pending" ? "+" + ex.n : OEx.ICON;     // static markup + a number
-        children.push(mk);
-      }
+      // (no comparison icon on the bed any more: the additions are read from the «الجارت الإضافي» button above the rooms)
       return h("button", {
         class: `bed-btn state-${status}${alertClass}${boarderClass}${patient.labs && patient.labs._gen === true ? " is-gen-ward" : ""}`,
         dataset: { roomId: room.id, bed: bed.number, key: key },
