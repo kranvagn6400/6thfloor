@@ -180,7 +180,7 @@
       const pend = OE && OE.enabled() ? OE.pendingPatients() : 0;
       const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
       const FM = global.PharmacyFileMark, fmN = FM && FM.enabled() ? FM.count() : 0;
-      if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "لم تُقارَن (الملف غير موجود): " + fmN));
+      if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "لم تُقارَن (الطبلة غير موجودة): " + fmN));
       if (pend) kids.push(h("button", { type: "button", class: "oe-chip", dataset: { extrasAll: "1" } }, "إضافات بعد الطلبية: " + pend));
       kids.push(sw);
       out.appendChild(h("div", { class: "unit-head" }, kids));
@@ -288,7 +288,7 @@
       if (T && T.showMarks() && T.isDone(key)) {
         children.push(h("span", { class: "bed-tarbeet-mark", title: "تم التربيت اليوم" }, "✓"));
       } else if (T && T.showMarks() && T.isNotDone && T.isNotDone(key)) {
-        const mark = h("span", { class: "bed-tarbeet-mark is-not", title: "الملف غير موجود اليوم" });
+        const mark = h("span", { class: "bed-tarbeet-mark is-not", title: "الطبلة غير موجودة اليوم" });
         mark.innerHTML = T.FILE_OFF_SVG;     // static icon markup
         children.push(mark);
       }
@@ -299,10 +299,10 @@
         boarderClass = " is-boarder" + (B.isNoOrder(patient) ? " is-no-order" : "");
         children.push(h("span", { class: "bed-boarder-badge", title: B.label(patient) }, B.badge(patient)));
       }
-      // «الملف غير موجود»: the paper file was not there in the morning round, the medicines are not compared yet (supreme admin only for now)
+      // «الطبلة غير موجودة»: the paper file was not there in the morning round, the medicines are not compared yet (supreme admin only for now)
       const FMk = global.PharmacyFileMark;
       if (FMk && FMk.enabled() && FMk.isMissing(key)) {
-        const fm = h("span", { class: "bed-fm-mark", title: "الملف غير موجود — لم تتم المقارنة", dataset: { fmKey: key } });
+        const fm = h("span", { class: "bed-fm-mark", title: "الطبلة غير موجودة — لم تتم المقارنة", dataset: { fmKey: key } });
         fm.innerHTML = FMk.ICON;     // static icon markup
         children.push(fm);
       }

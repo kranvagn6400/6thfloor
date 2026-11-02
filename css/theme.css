@@ -1822,7 +1822,7 @@ html[data-theme="dark"] .tarbeet-count.left, html[data-theme="dark"] .tarbeet-be
 html[data-theme="dark"] .tarbeet-bed.is-done .tarbeet-bed-state { color: #6FD8B0; }
 html[data-theme="dark"] .tarbeet-bed.is-not .tarbeet-bed-state { color: #F2998A; }
 
-/* crossed-out file icon (tarbeet "الملف غير موجود") */
+/* crossed-out file icon (tarbeet "الطبلة غير موجودة") */
 .ico-wrap { display: inline-flex; align-items: center; vertical-align: -0.15em; }
 .ico-file-off { display: block; }
 .tarbeet-mark.no .ico-file-off { width: 22px; height: 22px; }
@@ -3081,7 +3081,7 @@ html[data-theme="dark"] .oe-btn.oe-add, html[data-theme="dark"] .oe-btn.oe-send 
   pointer-events: none;
 }
 
-/* ===== «الملف غير موجود — لم تتم المقارنة» (file-mark.js — the supreme admin only for now) ===== */
+/* ===== «الطبلة غير موجودة — لم تتم المقارنة» (file-mark.js — the supreme admin only for now) ===== */
 .bed-btn .bed-fm-mark {
   position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
   background: #E0861B; color: #fff; cursor: pointer; box-shadow: 0 0 0 2px var(--surface, #fff);

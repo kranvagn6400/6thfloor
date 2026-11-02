@@ -43,7 +43,7 @@
   }
   const flash = (m) => App() && App().flashHint(m);
   const Ward_label = (r, b) => global.PharmacyWard.bedLabel(r, b);   // the ward-wide number 1-50
-  // "الملف غير موجود": a crossed-out file (static markup, no user text)
+  // "الطبلة غير موجودة": a crossed-out file (static markup, no user text)
   const FILE_OFF_SVG = '<svg class="ico-file-off" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M7 3h7l5 5v7"/><path d="M19 19a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/></svg>';
   function fileOffIcon() {
     const s = document.createElement("span");
@@ -184,7 +184,7 @@
       const { error } = await c.from("tarbeet_log").insert(row);
       const msg = (error && error.message) || "";
       if (error && /status/i.test(msg) && /column|schema/i.test(msg)) {
-        flash("شغّل القسم 14 من features.sql في Supabase حتى يعمل زر «الملف غير موجود»");
+        flash("شغّل القسم 14 من features.sql في Supabase حتى يعمل زر «الطبلة غير موجودة»");
         await load();
         return;
       }
@@ -193,7 +193,7 @@
         await load();
         return;
       }
-      flash((status === "done" ? "✓ تم التربيت — " : "الملف غير موجود — ") + (p.name || "").trim());
+      flash((status === "done" ? "✓ تم التربيت — " : "الطبلة غير موجودة — ") + (p.name || "").trim());
     }
     await load();
   }
@@ -218,7 +218,7 @@
     counts.appendChild(el("span", "tarbeet-count ok", "✓ " + nDone));
     const cNo = el("span", "tarbeet-count no", " " + nNot);
     cNo.prepend(fileOffIcon());
-    cNo.title = "الملف غير موجود";
+    cNo.title = "الطبلة غير موجودة";
     counts.appendChild(cNo);
     counts.appendChild(el("span", "tarbeet-count left", "متبقٍّ " + (list.length - nDone - nNot)));
     counts.appendChild(el("span", "tarbeet-count total", "من " + list.length));
@@ -246,7 +246,7 @@
         open.appendChild(el("strong", "tarbeet-bed-name", x.p.name.trim()));
         if (x.p.plateNumber) open.appendChild(el("span", "tarbeet-bed-plate", String(x.p.plateNumber)));
         const m = d || nd;
-        open.appendChild(el("span", "tarbeet-bed-state", m ? (d ? "✓ " : "الملف غير موجود · ") + timeOf(m.at) + (m.by ? " · " + m.by : "") : "لم يُسجَّل بعد"));
+        open.appendChild(el("span", "tarbeet-bed-state", m ? (d ? "✓ " : "الطبلة غير موجودة · ") + timeOf(m.at) + (m.by ? " · " + m.by : "") : "لم يُسجَّل بعد"));
         open.addEventListener("click", () => App().openPatient({ key: x.key, roomId: x.where.roomId, bed: x.where.bed }));
         tile.appendChild(open);
         const acts = el("div", "tarbeet-bed-acts");
@@ -256,8 +256,8 @@
         const no = el("button", "tarbeet-mark no" + (nd ? " on" : ""));
         no.appendChild(fileOffIcon());
         no.type = "button";
-        no.setAttribute("aria-label", nd ? "إلغاء «الملف غير موجود»" : "الملف غير موجود");
-        no.title = "الملف غير موجود";
+        no.setAttribute("aria-label", nd ? "إلغاء «الطبلة غير موجودة»" : "الطبلة غير موجودة");
+        no.title = "الطبلة غير موجودة";
         const busy = (fn) => async () => { ok.disabled = no.disabled = true; await fn(); };
         ok.addEventListener("click", busy(() => setStatus(x.key, d ? "" : "done")));
         no.addEventListener("click", busy(() => setStatus(x.key, nd ? "" : "not_done")));

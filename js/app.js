@@ -56,7 +56,7 @@
     // «ما أُضيف بعد الطلبية» (order-extras.js): the patients as they are ordered, redraw the rooms, add a medicine to a bed
     orderingState: () => orderingState(),
     redrawRooms: () => refreshStatsAndRooms(),
-    // «الملف غير موجود» (file-mark.js): change one patient and save it
+    // «الطبلة غير موجودة» (file-mark.js): change one patient and save it
     editPatient: (bedKey, fn) => { const p = state.patients[bedKey]; if (!p) return; fn(p); persistPatient(bedKey); },
     addMedFor: (bedRef) => { openPatient(bedRef); setTimeout(openSheetFromPatientView, 300); },
     // the price-link module: save the catalogue after it changed the links, and redraw the admin list

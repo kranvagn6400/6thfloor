@@ -1,5 +1,5 @@
 /* ============================================================
-   file-mark.js  —  «الملف غير موجود — لم تتم المقارنة»
+   file-mark.js  —  «الطبلة غير موجودة — لم تتم المقارنة»
    ============================================================
    In the morning round the pharmacist compares the medicines in the doctor's
    paper file with the patient's card. When the file is not there (it may come
@@ -73,8 +73,8 @@
     if (btn.hidden) return;
     const miss = isMissing(cur.key);
     btn.classList.toggle("is-on", miss);
-    btn.innerHTML = miss ? "✓ تمت المقارنة" : '<span aria-hidden="true">' + FILE_OFF + "</span> الملف غير موجود";
-    btn.title = miss ? "الملف ظهر وتمت مقارنة العلاج" : "الملف الورقي غير موجود الآن — علّم المريض لتقارن علاجه لاحقًا";
+    btn.innerHTML = miss ? "✓ تمت المقارنة" : '<span aria-hidden="true">' + FILE_OFF + "</span> الطبلة غير موجودة";
+    btn.title = miss ? "الطبلة ظهرت وتمت مقارنة العلاج" : "الطبلة غير موجودة الآن — علّم المريض لتقارن علاجه لاحقًا";
   }
 
   // ---------- the list popup ----------
@@ -85,7 +85,7 @@
     const ov = el("div", "fm-overlay"); ov.id = "fm-overlay";
     const box = el("div", "fm-box"); ov.appendChild(box);
     const head = el("div", "fm-head");
-    head.appendChild(el("strong", null, "لم تتم مقارنة علاجهم (الملف غير موجود)"));
+    head.appendChild(el("strong", null, "لم تتم مقارنة علاجهم (الطبلة غير موجودة)"));
     const x = el("button", "fm-x", "✕"); x.type = "button"; x.addEventListener("click", close);
     head.appendChild(x); box.appendChild(head);
     const list = missingList();
