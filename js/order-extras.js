@@ -117,7 +117,8 @@
   //                      kind "extra" k = a patient → { meds: { name: total sent as extra } };
   //                      kind "check" k = a bed → { at } (the «مطابق» ticks).
   // Without the table (the SQL not run yet) everything stays on this device, as before.
-  let shared = { orders: [], extras: {}, checks: {}, at: 0, sig: "" };
+  let shared = { orders: [], extras: {}, checks: {}, at: 0, sig: "", day: "" };
+  let activeDayV = "";                 // TESTING only: the chart day being worked on (the newest morning send's day, even when it is not today)
   let sharedOff = false, sharedBusy = false, sharedClean = false;
   const sbClient = () => { const SB = global.PharmacySupabase; return SB && SB.isConfigured && SB.isConfigured() ? SB.getClient() : null; };
   const tableMissing = (err) => !!err && /order_sync|does not exist|schema cache|relation/i.test(String(err.message || ""));
@@ -127,17 +128,26 @@
     if (!force && Date.now() - shared.at < 45000) return;
     sharedBusy = true;
     try {
-      const day = todayISO();
-      const r = await c.from("order_sync").select("kind,k,data").eq("day", day);
+      const today = todayISO();
+      // normal: today's rows. TESTING: the rows of every day from today on, and the day of the newest morning send is the one used
+      let q = c.from("order_sync").select("day,kind,k,data");
+      q = TEST_ALWAYS_OPEN ? q.gte("day", today) : q.eq("day", today);
+      const r = await q;
       if (r.error) { if (tableMissing(r.error)) sharedOff = true; return; }
-      const next = { orders: [], extras: {}, checks: {}, at: Date.now(), sig: "" };
-      (r.data || []).forEach(row => {
+      let rows = r.data || [], day = today;
+      if (TEST_ALWAYS_OPEN) {
+        let best = "";
+        rows.forEach(row => { if (row.kind === "order") ((row.data || {}).sends || []).forEach(s0 => { if (s0 && s0.at > best) { best = s0.at; day = row.day; } }); });
+        rows = rows.filter(row => row.day === day);
+      }
+      const next = { orders: [], extras: {}, checks: {}, at: Date.now(), sig: "", day };
+      rows.forEach(row => {
         const d = row.data || {};
         if (row.kind === "order") (d.sends || []).forEach(s => next.orders.push({ tsv: s.tsv, unit: row.k, date: d.date || day, at: s.at, result: { ok: true, at: s.at } }));
         else if (row.kind === "extra") next.extras[row.k] = d.meds || {};
         else if (row.kind === "check") next.checks[row.k] = d.at || "1";
       });
-      next.sig = JSON.stringify([next.orders.map(o => o.unit + o.at), next.extras, next.checks]);
+      next.sig = JSON.stringify([day, next.orders.map(o => o.unit + o.at), next.extras, next.checks]);
       const changed = next.sig !== shared.sig;
       shared = next;
       if (changed) redraw();
@@ -154,7 +164,7 @@
     const c = sbClient();
     if (!c || sharedOff) return;
     try {
-      const r = await c.from("order_sync").upsert({ day: day || todayISO(), kind, k, data, updated_at: new Date().toISOString() }, { onConflict: "day,kind,k" });
+      const r = await c.from("order_sync").upsert({ day: day || dayNow(), kind, k, data, updated_at: new Date().toISOString() }, { onConflict: "day,kind,k" });
       if (r.error && tableMissing(r.error)) sharedOff = true;
       else shared.at = 0;            // the next redraw reads it back
     } catch (e) { /* stays on this device */ }
@@ -162,7 +172,7 @@
   async function delShared(kind, k) {
     const c = sbClient();
     if (!c || sharedOff) return;
-    try { await c.from("order_sync").delete().eq("day", todayISO()).eq("kind", kind).eq("k", k); shared.at = 0; } catch (e) { /* ignore */ }
+    try { await c.from("order_sync").delete().eq("day", dayNow()).eq("kind", kind).eq("k", k); shared.at = 0; } catch (e) { /* ignore */ }
   }
   // a chart send that succeeded → its table is added to the shared morning order of that chart
   async function shareOrder(entry) {
@@ -182,16 +192,18 @@
 
   // ---------- storage (this device) ----------
   const todayISO = () => (global.PharmacyChartSync && global.PharmacyChartSync.todayISO ? global.PharmacyChartSync.todayISO() : localISO(new Date().toISOString()));
+  // the day the comparison is about: today — while TESTING, the day of the newest morning send (e.g. a chart sent for the 4th)
+  const dayNow = () => (TEST_ALWAYS_OPEN && activeDayV ? activeDayV : todayISO());
   function loadDay(key, shape) {
     try {
       const v = JSON.parse(localStorage.getItem(key) || "null");
-      if (v && v.day === todayISO()) return v;
+      if (v && v.day === dayNow()) return v;
     } catch (e) { /* blocked / bad json */ }
-    return Object.assign({ day: todayISO() }, shape);
+    return Object.assign({ day: dayNow() }, shape);
   }
   function saveDay(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* blocked */ } }
 
-  const isChecked = (bedKey) => !!loadDay(CHECK_KEY, { keys: {} }).keys[bedKey] || !!shared.checks[bedKey];
+  const isChecked = (bedKey) => !!loadDay(CHECK_KEY, { keys: {} }).keys[bedKey] || (!shared.day || shared.day === dayNow()) && !!shared.checks[bedKey];
   function setChecked(bedKey, on) {
     const v = loadDay(CHECK_KEY, { keys: {} });
     if (on) v.keys[bedKey] = new Date().toISOString(); else delete v.keys[bedKey];
@@ -227,11 +239,19 @@
   function analyze() {
     const Log = global.PharmacyChartLog, Bridge = global.PharmacyChartBridge, App = global.PharmacyApp;
     if (!Log || !Bridge || !App || !App.orderingState) return null;
-    const day = todayISO();
-    const entries = Log.load().concat(shared.orders);        // this device's send log + the sends of the other devices
+    if (TEST_ALWAYS_OPEN) {                                    // TESTING: work on the day of the newest successful morning send
+      let best = "";
+      Log.load().concat(shared.orders).forEach(e => {
+        const at = e && e.result && e.result.ok ? (e.result.at || e.at || "") : "";
+        if (at > best) { best = at; activeDayV = e.date || localISO(e.at); }
+      });
+    }
+    const day = dayNow();
+    const sh = shared.day === day || !shared.day ? shared : { orders: [], extras: {}, checks: {} };      // rows of another day are not used
+    const entries = Log.load().concat(sh.orders);            // this device's send log + the sends of the other devices
     const over0 = loadDay(OVERLAY_KEY, { byPk: {} });
     const over = { byPk: {} };                                 // what was sent as extras: this device + the others (the larger total wins)
-    [over0.byPk, shared.extras].forEach(src => Object.keys(src || {}).forEach(pk => {
+    [over0.byPk, sh.extras].forEach(src => Object.keys(src || {}).forEach(pk => {
       const o = over.byPk[pk] || (over.byPk[pk] = {});
       Object.keys(src[pk] || {}).forEach(m => { if (!(+o[m] >= +src[pk][m])) o[m] = src[pk][m]; });
     }));
