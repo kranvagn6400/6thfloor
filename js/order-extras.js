@@ -214,7 +214,7 @@
   // ---------- who sees it, and until when ----------
   // the chart app's extra chart closes at 2 pm: from then on the icons, the chip and the send are gone (back after the next morning send)
   const OPEN_HOUR = 8, CLOSE_HOUR = 14;               // the button / icons / send show from 8 am to 2 pm
-  const TEST_ALWAYS_OPEN = true;                      // TESTING: always open — set to false to bring the hours back
+  const TEST_ALWAYS_OPEN = false;                     // testing mode (always open + the day of the newest send, e.g. a chart for another date): off
   const open = () => TEST_ALWAYS_OPEN || (new Date().getHours() >= OPEN_HOUR && new Date().getHours() < CLOSE_HOUR);
   function enabled() {
     const A = global.PharmacyAuth;
