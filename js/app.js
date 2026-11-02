@@ -1841,7 +1841,10 @@
     const p = ensurePatient(state.currentBed.key);
     if (!p.labs) p.labs = {};
     if (!p.labs._dates || typeof p.labs._dates !== "object") p.labs._dates = {};
-    const today = new Date().toISOString().slice(0, 10);
+    // the date of the results: «تاريخ النتيجة» (today unless an earlier day was picked) — local day, never a future one
+    const today = UI.localToday();
+    const di = $("lab-date-input");
+    const day = di && /^d{4}-d{2}-d{2}$/.test(di.value) && di.value <= today ? di.value : today;
     let n = 0;
     (inputs || []).forEach(inp => {
       if (!inp || inp.disabled) return;
@@ -1849,16 +1852,22 @@
       const key = inp.dataset.labKey, label = inp.dataset.labLabel || key;
       if (!v || !key) return;
       const prev = p.labs[key] ? String(p.labs[key]).trim() : "";
-      if (prev) {
-        if (!Array.isArray(p.labHistory)) p.labHistory = [];
-        p.labHistory.push({ date: p.labs._dates[key] || today, key, label, value: prev });
+      const curDay = p.labs._dates[key] || "";
+      if (!Array.isArray(p.labHistory)) p.labHistory = [];
+      if (prev && curDay && day < curDay) {
+        // an OLDER result than the recorded one: it goes to the history with its own date; the recorded result stays current
+        p.labHistory.push({ date: day, key, label, value: v });
+      } else {
+        if (prev) p.labHistory.push({ date: curDay || today, key, label, value: prev });
+        p.labs[key] = v;
+        p.labs._dates[key] = day;
       }
-      p.labs[key] = v;
-      p.labs._dates[key] = today;
       inp.value = "";
       n++;
     });
+    if (Array.isArray(p.labHistory)) p.labHistory.sort((a, b) => String(a && a.date || "").localeCompare(String(b && b.date || "")));   // stable: the same day keeps its order
     if (!n) { flashHint("اكتب النتيجة أولاً ثم اضغط ✓"); return 0; }
+    UI.resetLabDate();      // the next results are today's again
     persistPatient(state.currentBed.key);
     UI.renderPatientView(state.patients[state.currentBed.key] || null, state.currentBed.roomId, state.currentBed.bed);
     renderGFRCard();

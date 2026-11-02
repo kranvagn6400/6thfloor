@@ -353,6 +353,14 @@
   }
 
   // ---------- Patient view ----------
+  // The date the next lab results are recorded with («تاريخ النتيجة»): today unless the user picked an earlier day.
+  // Kept per patient across redraws (a poll / realtime redraw must not lose it); recordLabs resets it.
+  let labDateState = { key: "", value: "" };
+  function localToday() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function resetLabDate() { labDateState = { key: "", value: "" }; }
   function renderPatientView(patient, roomId, bedNumber) {
     document.getElementById("loc-room").textContent = global.PharmacyWard.roomTitle(roomId);
     document.getElementById("loc-bed").textContent  = "سرير " + global.PharmacyWard.bedLabel(roomId, bedNumber);
@@ -470,6 +478,22 @@
       labsContainer.style.gridTemplateColumns = "repeat(auto-fill, minmax(80px, 1fr))";
       labsContainer.style.gap = "6px";
       labsContainer.style.marginTop = "8px";
+
+      // «تاريخ النتيجة»: one date for every result recorded with ✓ (today by default, never a future day)
+      {
+        const bk = global.PharmacyWard.bedKey(roomId, bedNumber);
+        if (labDateState.key !== bk) labDateState = { key: bk, value: "" };
+        const today = localToday();
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.id = "lab-date-input";
+        dateInput.className = "lab-date-input";
+        dateInput.max = today;
+        dateInput.value = labDateState.value && labDateState.value <= today ? labDateState.value : today;
+        dateInput.addEventListener("change", () => { labDateState.value = dateInput.value && dateInput.value <= today ? dateInput.value : ""; if (!labDateState.value) dateInput.value = today; });
+        const dateRow = h("div", { class: "lab-date-row" }, [h("span", {}, "تاريخ النتيجة"), dateInput]);
+        labsContainer.appendChild(dateRow);
+      }
 
       // Each lab: its name, the recorded result under it (with its date),
       // then a field for a NEW result + ✓ to record it (app.js recordLab).
@@ -1825,6 +1849,7 @@
   global.PharmacyUI = {
     setUnit, setKind, getKind: () => currentKind, setPillsUnit, markNav, getUnit: () => currentUnit, currentView: () => showView._lastView,
     getScrollY,
+    localToday, resetLabDate,
     setScrollY,
     h,
     renderStats,

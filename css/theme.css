@@ -3114,3 +3114,7 @@ html[data-theme="dark"] .gen-ward-btn.is-on { background: color-mix(in srgb, var
 /* every occupied bed card has the same height (the size of a card with name + specialist + plate), private and general alike;
    only a very long name that wraps to two lines can make one taller */
 .bed-btn:not(.state-empty) { min-height: 108px; }     /* occupied = state-occupied (no medicines) or state-meds */
+
+/* «تاريخ النتيجة»: the date the next recorded lab results get (top of the lab cells) */
+.lab-date-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; color: var(--text-muted); }
+.lab-date-input { padding: 5px 8px; border-radius: 10px; border: 1px solid var(--border-strong, var(--border)); background: var(--surface, #fff); color: var(--text); font: inherit; font-size: 13px; direction: ltr; }
