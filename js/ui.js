@@ -300,7 +300,7 @@
         children.push(h("span", { class: "bed-boarder-badge", title: B.label(patient) }, B.badge(patient)));
       }
       // a general-ward patient lying in a private bed (labs._gen): a wide capsule «جناح عام» at the top centre
-      if (patient.labs && patient.labs._gen === true) children.push(h("span", { class: "bed-gen-badge", title: "مريض من الجناح العام في سرير خاص" }, "جناح عام"));
+      if (patient.labs && patient.labs._gen === true && room.kind === "private") children.push(h("span", { class: "bed-gen-badge", title: "مريض من الجناح العام في سرير خاص" }, "جناح عام"));
       // «الطبلة غير موجودة»: the paper file was not there in the morning round, the medicines are not compared yet (supreme admin only for now)
       const FMk = global.PharmacyFileMark;
       if (FMk && FMk.enabled() && FMk.isMissing(key)) {

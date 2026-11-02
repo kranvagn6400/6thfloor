@@ -2100,6 +2100,8 @@
     const bedKey = state.currentBed.key;
     const p = state.patients[bedKey];
     if (!p) return;
+    // «من الجناح العام» pressed on a bed that never got a name: nothing to keep, and the next patient of the bed must not inherit it
+    if (p.labs && p.labs._gen && !(p.name && p.name.trim())) delete p.labs._gen;
     if (!hasUnsavedEdits(p)) return;
     persistPatient(bedKey);
   }
