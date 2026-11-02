@@ -76,7 +76,10 @@
     // Weight + Cockcroft-Gault CrCl when the weight is known
     const Clinical = global.PharmacyClinical;
     const crcl = Clinical ? Clinical.calculateCrCl(patient) : null;
-    const weightRows = (labs.weight ? `<div class="ps-lab-row"><span class="ps-lab-val">${escapeHtml(labs.weight)} kg</span><span class="ps-lab-label">Weight</span></div>` : "")
+    const gfr = Clinical && Clinical.calculateGFR ? Clinical.calculateGFR(patient) : null;
+    const weightRows = labs.weight ? `<div class="ps-lab-row"><span class="ps-lab-val">${escapeHtml(labs.weight)} kg</span><span class="ps-lab-label">Weight</span></div>` : "";
+    // eGFR (CKD-EPI) and CrCl (Cockcroft-Gault) are shown with the labs, when they can be worked out
+    const renalRows = (gfr ? `<div class="ps-lab-row"><span class="ps-lab-val">${gfr.gfr} mL/min/1.73m²</span><span class="ps-lab-label">eGFR</span></div>` : "")
       + (crcl ? `<div class="ps-lab-row"><span class="ps-lab-val">${crcl.crcl} mL/min</span><span class="ps-lab-label">CrCl (CG)</span></div>` : "");
 
     return `
@@ -84,8 +87,19 @@
         <div class="ps-labs-title">Lab Test Results</div>
         ${weightRows}
         ${labRows}
+        ${renalRows}
         ${historyRows ? `<div class="ps-labs-title" style="margin-top:10px;">Previous Results</div>${historyRows}` : ""}
       </div>`;
+  }
+
+  // ---- under the medicines: Diagnoses and History, the drug allergy and the notes — each only when it has something written ----
+  function buildNotesHtml(patient) {
+    const labs = (patient && patient.labs) || {};
+    const block = (title, text) => String(text || "").trim()
+      ? `<div class="ps-note-block"><div class="ps-note-title">${title}</div><div class="ps-note-text" dir="auto">${escapeHtml(String(text).trim())}</div></div>` : "";
+    return block("Diagnoses and History", patient && patient.diagnosis)
+      + block("Drug Allergy", patient && patient.allergies)
+      + block("Notes", typeof labs._notes === "string" ? labs._notes : "");
   }
 
   // ---- Left column: medication lines ----
@@ -175,7 +189,7 @@
         </div>
         <div class="ps-body">
           <div class="ps-vs-col">${buildLabsVitalsHtml(patient)}</div>
-          <div class="ps-meds-col">${buildMedsHtml(patient, medCatalog)}</div>
+          <div class="ps-meds-col">${buildMedsHtml(patient, medCatalog)}${buildNotesHtml(patient)}</div>
         </div>
         <div class="ps-version">${SHEET_VERSION}</div>
       </div>`;
@@ -203,6 +217,9 @@
     '.ps-labs-title { font-size: 13px; font-weight: 800; margin-bottom: 6px; text-decoration: underline; }',
     '.ps-lab-row { display: flex; justify-content: space-between; padding: 3px 0; }',
     '.ps-lab-label { font-weight: 700; }',
+    '.ps-note-block { margin-top: 14px; padding-left: 8px; }',
+    '.ps-note-title { font-size: 13px; font-weight: 800; text-decoration: underline; margin-bottom: 3px; }',
+    '.ps-note-text { font-size: 13.5px; font-weight: 600; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }',
     // the previous results: one block per date, the date as a shaded heading, one row per lab
     '.ps-hist-block { margin-top: 6px; break-inside: avoid; }',
     '.ps-hist-date { font-size: 12px; font-weight: 800; background: #eee; border-bottom: 1px solid #000; padding: 2px 6px; margin-bottom: 2px; }',
