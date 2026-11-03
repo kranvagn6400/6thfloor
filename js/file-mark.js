@@ -6,8 +6,9 @@
    back in an hour or two, or only tomorrow) the bed is marked here, so the
    patient is not forgotten: an orange file mark on the bed in the rooms view
    and a counter «لم تُقارَن: n» above the rooms with the list.
-   «رجعت الطبلة» clears it (who / when is kept). The mark does NOT reset at the
-   end of the day — it stays until the comparison is done.
+   «رجعت الطبلة» clears it (who / when is kept). If nobody clears it, it clears ITSELF
+   at 2 pm (the first 14:00 after it was set): the file is then taken as present again.
+   Nothing is written for that — the expiry is worked out from the time of the mark.
    Kept in patient.labs._cmp = { missing, at, by, doneAt, doneBy } (labs JSON —
    no new column; shared like the rest of the patient).
    Visible to the admin and the pharmacists (the doctors do not do the morning round).
@@ -30,10 +31,20 @@
   }
   const patients = () => (App() && App().state && App().state.patients) || {};
   const cmpOf = (p) => (p && p.labs && p.labs._cmp) || null;
+  const CLOSE_HOUR = 14;
+  // a mark lives until the first 2 pm after it was made (made in the morning → that day 2 pm; made after 2 pm → the next day's)
+  function expired(c) {
+    const at = new Date(c && c.at);
+    if (isNaN(at)) return false;
+    const cut = new Date(at);
+    cut.setHours(CLOSE_HOUR, 0, 0, 0);
+    if (cut.getTime() <= at.getTime()) cut.setDate(cut.getDate() + 1);
+    return Date.now() >= cut.getTime();
+  }
   function isMissing(key) {
     const p = patients()[key];
     const c = cmpOf(p);
-    return !!(c && c.missing && p && p.name && p.name.trim());
+    return !!(c && c.missing && !expired(c) && p && p.name && p.name.trim());
   }
   // every occupied bed whose file was not there and is not compared yet
   function missingList() {
@@ -108,7 +119,21 @@
     document.body.appendChild(ov);
   }
 
+  // at 2 pm the marks fall by themselves: redraw the rooms (and the card button) at the moment, and again every day
+  function scheduleExpiry() {
+    const next = new Date();
+    next.setHours(CLOSE_HOUR, 0, 1, 0);
+    if (next.getTime() <= Date.now()) next.setDate(next.getDate() + 1);
+    setTimeout(() => {
+      const app = App();
+      if (app && app.redrawRooms) app.redrawRooms();
+      updateCardButton();
+      scheduleExpiry();
+    }, next.getTime() - Date.now());
+  }
+
   function init() {
+    scheduleExpiry();
     // the bed mark / the counter in the rooms view (capture: the bed underneath must not open)
     const grid = document.getElementById("rooms-grid");
     if (grid) grid.addEventListener("click", (e) => {
