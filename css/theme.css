@@ -3190,14 +3190,3 @@ html[data-theme="dark"] .lab-cell-value strong.is-low { color: #8CB8EE; }
 .lab-trend.is-good { color: #1D9E75; }
 .lab-trend.is-bad { color: var(--danger, #C2412D); }
 .lab-trend.is-flat { color: var(--text-muted); }
-
-/* the quick menu of a bed (long-press / right-click) */
-.bm-overlay { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; justify-content: center; padding: 12px; }
-.bm-sheet { width: min(420px, 100%); display: flex; flex-direction: column; gap: 8px; background: var(--surface, #fff); color: var(--text); border-radius: 20px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-.bm-title { font-size: 17px; font-weight: 800; }
-.bm-sub { font-size: 12.5px; color: var(--text-muted); margin-top: -6px; }
-.bm-btn { width: 100%; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--border-strong, var(--border)); background: transparent; color: var(--text); font: inherit; font-size: 15px; font-weight: 800; text-align: start; cursor: pointer; }
-.bm-btn.bm-file { border-color: #E0861B; color: #B5650D; }
-.bm-btn.bm-cancel { text-align: center; color: var(--text-muted); }
-html[data-theme="dark"] .bm-btn.bm-file { color: #F2C078; }
-@media (min-width: 700px) { .bm-overlay { align-items: center; } }
