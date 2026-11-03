@@ -346,6 +346,38 @@
   }
 
   // Helper: format ISO date string to short Arabic date
+  // ---- lab result colouring and the trend arrow (decision support only) ----
+  // General adult reference ranges [low, high] — one table, change a pair to change the colouring. WBC / PLT typed as 12500 are read as 12.5.
+  // CRP is not coloured (its unit differs between labs).
+  const LAB_RANGES = {
+    creatinine: [0.6, 1.3], albumin: [3.5, 5.0], wbc: [4, 11], hb: [12, 17.5],
+    plt: [150, 450], na: [135, 145], k: [3.5, 5.1], glucose: [70, 180]
+  };
+  // which direction is the better one, for the colour of the arrow (the others get a grey arrow)
+  const LAB_GOOD_DIR = { creatinine: "down", albumin: "up", hb: "up" };
+  function labNumber(key, v) {
+    let n = parseFloat(String(v == null ? "" : v).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(",", "."));
+    if (!isFinite(n)) return null;
+    if ((key === "wbc" || key === "plt") && n >= 1000) n = n / 1000;
+    return n;
+  }
+  // "high" | "low" | "" for a result
+  function labStatus(key, v) {
+    const r = LAB_RANGES[key], n = labNumber(key, v);
+    if (!r || n == null) return "";
+    return n > r[1] ? "high" : n < r[0] ? "low" : "";
+  }
+  // the previous result of this lab (newest in the history) → { dir: "up" | "down", from, date } | null
+  function labTrend(key, labs, history) {
+    const cur = labNumber(key, labs && labs[key]);
+    if (cur == null) return null;
+    const prev = (history || []).filter(h => h && h.key === key && labNumber(key, h.value) != null)
+      .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0];
+    if (!prev) return null;
+    const p = labNumber(key, prev.value);
+    if (Math.abs(cur - p) < Math.max(1e-9, Math.abs(p) * 0.01)) return null;     // practically the same: no arrow
+    return { dir: cur > p ? "up" : "down", from: prev.value, date: prev.date };
+  }
   function formatDateShort(dateStr) {
     try {
       const d = new Date(dateStr);
@@ -505,8 +537,18 @@
         wrapper.className = "lab-cell";
         wrapper.appendChild(h("div", { class: "lab-cell-name" }, label));
         const cur = labs[key] ? String(labs[key]) : "";
+        const st = cur ? labStatus(key, cur) : "", tr = cur ? labTrend(key, labs, labHistory) : null, rg = LAB_RANGES[key];
+        let arrow = null;
+        if (tr) {
+          const good = LAB_GOOD_DIR[key];
+          arrow = h("span", {
+            class: "lab-trend " + (good ? (tr.dir === good ? "is-good" : "is-bad") : "is-flat"),
+            title: "كانت " + tr.from + (tr.date ? " في " + formatDateShort(tr.date) : "")
+          }, tr.dir === "up" ? "▲" : "▼");
+        }
         wrapper.appendChild(h("div", { class: "lab-cell-value" + (cur ? "" : " is-empty") },
-          cur ? [h("strong", {}, cur), dates[key] ? h("span", { class: "lab-cell-date" }, formatDateShort(dates[key])) : null] : "—"));
+          cur ? [h("strong", { class: st ? "is-" + st : "", title: st && rg ? (st === "high" ? "أعلى من المعدل" : "أدنى من المعدل") + " (" + rg[0] + " – " + rg[1] + ")" : "" }, cur), arrow,
+            dates[key] ? h("span", { class: "lab-cell-date" }, formatDateShort(dates[key])) : null] : "—"));
         const row = h("div", { class: "lab-cell-entry" });
         const input = document.createElement("input");
         input.type = "text";

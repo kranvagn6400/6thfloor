@@ -3180,3 +3180,13 @@ html[data-theme="dark"] .gen-ward-btn.is-on { background: color-mix(in srgb, var
   .oe-box.oe-wide .oe-actions .oe-btn { flex: 1 1 40%; text-align: center; }
   .oe-box.oe-wide .oe-actions .oe-send { flex: 1 0 100%; }
 }
+
+/* lab results: out-of-range values coloured, a small arrow when the result moved from the previous one */
+.lab-cell-value strong.is-high { color: var(--danger, #C2412D); }
+.lab-cell-value strong.is-low { color: #2F6FB3; }
+html[data-theme="dark"] .lab-cell-value strong.is-high { color: #FF8F7E; }
+html[data-theme="dark"] .lab-cell-value strong.is-low { color: #8CB8EE; }
+.lab-trend { font-size: 11px; font-weight: 900; line-height: 1; }
+.lab-trend.is-good { color: #1D9E75; }
+.lab-trend.is-bad { color: var(--danger, #C2412D); }
+.lab-trend.is-flat { color: var(--text-muted); }
