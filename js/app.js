@@ -3518,10 +3518,8 @@
         p.name || "", `${global.PharmacyWard.roomTitle(state.currentBed.roomId)}`);
       // Renal / allergy / duplicate / interaction alerts for the new meds
       showClinicalAlertsForNewMeds(p, firstNewIndex);
-      // Return to rooms view immediately so the pharmacist can move to
-      // the next patient without an extra tap on the back button.
-      state.currentBed = null;
-      UI.showView("home");
+      // Stay in the patient's card (the user asked): show the new medicines in it. The back button leaves it.
+      refreshPatientViewOnly();
     });
 
     // ----- Settings/Admin: open via header gear -----
