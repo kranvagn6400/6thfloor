@@ -408,7 +408,8 @@
   // The admin, or a pharmacist the admin allowed (features.sql §19)
   function canEditCatalog() {
     const s = loadSession();
-    return !!(s && s.role === "admin" && !s.limitedAdmin);   // no pharmacist / floor manager edits the catalogue
+    // the supreme admin, or a pharmacist the admin allowed (user management → «الكتالوج», read at login); never the floor manager
+    return !!(s && ((s.role === "admin" && !s.limitedAdmin) || (s.role === "pharmacist" && s.canEditCatalog)));
   }
 
   async function toggleUserActive(userId, currentActive) {

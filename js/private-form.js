@@ -476,7 +476,7 @@
           '<label class="pfe-f">المصدر<select class="pfe-src"><option value="">—</option><option value="شراء"' + (src === "شراء" ? " selected" : "") + '>شراء</option><option value="كيماديا"' + (src === "كيماديا" ? " selected" : "") + ">كيماديا</option></select></label>" +
           '<label class="pfe-f">سعر المفرد' +
             '<span class="pfe-money"><input class="pfe-price" inputmode="decimal" placeholder="—" value="' + esc(meta.price || "") + '"><em>د.ع</em></span>' +
-            (meta.auto && !meta.hand ? '<span class="pfe-auto">من موقع الأسعار</span>' : "") + "</label>" +
+            "</label>" +
         "</div></div>";
     }).join("");
     $("pfe-tbody").innerHTML = body || '<div class="pfe-empty">لا توجد مواد في الفترة المختارة.<br>غيّر تاريخ الدخول أو الخروج، أو أضف دواءً من قسم «أدوية أضافها الخفر».</div>';
