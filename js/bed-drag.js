@@ -36,7 +36,7 @@
 
   function startDrag(x, y) {
     if (!pending) return;
-    const source = pending.bed;
+    const source = pending.bed, byTouch = !!pending.touch;
     cancelPending();
     const rect = source.getBoundingClientRect();
     const ghost = source.cloneNode(true);
@@ -46,7 +46,8 @@
     document.body.appendChild(ghost);
     drag = {
       fromKey: source.dataset.key, source, ghost,
-      offX: x - rect.left, offY: y - rect.top, x, y, target: null, raf: 0
+      offX: x - rect.left, offY: y - rect.top, x, y, target: null, raf: 0,
+      byTouch, sx: x, sy: y, moved: false      // a touch long-press released without moving = the quick menu
     };
     source.classList.add("is-drag-source");
     document.body.classList.add("bed-dragging");
@@ -65,6 +66,7 @@
   function moveTo(x, y) {
     drag.x = x;
     drag.y = y;
+    if (!drag.moved && Math.hypot(x - drag.sx, y - drag.sy) > 14) drag.moved = true;
     drag.ghost.style.transform = `translate(${x - drag.offX}px, ${y - drag.offY}px) scale(1.06) rotate(-2deg)`;
     const under = document.elementFromPoint(x, y);
     const bed = under && under.closest("#rooms-grid .bed-btn");
@@ -89,7 +91,7 @@
 
   function endDrag(drop) {
     if (!drag) return;
-    const { fromKey, source, ghost, target, raf } = drag;
+    const { fromKey, source, ghost, target, raf, byTouch, moved } = drag;
     cancelAnimationFrame(raf);
     ghost.remove();
     source.classList.remove("is-drag-source");
@@ -99,6 +101,7 @@
     // The click that follows mouseup / touchend must not open the patient
     suppressClick = true;
     setTimeout(() => { suppressClick = false; }, 400);
+    if (drop && byTouch && !moved && !target && global.PharmacyBedMenu) { global.PharmacyBedMenu.open(fromKey); return; }
     if (!drop || !target) return;
     // onto another patient → the two swap beds; onto an empty bed → move
     if (isOccupied(target)) {
@@ -141,7 +144,11 @@
 
     // Long-press would otherwise open the browser's context menu / callout
     grid.addEventListener("contextmenu", (e) => {
-      if (e.target.closest(".bed-btn")) e.preventDefault();
+      const bed = e.target.closest(".bed-btn");
+      if (!bed) return;
+      e.preventDefault();
+      // right-click with the mouse = the quick menu (a touch long-press is handled by the drag above)
+      if (e.pointerType !== "touch" && !drag && isOccupied(bed) && global.PharmacyBedMenu) global.PharmacyBedMenu.open(bed.dataset.key);
     });
 
     // ---- mouse: press and drag ----

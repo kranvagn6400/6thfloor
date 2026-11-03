@@ -149,5 +149,5 @@
     });
   }
 
-  global.PharmacyFileMark = { enabled, isMissing, count: () => missingList().length, openList, updateCardButton, init, ICON: FILE_OFF };
+  global.PharmacyFileMark = { enabled, isMissing, toggle: (key) => setMissing(key, !isMissing(key)), count: () => missingList().length, openList, updateCardButton, init, ICON: FILE_OFF };
 })(window);
