@@ -98,15 +98,10 @@ html[data-theme="dark"] .wp-result .big { color: var(--text); }
 .wp-result .row b { direction: ltr; }
 .wp-note { margin-top: 8px; font-size: 11.5px; color: var(--text-faint); }
 
-/* ---------- الانتقال السينمائي (View Transitions) ---------- */
-::view-transition-group(wp-hero) { animation-duration: .5s; animation-timing-function: cubic-bezier(.2, .8, .2, 1); }
-::view-transition-old(wp-hero), ::view-transition-new(wp-hero) { height: 100%; object-fit: cover; }
-::view-transition-old(root) { animation: .22s ease both wp-fade-out; }
-::view-transition-new(root) { animation: .3s ease both wp-fade-in; }
-@keyframes wp-fade-out { to { opacity: 0; } }
+/* ---------- تلاشٍ خفيف عند تبديل الصفحات ---------- */
+.view.wp-fade { animation: wp-fade-in .16s ease-out; }
 @keyframes wp-fade-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   .wp-sheet, .wp-sheet-back, #rooms-grid .bed-btn.wp-back { transition: none; }
-  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }

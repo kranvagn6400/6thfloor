@@ -5,7 +5,7 @@
    2) السحب على السرير: يسارًا = إضافة علاج، يمينًا = Bird Vision.
    3) رسوم التحاليل المصغّرة (spark) تستدعيها ui.js.
    4) حاسبات سريعة (تسريب مل/س، وظائف الكلى).
-   5) انتقال سينمائي بين السرير وبطاقته (View Transitions API).
+   5) تلاشٍ خفيف عند تبديل الصفحات (CSS فقط).
    المكتبة (GSAP) من CDN وهي اختيارية: إن لم
    تتوفر يعمل كل شيء بدونها. كل الحركة تتوقف مع prefers-reduced-motion.
    دعم قرار فقط — الحاسبات لا تحل محل بروتوكول المستشفى.
@@ -261,52 +261,25 @@
     bar.insertBefore(b, $("open-med-sheet"));
   }
 
-  // ---------- الانتقال السينمائي + ربط الواجهة ----------
-  let busy = false, lastKey = null;
-  const visible = (e) => e && e.offsetParent !== null;
-  function heroFor(key) {
-    if (!key) return null;
-    const q = (sel) => { const e = document.querySelector(sel + '[data-key="' + key + '"]'); return visible(e) ? e : null; };
-    return q("#rooms-grid .bed-btn") || q(".patient-row");
-  }
+  // ---------- تلاشٍ خفيف عند تبديل الصفحات + ربط الواجهة ----------
+  // (بلا لقطات للصفحة ولا تمدّد — CSS فقط، حتى يبقى الفتح سلسًا على الجوالات المتوسطة)
   function afterShow(name) {
-    if (name === "home") maybeStagger();
     if (name !== "patient") closeCalc();
-  }
-  let staggered = false;
-  function maybeStagger() {
-    const g = G();
-    if (staggered || !g) return;
-    const home = $("view-home");
-    const beds = document.querySelectorAll("#rooms-grid .bed-btn");
-    if (!home || home.hidden || !beds.length) return;
-    staggered = true;
-    g.from(beds, { opacity: 0, y: 14, duration: 0.35, ease: "power2.out", stagger: { amount: 0.5 }, clearProps: "opacity,transform" });
+    if (reduce()) return;
+    const v = document.querySelector(".view[data-view=\"" + name + "\"]");
+    if (!v) return;
+    v.classList.remove("wp-fade");
+    void v.offsetWidth;
+    v.classList.add("wp-fade");
+    setTimeout(() => v.classList.remove("wp-fade"), 220);
   }
   function wrapUI() {
     const origShow = UI.showView, origRender = UI.renderPatientView;
     UI.showView = function (name) {
-      const args = arguments, from = origShow._lastView;
-      if (name === "patient") { const cb = App() && App().state.currentBed; lastKey = cb ? cb.key : lastKey; }
-      const can = global.document.startViewTransition && !reduce() && !busy && from && from !== name && (name === "patient" || from === "patient");
-      if (!can) { const r = origShow.apply(UI, args); afterShow(name); return r; }
-      const src = name === "patient" ? heroFor(lastKey) : $("patient-header");
-      if (src) src.style.viewTransitionName = "wp-hero";
-      let dst = null;
-      busy = true;
-      try {
-        const t = global.document.startViewTransition(() => {
-          if (src) src.style.viewTransitionName = "";
-          origShow.apply(UI, args);
-          dst = name === "patient" ? $("patient-header") : heroFor(lastKey);
-          if (dst) dst.style.viewTransitionName = "wp-hero";
-        });
-        const done = () => { busy = false; if (dst) dst.style.viewTransitionName = ""; if (src) src.style.viewTransitionName = ""; afterShow(name); };
-        t.finished.then(done, done);
-      } catch (e) {
-        busy = false; if (src) src.style.viewTransitionName = "";
-        origShow.apply(UI, args); afterShow(name);
-      }
+      const from = origShow._lastView;
+      const r = origShow.apply(UI, arguments);
+      if (from !== name) afterShow(name);
+      return r;
     };
     Object.defineProperty(UI.showView, "_lastView", { get: () => origShow._lastView, set: (v) => { origShow._lastView = v; } });   // handover.js / duty-roster.js read it
     UI.renderPatientView = function () {
@@ -321,14 +294,6 @@
     wrapUI();
     buildNav();
     initSwipe();
-    const grid = $("rooms-grid");
-    if (grid && global.MutationObserver) {
-      let raf = 0;
-      new MutationObserver(() => {
-        cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(() => { try { maybeStagger(); } catch (e) { /* ignore */ } });
-      }).observe(grid, { childList: true });
-    }
   }
 
   global.PharmacyWardPlus = { spark, openCalc, occupied, go };
