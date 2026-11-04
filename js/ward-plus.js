@@ -137,13 +137,14 @@
 
   // ---------- الحاسبات ----------
   const f1 = (n, d) => (isFinite(n) ? String(Math.round(n * Math.pow(10, d == null ? 1 : d)) / Math.pow(10, d == null ? 1 : d)) : "—");
+  const DROPS_PER_ML = 15;   // عيار القطرة ثابت: 15 قطرة لكل مل
   const TABS = [
     { id: "inf", title: "تسريب (مل/س)",
-      fields: [{ k: "vol", l: "الحجم (مل)", v: "500" }, { k: "hrs", l: "المدة (ساعة)", v: "8" }, { k: "df", l: "عيار القطرة (قطرة/مل)", sel: ["20", "15", "60"] }],
+      fields: [{ k: "vol", l: "الحجم (مل)", v: "500" }, { k: "hrs", l: "المدة (ساعة)", v: "8" }],
       calc: (v) => {
         if (!(v.vol > 0 && v.hrs > 0)) return null;
         const rate = v.vol / v.hrs;
-        return { big: f1(rate) + " مل/ساعة", rows: [["قطرة/دقيقة", f1(v.vol * v.df / (v.hrs * 60), 0)], ["مل/دقيقة", f1(rate / 60, 2)]] };
+        return { big: f1(rate) + " مل/ساعة", rows: [["قطرة/دقيقة", f1(v.vol * DROPS_PER_ML / (v.hrs * 60), 0)], ["مل/دقيقة", f1(rate / 60, 2)]] };
       } },
     { id: "renal", title: "وظائف الكلى",
       fields: [{ k: "age", l: "العمر (سنة)", p: "age" }, { k: "sex", l: "الجنس", sel: ["male", "female"], selText: ["ذكر", "أنثى"], p: "sex" }, { k: "wt", l: "الوزن (كغ)", p: "wt" }, { k: "ht", l: "الطول (سم) اختياري", p: "ht" }, { k: "scr", l: "كرياتنين المصل (ملغ/دل)", p: "scr" }],
