@@ -30,6 +30,7 @@ accounts. Never touch, push to or mention the Ward 5 app / accounts here. Talk t
   extra chart (existing logic). js/chart-sync.js PROD must stay https://6thfloor.vercel.app.
 - Local preview: node .claude/serve.js (port 5174). Old tests (scripts/test-*.js) still assume the Ward 5 layout.
 
+- «سلامة البيانات» (js/data-health.js; a settings row for EVERYONE): a read-only window — patients without plate no. / age / weight, duplicate plate numbers, meronem with no S.Creatinine, albumin with no S.Albumin / S.Creatinine; each row «غرفة N · الوحدة · سرير M» opens the card. Medicines without a chart name are not listed. Handover albumin status `aw` = «بانتظار نتيجة التحليل» (prints at 11 pt).
 - Ward tools (js/ward-plus.js + css/ward-plus.css, v556): swipe an occupied bed (touch): left = add medicine, right = Bird Vision; the change log is a day-grouped timeline with the lab results (patient-history.js render); «حاسبات» tile → sheet «Drops Calculator» (infusion mL/h + drops/min, CrCl via clinical.js);
   NO page transition on purpose (the user chose instant open/back: View Transitions was janky on phones, a fade was dropped too); ward-plus wraps UI.showView / UI.renderPatientView — keep `UI.showView._lastView`, handover.js and duty-roster.js read it). GSAP comes from jsdelivr (a defer tag in index.html); optional, all off under prefers-reduced-motion.
 

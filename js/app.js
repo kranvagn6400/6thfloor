@@ -103,6 +103,7 @@
     global.PharmacyBedDrag.init();
     global.PharmacyMedAvailability.init();
     if (global.PharmacyFileMark) global.PharmacyFileMark.init();
+    if (global.PharmacyDataHealth) global.PharmacyDataHealth.init();
     // Show login overlay if not logged in, otherwise show the app
     if (Auth && Auth.isLoggedIn()) {
       showApp();

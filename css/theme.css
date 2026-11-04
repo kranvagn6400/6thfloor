@@ -3197,3 +3197,19 @@ html[data-theme="dark"] .lab-cell-value strong.is-low { color: #8CB8EE; }
 .lab-trend.is-good { color: #1D9E75; }
 .lab-trend.is-bad { color: var(--danger, #C2412D); }
 .lab-trend.is-flat { color: var(--text-muted); }
+
+/* «سلامة البيانات» (data-health.js) */
+.dh-box { width: min(560px, 100%); }
+.dh-summary { margin: 0 0 10px; padding: 8px 10px; border-radius: 10px; background: #FFF4E5; color: #8A4B05; font-weight: 800; font-size: 13.5px; }
+.dh-summary.is-ok { background: #E9F7F1; color: #0F6E56; }
+html[data-theme="dark"] .dh-summary { background: #2A1D0B; color: #F2C078; }
+html[data-theme="dark"] .dh-summary.is-ok { background: color-mix(in srgb, var(--primary) 14%, var(--surface)); color: var(--primary); }
+.dh-section { border-top: 1px solid var(--border); padding: 8px 0 6px; }
+.dh-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; }
+.dh-count { min-width: 26px; text-align: center; padding: 1px 8px; border-radius: 999px; font-weight: 900; font-size: 12.5px; background: #E0861B; color: #fff; }
+.dh-section.is-ok .dh-count { background: #1D9E75; }
+.dh-hint { margin: 4px 0 6px; color: var(--text-muted); font-size: 12.5px; line-height: 1.5; }
+.dh-sub { margin: 6px 0 2px; font-weight: 800; font-size: 12.5px; color: var(--text-muted); }
+.dh-row { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; width: 100%; text-align: right; padding: 7px 8px; margin: 3px 0; border-radius: 10px; border: 1px solid var(--border); background: var(--surface, #fff); color: var(--text); font: inherit; font-size: 13.5px; cursor: pointer; }
+.dh-where { color: var(--text-muted); font-size: 12px; }
+.dh-note { color: #B5650D; font-size: 12.5px; font-weight: 700; margin-inline-start: auto; }

@@ -119,7 +119,8 @@
             '<option value="ni"' + (st === "ni" ? " selected" : "") + ">Not indicated</option>" +
             '<option value="ns"' + (st === "ns" ? " selected" : "") + ">لم يتوفر ختم أخصائي</option>" +
             '<option value="dr"' + (st === "dr" ? " selected" : "") + ">عند السحب</option>" +
-            '<option value="np"' + (st === "np" ? " selected" : "") + ">لم يتواجد المريض صباحًا</option></select>" +
+            '<option value="np"' + (st === "np" ? " selected" : "") + ">لم يتواجد المريض صباحًا</option>" +
+            '<option value="aw"' + (st === "aw" ? " selected" : "") + ">بانتظار نتيجة التحليل</option></select>" +
             '<input class="hv-time" type="text" inputmode="text" autocomplete="off" placeholder="وقت التسليم" aria-label="وقت التسليم" value="' + esc(saved.time[r.key] || "") + '"></div>';
         }).join("")
       : '<div class="ix-ok">لا يوجد مريض على الألبومين حاليًا</div>';
@@ -153,7 +154,7 @@
   const COL = { name: [417.6, 537.6], room: [327.5, 417.6], mid: [177.8, 327.5], time: [58.7, 177.8] };
   const T1 = { top: 151.8, rows: 13 }, T2 = { top: 523.1, rows: 11 }, ROW_H = 22.74;
   const X0 = 57.7, X1 = 537.6;                     // the outer lines of every block
-  const STATUS = { ni: "Not indicated", ns: "لم يتوفر ختم أخصائي", dr: "عند السحب", np: "لم يتواجد المريض صباحًا" };
+  const STATUS = { ni: "Not indicated", ns: "لم يتوفر ختم أخصائي", dr: "عند السحب", np: "لم يتواجد المريض صباحًا", aw: "بانتظار نتيجة التحليل" };
   // S = "" for the preview frame (own document); "#hv-pdf-root " when the pages are drawn inside the app for the PDF
   const cssText = (S) => {
     S = S || "";
@@ -252,7 +253,7 @@
       const mid = r.status ? STATUS[r.status] : (r.qty ? String(r.qty) : "");
       h += box("", COL.name[0] + 1, COL.name[1] - 1, top, ROW_H, esc(r.name), fitSize(r.name, 12));
       h += box("", COL.room[0] + 1, COL.room[1] - 1, top, ROW_H, esc(r.room), roomSize(r.room));
-      h += box("", COL.mid[0] + 1, COL.mid[1] - 1, top, ROW_H, esc(mid), r.status === "np" ? 11 : 12);   // the longest status is a little smaller so it fits the cell
+      h += box("", COL.mid[0] + 1, COL.mid[1] - 1, top, ROW_H, esc(mid), (r.status === "np" || r.status === "aw") ? 11 : 12);   // the longest status is a little smaller so it fits the cell
       if (r.time) h += box("", COL.time[0] + 1, COL.time[1] - 1, top, ROW_H, esc(r.time), fitSize(r.time, 12));
     });
     // the banner, then table 2: other critical medicines, the preparation under the medicine
