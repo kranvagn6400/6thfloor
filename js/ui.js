@@ -547,6 +547,8 @@
         addBtn.dataset.labKey = key;
         addBtn.dataset.labLabel = label;
         row.appendChild(addBtn);
+        const sp = cur && global.PharmacyWardPlus ? global.PharmacyWardPlus.spark(labs, labHistory, key, st) : null;   // رسم مصغّر لآخر النتائج
+        if (sp) wrapper.appendChild(sp);
         wrapper.appendChild(row);
         labsContainer.appendChild(wrapper);
       });

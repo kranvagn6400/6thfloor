@@ -79,28 +79,69 @@
     return cutStay(data, currentName);
   }
 
-  function render(list, events) {
+  // ---- الخط الزمني: الأحداث (من السجل) + نتائج التحاليل المحلية، مجمّعة باليوم ----
+  const dayKey = (d) => new Date(d).toLocaleDateString("en-CA");
+  function dayTitle(k) {
+    const t = new Date().toLocaleDateString("en-CA");
+    const y = new Date(Date.now() - 864e5).toLocaleDateString("en-CA");
+    if (k === t) return "اليوم";
+    if (k === y) return "أمس";
+    return new Date(k + "T12:00:00").toLocaleDateString("ar", { weekday: "long", day: "numeric", month: "long" });
+  }
+  const LAB_NAMES = { creatinine: "S. Creatinine", albumin: "S. Albumin", wbc: "WBC", hb: "Hb", plt: "PLT", na: "Na+", k: "K+", glucose: "Glucose", crp: "CRP" };
+  function labItems(p) {
+    const out = [];
+    if (!p) return out;
+    (p.labHistory || []).forEach(h => { if (h && h.date && /^\d{4}-\d{2}-\d{2}/.test(h.date)) out.push({ day: h.date.slice(0, 10), t: 0, kind: "lab", title: (h.label || LAB_NAMES[h.key] || h.key) + ": " + h.value }); });
+    const L = p.labs || {}, D = L._dates || {};
+    Object.keys(D).forEach(k => { if (L[k] && /^\d{4}-\d{2}-\d{2}/.test(D[k])) out.push({ day: D[k].slice(0, 10), t: 0, kind: "lab", title: (LAB_NAMES[k] || k) + ": " + L[k] }); });
+    return out;
+  }
+  function render(list, events, patient) {
     list.innerHTML = "";
-    if (events.length === 0) {
+    const items = (events || []).map(ev => ({ day: dayKey(ev.created_at), t: new Date(ev.created_at).getTime(), kind: ev.event, ev }));
+    labItems(patient).forEach(x => items.push(x));
+    if (items.length === 0) {
       list.appendChild(el("div", "patient-history-empty", "لا توجد تغييرات مسجّلة لهذا المريض بعد"));
       return;
     }
-    events.forEach(ev => {
-      const label = EVENT_LABELS[ev.event] || { icon: "•", text: ev.event };
-      const row = el("div", "patient-history-row event-" + ev.event);
-      row.appendChild(el("span", "patient-history-icon", label.icon));
-      const body = el("div", "patient-history-body");
-      const line = el("div", "patient-history-line");
-      line.appendChild(el("strong", null, label.text));
-      if (ev.med_name) line.appendChild(document.createTextNode(" " + ev.med_name));
-      body.appendChild(line);
-      const detail = detailText(ev);
-      if (detail) body.appendChild(el("div", "patient-history-detail" + (ev.event === "origin" || ev.event === "moved" ? " is-text" : ""), detail));
-      const when = new Date(ev.created_at).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" });
-      body.appendChild(el("div", "patient-history-meta", when + (ev.username ? " · @" + ev.username : "")));
+    items.sort((a, b) => b.day.localeCompare(a.day) || b.t - a.t);
+    const days = Array.from(new Set(items.map(x => x.day)));
+    const meds = (events || []).filter(e => e.event === "med_added").length;
+    const sum = el("div", "tl-sum");
+    sum.appendChild(el("span", null, "الإقامة: " + Math.max(1, Math.round((Date.now() - new Date(days[days.length - 1] + "T00:00:00")) / 864e5) + 1) + " يوم"));
+    sum.appendChild(el("span", null, items.length + " حدث"));
+    if (meds) sum.appendChild(el("span", null, meds + " دواء أُضيف"));
+    list.appendChild(sum);
+    const tl = el("div", "tl");
+    let lastDay = "";
+    items.forEach(x => {
+      if (x.day !== lastDay) { lastDay = x.day; tl.appendChild(el("div", "tl-day", dayTitle(x.day))); }
+      const row = el("div", "tl-item k-" + x.kind);
+      const body = el("div", "tl-body");
+      if (x.ev) {
+        const ev = x.ev, label = EVENT_LABELS[ev.event] || { icon: "•", text: ev.event };
+        row.appendChild(el("span", "tl-dot", label.icon));
+        const t = el("div", "tl-title"); t.appendChild(el("strong", null, label.text));
+        if (ev.med_name) t.appendChild(document.createTextNode(" " + ev.med_name));
+        body.appendChild(t);
+        const detail = detailText(ev);
+        if (detail) { const d = el("div", "tl-sub", detail); d.dir = "auto"; body.appendChild(d); }
+        const meta = el("div", "tl-meta", new Date(ev.created_at).toLocaleTimeString("ar", { timeStyle: "short" }));
+        if (ev.username) { meta.appendChild(document.createTextNode(" · ")); const u = el("span", null, "@" + ev.username); u.dir = "ltr"; meta.appendChild(u); }
+        body.appendChild(meta);
+      } else {
+        row.appendChild(el("span", "tl-dot", "🧪"));
+        const t = el("div", "tl-title"); t.appendChild(el("strong", null, "تحليل")); t.appendChild(document.createTextNode(" " + x.title));
+        body.appendChild(t);
+      }
       row.appendChild(body);
-      list.appendChild(row);
+      tl.appendChild(row);
     });
+    list.appendChild(tl);
+    if (global.gsap && !(global.matchMedia && global.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      global.gsap.from(tl.querySelectorAll(".tl-item"), { opacity: 0, x: 16, duration: 0.3, stagger: 0.03, ease: "power2.out", clearProps: "opacity,transform" });
+    }
   }
 
   async function load() {
@@ -114,7 +155,7 @@
       const p = App.state.patients && App.state.patients[bed.key];
       const events = await fetchStay(bed.key, p && p.name);
       if (!App.state.currentBed || App.state.currentBed.key !== bed.key) return; // switched patient
-      render(list, events);
+      render(list, events, p);
     } catch (e) {
       list.innerHTML = "";
       list.appendChild(el("div", "patient-history-empty", (e && e.message) ? e.message : String(e)));
