@@ -67,8 +67,10 @@ html[data-theme="dark"] .tl-item.k-lab .tl-dot { background: #152638; }
 
 /* ---------- الحاسبات ---------- */
 .wp-calc-btn { }
-.wp-sheet-back { position: fixed; inset: 0; z-index: 180; background: rgba(10, 20, 18, .5); opacity: 0; transition: opacity .2s; }
-.wp-sheet-back.open { opacity: 1; }
+.wp-sheet-back { position: fixed; inset: 0; z-index: 180; background: rgba(10, 20, 18, .5); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.wp-sheet-back.open { opacity: 1; pointer-events: auto; }
+.wp-sheet { pointer-events: none; visibility: hidden; }
+.wp-sheet.open { pointer-events: auto; visibility: visible; }
 .wp-sheet {
   position: fixed; inset-inline: 0; bottom: 0; z-index: 181; max-height: 88vh; overflow-y: auto;
   background: var(--surface); color: var(--text); border-radius: 22px 22px 0 0; box-shadow: var(--shadow-xl);
