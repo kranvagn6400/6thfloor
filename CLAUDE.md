@@ -30,8 +30,8 @@ accounts. Never touch, push to or mention the Ward 5 app / accounts here. Talk t
   extra chart (existing logic). js/chart-sync.js PROD must stay https://6thfloor.vercel.app.
 - Local preview: node .claude/serve.js (port 5174). Old tests (scripts/test-*.js) still assume the Ward 5 layout.
 
-- Ward tools (js/ward-plus.js + css/ward-plus.css, v555): «السابق / التالي» bar under the back button (occupied beds in ward order);
-  swipe an occupied bed (touch): left = add medicine, right = Bird Vision; lab sparklines (ui.js calls PharmacyWardPlus.spark); the change log is a day-grouped timeline with the lab results (patient-history.js render); «حاسبات» tile (infusion, mg/kg, mcg/kg/min, CrCl via clinical.js);
+- Ward tools (js/ward-plus.js + css/ward-plus.css, v556): «السابق / التالي» bar under the back button (occupied beds in ward order);
+  swipe an occupied bed (touch): left = add medicine, right = Bird Vision; lab sparklines (ui.js calls PharmacyWardPlus.spark); the change log is a day-grouped timeline with the lab results (patient-history.js render); «حاسبات» tile → sheet «Drops Calculator» (infusion mL/h + drops/min, CrCl via clinical.js);
   View Transitions bed ↔ card (ward-plus wraps UI.showView / UI.renderPatientView — keep `UI.showView._lastView`, handover.js and duty-roster.js read it). GSAP comes from jsdelivr (a defer tag in index.html); optional, all off under prefers-reduced-motion.
 
 ## Inherited from the Ward 5 code (modules still apply; layout / roles above override)

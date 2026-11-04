@@ -4,7 +4,7 @@
    1) السابق / التالي بين المرضى داخل بطاقة المريض.
    2) السحب على السرير: يسارًا = إضافة علاج، يمينًا = Bird Vision.
    3) رسوم التحاليل المصغّرة (spark) تستدعيها ui.js.
-   4) حاسبات سريعة (تسريب، جرعة بالوزن، ميكروغرام/كغ/د، وظائف الكلى).
+   4) حاسبات سريعة (تسريب مل/س، وظائف الكلى).
    5) انتقال سينمائي بين السرير وبطاقته (View Transitions API).
    المكتبة (GSAP) من CDN وهي اختيارية: إن لم
    تتوفر يعمل كل شيء بدونها. كل الحركة تتوقف مع prefers-reduced-motion.
@@ -190,21 +190,6 @@
         const rate = v.vol / v.hrs;
         return { big: f1(rate) + " مل/ساعة", rows: [["قطرة/دقيقة", f1(v.vol * v.df / (v.hrs * 60), 0)], ["مل/دقيقة", f1(rate / 60, 2)]] };
       } },
-    { id: "kg", title: "جرعة بالوزن",
-      fields: [{ k: "wt", l: "الوزن (كغ)", p: "wt" }, { k: "dkg", l: "الجرعة (ملغ/كغ)" }, { k: "n", l: "مرات باليوم", v: "3" }, { k: "conc", l: "التركيز (ملغ/مل) اختياري" }],
-      calc: (v) => {
-        if (!(v.wt > 0 && v.dkg > 0)) return null;
-        const dose = v.wt * v.dkg, rows = [["لليوم", f1(dose * (v.n || 1)) + " ملغ"]];
-        if (v.conc > 0) rows.push(["الحجم لكل جرعة", f1(dose / v.conc, 2) + " مل"]);
-        return { big: f1(dose) + " ملغ / جرعة", rows };
-      } },
-    { id: "mcg", title: "ميكروغرام/كغ/د",
-      fields: [{ k: "wt", l: "الوزن (كغ)", p: "wt" }, { k: "mcg", l: "الجرعة (ميكروغرام/كغ/د)" }, { k: "mg", l: "كمية الدواء (ملغ)" }, { k: "ml", l: "الحجم النهائي (مل)" }],
-      calc: (v) => {
-        if (!(v.wt > 0 && v.mcg > 0 && v.mg > 0 && v.ml > 0)) return null;
-        const conc = v.mg * 1000 / v.ml;
-        return { big: f1(v.mcg * v.wt * 60 / conc, 2) + " مل/ساعة", rows: [["التركيز", f1(conc, 0) + " ميكروغرام/مل"], ["ملغ/ساعة", f1(v.mcg * v.wt * 60 / 1000, 2)]] };
-      } },
     { id: "renal", title: "وظائف الكلى",
       fields: [{ k: "age", l: "العمر (سنة)", p: "age" }, { k: "sex", l: "الجنس", sel: ["male", "female"], selText: ["ذكر", "أنثى"], p: "sex" }, { k: "wt", l: "الوزن (كغ)", p: "wt" }, { k: "ht", l: "الطول (سم) اختياري", p: "ht" }, { k: "scr", l: "كرياتنين المصل (ملغ/دل)", p: "scr" }],
       calc: (v, sel) => {
@@ -257,7 +242,7 @@
     if (!calcEl) {
       calcBack = el("div", "wp-sheet-back");
       calcEl = el("div", "wp-sheet");
-      calcEl.innerHTML = '<div class="wp-sheet-grip"></div><h3><span>حاسبات سريعة</span><button type="button" aria-label="إغلاق">✕</button></h3><div class="wp-tabs"></div><div class="wp-body"></div>';
+      calcEl.innerHTML = '<div class="wp-sheet-grip"></div><h3><span>Drops Calculator</span><button type="button" aria-label="إغلاق">✕</button></h3><div class="wp-tabs"></div><div class="wp-body"></div>';
       document.body.appendChild(calcBack); document.body.appendChild(calcEl);
       calcBack.addEventListener("click", closeCalc);
       calcEl.querySelector("h3 button").addEventListener("click", closeCalc);
@@ -270,7 +255,7 @@
     const bar = document.querySelector(".meds-head-actions");
     if (!bar || $("wp-calc-btn")) return;
     const b = el("button", "add-med-fab patient-print-btn wp-calc-btn");
-    b.id = "wp-calc-btn"; b.type = "button"; b.title = "حاسبات سريعة";
+    b.id = "wp-calc-btn"; b.type = "button"; b.title = "Drops Calculator";
     b.innerHTML = '<span aria-hidden="true">🧮</span> حاسبات';
     b.addEventListener("click", openCalc);
     bar.insertBefore(b, $("open-med-sheet"));
