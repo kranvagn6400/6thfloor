@@ -18,7 +18,7 @@
   const $ = (id) => document.getElementById(id);
   const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const App = () => global.PharmacyApp;
-  const todayISO = () => (global.PharmacyChartSync && global.PharmacyChartSync.todayISO) ? global.PharmacyChartSync.todayISO() : new Date().toISOString().slice(0, 10);
+  const todayISO = () => new Date().toLocaleDateString("en-CA");      // the LOCAL day
   const isDay = (d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d || ""));
 
   function roomOfKey(key) {
@@ -41,25 +41,43 @@
     return p.labs && p.labs._priv ? p.labs._priv : null;
   }
 
-  // ---- 1) recording (called by chart-bridge after a successful send to the private chart) ----
-  // patients: chart-bridge collectPatientsFromApp rows ({ key, meds: [{ name, available, … }] })
-  function record(patients, date) {
+  // ---- 1) recording: the button «تسجيل صرف اليوم» ----
+  // The day's items = the patient's medicines that are AVAILABLE now (an unavailable one is never received, so never
+  // charged), each with its daily quantity (+ tigecycline's extra vial, + the Lasix that goes with albumin).
+  const nameOf = (c, pm) => String((c && c.nameChart) || (pm && pm.nameChart) || (c && c.nameTrade) || (pm && pm.nameTrade) || (c && c.nameEn) || (pm && pm.nameEn) || (c && c.nameAr) || (pm && pm.nameAr) || (pm && pm.id) || "").trim();
+  function todaysItems(p) {
     const app = App(), Bridge = global.PharmacyChartBridge;
-    if (!app || !Bridge || !Bridge.medQty) return;
-    const day = isDay(date) ? date : todayISO();
-    (patients || []).forEach(pt => {
-      const p = pt.key && app.state.patients[pt.key];
-      if (!p) return;
-      const items = [];
-      pt.meds.forEach(m => {
-        if (m.available === false) return;                    // not available → not received → not charged
-        const q = parseInt(Bridge.medQty(m), 10);
-        items.push({ k: m.name, n: m.name, q: isNaN(q) || q < 1 ? 1 : q });
-      });
-      if (!items.length) return;
-      priv(p, true).days[day] = { items };                     // the same day sent again replaces it
-      app.savePatient(pt.key);
+    const cat = (app && app.state && app.state.medications) || [];
+    const items = [];
+    (p.medications || []).forEach(pm => {
+      if (!pm || !pm.id) return;
+      const c = cat.find(x => x && x.id === pm.id) || {};
+      if (c.available === false) return;
+      const name = nameOf(c, pm);
+      if (!name) return;
+      let q = Bridge && Bridge.dailyQuantity ? parseInt(Bridge.dailyQuantity(pm.id, pm.frequency || c.defaultFrequency || "", c.form || pm.form), 10) : 1;
+      if (isNaN(q) || q < 1) q = 1;
+      if (Bridge && Bridge.extraVialOf) { const ev = Bridge.extraVialOf(pm, p); if (ev) q += ev; }
+      items.push({ id: pm.id, k: name, n: name, q });
     });
+    const lx = Bridge && Bridge.lasixExtraOf ? Bridge.lasixExtraOf(p) : 0;
+    if (lx > 0) {
+      const id = Bridge.LASIX_ID, own = items.find(x => x.id === id);
+      if (own) own.q += lx;
+      else { const c = cat.find(x => x && x.id === id) || {}; if (c.available !== false) { const name = nameOf(c, { id }); if (name) items.push({ id, k: name, n: name, q: lx }); } }
+    }
+    return items.map(x => ({ k: x.k, n: x.n, q: x.q }));
+  }
+  function recordToday(key) {
+    const app = App(), p = app && key && app.state.patients[key];
+    if (!p) return false;
+    const items = todaysItems(p);
+    if (!items.length) { app.flashHint("لا أدوية متوفرة لتسجيلها لهذا المريض"); return false; }
+    priv(p, true).days[todayISO()] = { items };               // pressed again the same day → replaces that day
+    app.savePatient(key);
+    if (S && S.key === key) { S.pr = priv(p, true); renderAll(); }
+    app.flashHint("✓ سُجّل صرف اليوم (" + items.length + " مادة)");
+    return true;
   }
 
   // ---- 2) the numbers ----
@@ -151,7 +169,7 @@
   // OUR medicine: the words of its chart name (all must be found) — else its other names (English generic, trade name,
   // generic key: any of them), its form class and its strength
   function ourSide(chartName) {
-    const med = ((App() && App().state.medications) || []).find(m => m && String(m.nameChart || "").trim() === chartName);
+    const med = ((App() && App().state.medications) || []).find(m => m && nameOf(m) === chartName);
     const C = global.PharmacyClinical;
     const alt = new Set();
     if (med) [med.nameEn, med.nameTrade, C && C.genericKey ? C.genericKey(med) : ""].forEach(t => wordsOf(t).forEach(w => alt.add(w)));
@@ -450,7 +468,7 @@
     const days = dayList(pr);
     $("pfe-days-count").textContent = days.length ? days.length + " يوم" : "—";
     const box = $("pfe-days");
-    if (!days.length) { box.innerHTML = '<div class="pfe-empty">لم يُسجَّل بعد أي إرسال إلى جارت الخاص لهذا المريض.<br>أرسل الجارت أولاً، أو أضف الأدوية من قسم «أدوية أضافها الخفر».</div>'; return; }
+    if (!days.length) { box.innerHTML = '<div class="pfe-empty">لم يُسجَّل بعد أي صرف يومي لهذا المريض.<br>اضغط «تسجيل صرف اليوم» كل يوم، أو أضف الأدوية من قسم «أدوية أضافها الخفر».</div>'; return; }
     box.innerHTML = days.map(d => {
       const items = (pr.days[d] || {}).items || [];
       return '<div class="pfe-day" data-day="' + d + '"><b>' + fmtDay(d) + "</b>" +
@@ -496,7 +514,7 @@
       if (!m || out.length >= 8) return;
       const hay = [m.nameTrade, m.nameEn, m.nameAr, m.nameChart, m.defaultDose, m.id].join(" ").toLowerCase();
       if (!words.every(w => hay.indexOf(w) >= 0)) return;
-      const label = String(m.nameChart || "").trim() || [m.nameTrade || m.nameEn, m.defaultDose].filter(Boolean).join(" ");
+      const label = String(m.nameChart || "").trim() || [m.nameTrade || m.nameEn, m.defaultDose].filter(Boolean).join(" ");   // (the same text nameOf() gives for a medicine with a chart name)
       const sub = [m.nameAr, m.nameEn && m.nameEn !== m.nameTrade ? m.nameEn : "", m.available === false ? "غير متوفر" : ""].filter(Boolean).join(" · ");
       out.push({ label, sub });
     });
@@ -560,15 +578,17 @@
           "</div>" + (S.key ? "" : '<p class="pfe-hint">هذا السجل من المرضى السابقين: يمكنك تعديل الأرقام والطباعة، لكن التعديلات لا تُحفظ.</p>') + "</div>" +
         '<div class="pfe-card"><h4 class="pfe-h">المواد المصروفة <span class="pfe-badge" id="pfe-count">—</span></h4><div id="pfe-tbody"></div>' +
           '<p class="pfe-hint">أعمدة المجموع والفراض الإدارية والإجمالي تُترك فارغة في الورقة (تخص المحاسب). سعر المفرد يُجلب من موقع الأسعار تلقائيًا ويمكنك تعديله.</p></div>' +
-        '<details class="pfe-card"><summary>الإرسالات المسجّلة يوميًا <span class="pfe-badge" id="pfe-days-count">—</span></summary><div class="pfe-in"><div id="pfe-days"></div>' +
-          '<p class="pfe-hint">يُسجَّل كل يوم ما أُرسل إلى جارت الخاص وكان <b>متوفرًا</b> وقت الإرسال. عدّل الكمية أو احذف المادة إن لم يستلمها المريض.</p></div></details>' +
+        '<details class="pfe-card"><summary>الصرف المسجّل يوميًا <span class="pfe-badge" id="pfe-days-count">—</span></summary><div class="pfe-in">' + (S.key ? '<button type="button" class="pfe-go" id="pfe-rec-today" style="width:100%;margin-bottom:8px">تسجيل صرف اليوم</button>' : "") + '<div id="pfe-days"></div>' +
+          '<p class="pfe-hint">«تسجيل صرف اليوم» يحفظ أدوية المريض <b>المتوفرة</b> الآن بكمياتها اليومية؛ اضغطه مرة كل يوم. عدّل الكمية أو احذف المادة إن لم يستلمها المريض.</p></div></details>' +
         '<details class="pfe-card"' + (S.pr.extra.length ? " open" : "") + '><summary>أدوية أضافها الخفر <span class="pfe-badge" id="pfe-extra-count"></span></summary><div class="pfe-in">' +
-          '<p class="pfe-hint" style="margin:0 0 6px">أدوية أضافها صيدلي الخفر ولم تُرسل من هنا. اكتب اسم الدواء فتظهر اقتراحات من الكتالوج.</p><div id="pfe-extra"></div>' +
+          '<p class="pfe-hint" style="margin:0 0 6px">أدوية أضافها صيدلي الخفر ولم تُسجَّل من هنا. اكتب اسم الدواء فتظهر اقتراحات من الكتالوج.</p><div id="pfe-extra"></div>' +
           '<div class="pfe-addrow"><div class="pfe-ac"><input id="pfe-xn" placeholder="اسم الدواء" autocomplete="off" autocorrect="off" spellcheck="false"><div class="pfe-sug" id="pfe-sug" hidden></div></div><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة الدواء</button></div></div></details>' +
       "</div></div>" +
       '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-pv" id="pfe-preview">معاينة</button><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
     document.body.appendChild(el);
     renderAll();
+    const recBtn = $("pfe-rec-today");
+    if (recBtn) recBtn.addEventListener("click", () => recordToday(S.key));
     // the entry date comes from the patient's log (the «admitted» event of this stay)
     const PH = global.PharmacyPatientHistory;
     if (S.key && !pr.from && PH && PH.fetchStay) {
@@ -587,7 +607,7 @@
     // unit prices: the drug LINKED to the price site (catalogue → «الدواء في موقع الأسعار») first — read live by its id —,
     // else a match by name; a price typed by hand is never replaced
     const linkedPrice = (chartName, lists) => {
-      const med = ((App() && App().state.medications) || []).find(m => m && m.priceRef && String(m.nameChart || "").trim() === chartName);
+      const med = ((App() && App().state.medications) || []).find(m => m && m.priceRef && nameOf(m) === chartName);
       if (!med) return null;
       for (const list of lists) { const e = list.find(x => x.id === med.priceRef); if (e) return e.price; }
       return null;
@@ -746,7 +766,7 @@
     });
   }
 
-  global.PharmacyPrivateForm = { record, open, pickEntry, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
+  global.PharmacyPrivateForm = { recordToday, open, pickEntry, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

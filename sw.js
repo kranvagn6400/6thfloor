@@ -12,7 +12,7 @@
    - Supabase API calls are never cached.
    ============================================================ */
 
-const CACHE_VERSION = 'pharma-ward-v553';
+const CACHE_VERSION = 'pharma-ward-v554';
 const PRECACHE_URLS = [
   './',
   './index.html',
@@ -44,8 +44,6 @@ const PRECACHE_URLS = [
   './js/patient-merge.js',
   './js/specialists.js',
   './js/specialists-admin.js',
-  './js/chart-merge.js',
-  './js/chart-sync.js',
   './js/occasions.js',
   './js/palettes.js',
   './js/ornaments.js',
@@ -59,9 +57,6 @@ const PRECACHE_URLS = [
   './js/handover.js',
   './js/private-form.js',
   './js/price-link.js',
-  './js/ministry-forms.js',
-  './js/ministry.js',
-  './js/patient-forms.js',
   './img/forms/albumin.jpg',
   './img/forms/meronem.jpg',
   './img/forms/tigecycline.jpg',
@@ -69,13 +64,8 @@ const PRECACHE_URLS = [
   './js/duty-roster.js',
   './fonts/Cairo-Regular.ttf',
   './fonts/Cairo-Bold.ttf',
-  './js/chart-names.js',
-  './js/chart-send-log.js',
-  './js/order-extras.js',
   './js/file-mark.js',
-  './js/tarbeet.js',
   './js/pills-page.js',
-  './js/tv-alerts.js',
   './js/daily-quotes.js',
   './js/app.js',
   './manifest.json',

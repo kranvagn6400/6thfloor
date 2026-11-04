@@ -168,8 +168,6 @@
     container.dataset.drawn = "1";
     // Built off-screen and swapped in at once (the grid never collapses)
     const out = document.createDocumentFragment();
-    const OE = global.PharmacyOrderExtras;
-    if (OE && OE.enabled()) OE.refresh();     // «ما أُضيف بعد الطلبية» (the supreme admin only)
 
     // The unit's heading with the عام / خاص switch: one kind of rooms at a time
     {
@@ -177,11 +175,9 @@
       const sw = h("span", { class: "kind-toggle", role: "group", "aria-label": "عام / خاص" },
         [["general", "عام"], ["private", "خاص"]].map(([k, t]) =>
           h("button", { type: "button", class: "kind-btn" + (currentKind === k ? " is-on" : ""), dataset: { kind: k } }, t)));
-      const pend = OE && OE.enabled() ? OE.pendingPatients() : 0;
       const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
       const FM = global.PharmacyFileMark, fmN = FM && FM.enabled() ? FM.count() : 0;
       if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "الطبلات الغير موجودة اثناء الجارت (" + fmN + ")"));
-      if (OE && OE.enabled()) kids.push(h("button", { type: "button", class: "oe-chip" + (pend ? " is-glow" : " is-zero"), dataset: { extrasAll: "1" } }, "الجارت الإضافي" + (pend ? " (" + pend + ")" : "")));
       kids.push(sw);
       out.appendChild(h("div", { class: "unit-head" }, kids));
     }
@@ -283,15 +279,6 @@
           children.push(h("span", { class: "bed-alert-dot", title: "تنبيه سريري" }, "!"));
         }
       }
-      // التربيت done today (pharmacists + admin)
-      const T = global.PharmacyTarbeet;
-      if (T && T.showMarks() && T.isDone(key)) {
-        children.push(h("span", { class: "bed-tarbeet-mark", title: "تم التربيت اليوم" }, "✓"));
-      } else if (T && T.showMarks() && T.isNotDone && T.isNotDone(key)) {
-        const mark = h("span", { class: "bed-tarbeet-mark is-not", title: "الطبلة غير موجودة اليوم" });
-        mark.innerHTML = T.FILE_OFF_SVG;     // static icon markup
-        children.push(mark);
-      }
       // Boarder badge (القسم الأصلي)
       let boarderClass = "";
       const B = global.PharmacyBoarders;
@@ -307,15 +294,6 @@
         const fm = h("span", { class: "bed-fm-mark", title: "الطبلة غير موجودة — لم تتم المقارنة", dataset: { fmKey: key } });
         fm.innerHTML = FMk.ICON;     // static icon markup
         children.push(fm);
-      }
-      // the orange «+n» badge: n medicines were added to this bed after the morning order (a tap opens its window).
-      // There is no «matches» / «compared» badge any more — only the pending additions show.
-      const OEx = global.PharmacyOrderExtras;
-      const ex = OEx && OEx.enabled() ? OEx.bedState(key) : null;
-      if (ex && ex.state === "pending") {
-        const mk = h("span", { class: "bed-extras-mark is-pending", title: "إضافات بعد الطلبية", dataset: { extrasKey: key, roomId: String(room.id), bed: String(bed.number) } });
-        mk.textContent = "+" + ex.n;
-        children.push(mk);
       }
       return h("button", {
         class: `bed-btn state-${status}${alertClass}${boarderClass}${patient.labs && patient.labs._gen === true ? " is-gen-ward" : ""}`,
@@ -1483,7 +1461,6 @@
     const nameTrade = document.getElementById("adm-name-trade");
     const nameAr = document.getElementById("adm-name-ar");
     const nameEn = document.getElementById("adm-name-en");
-    const nameChart = document.getElementById("adm-name-chart");
     const form   = document.getElementById("adm-form");
     const dose   = document.getElementById("adm-dose");
     const freq   = document.getElementById("adm-freq");
@@ -1493,7 +1470,6 @@
     nameTrade.value = med.nameTrade || "";
     nameAr.value    = med.nameAr || "";
     nameEn.value    = med.nameEn || "";
-    nameChart.value = med.nameChart || "";
     if (global.PharmacyPriceLink) global.PharmacyPriceLink.bindEditor(med);
     // Set form dropdown: fall back to "vial" if form is unknown/empty
     const VALID_FORMS = ["vial", "ampule", "prefilled-syringe", "tablet", "effervescent", "syrup-and-oral-drop", "suppository", "solution", "supplies"];
@@ -1523,7 +1499,7 @@
   function hideAdminForm() {
     document.getElementById("admin-form-card").hidden = true;
     document.getElementById("admin-empty").hidden = false;
-    ["adm-name-trade", "adm-name-ar", "adm-name-en", "adm-name-chart", "adm-dose", "adm-freq-custom"].forEach(id => {
+    ["adm-name-trade", "adm-name-ar", "adm-name-en", "adm-dose", "adm-freq-custom"].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = "";
     });
     document.getElementById("adm-form").value = "vial";
@@ -1540,7 +1516,6 @@
     const nameTrade = document.getElementById("adm-name-trade").value.trim();
     const nameAr = document.getElementById("adm-name-ar").value.trim();
     const nameEn = document.getElementById("adm-name-en").value.trim();
-    const nameChart = document.getElementById("adm-name-chart").value.trim();
     const form   = document.getElementById("adm-form").value;
     const dose   = document.getElementById("adm-dose").value.trim();
     const freqSel = document.getElementById("adm-freq").value;
@@ -1556,7 +1531,6 @@
       nameTrade: nameTrade,
       nameAr:    nameAr,
       nameEn:    nameEn,
-      nameChart: nameChart,
       priceRef:  global.PharmacyPriceLink ? global.PharmacyPriceLink.draft().ref : "",
       priceSeen: global.PharmacyPriceLink ? global.PharmacyPriceLink.draft().seen : 0,
       form:      VALID_FORMS.indexOf(form) !== -1 ? form : "vial",

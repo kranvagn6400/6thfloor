@@ -1,20 +1,11 @@
-// Chart Bridge — sends patient data to the external "جارت الجارت" app
-// ============================================================
-// Based on the user's snippet — collects occupied patients from the
-// app's state (same data the chart-print button uses), builds a TSV
-// table (med names as columns, patients as rows, doses as cells),
-// and opens the external جارت الجارت URL with the TSV encoded in the
-// hash fragment. The جارت الجارت app reads the hash, decodes the
-// TSV, and auto-fills its grid.
-//
-// NOTE: CHART_URL is currently a placeholder. Replace it with the
-// actual URL you use daily to open جارت الجارت.
+// Daily quantities of the medicines — "N×M" → pieces a day (the ward's order numbers, the private-ward form, the
+// critical-medicines table, the handover). There is no target chart any more: nothing is sent from here.
+// (File name kept: other modules read window.PharmacyChartBridge.)
 
 (function (global) {
   "use strict";
 
-  /* ================= جسر الجارت ================= */
-  const CHART_URL = "https://clinical-pharmacy-app.onrender.com/";
+  /* ================= الكميات اليومية ================= */
 
   /* ===== استثناءات الكمية في الجارت =====
      خريطة تربط مُعرّف الدواء (med id) بالكمية الثابتة المطلوبة
@@ -135,24 +126,6 @@
      { bedKey: freq }) so the supplies the user just distributed via
      the supply-order modal are injected into each patient's meds
      list — same way the med-summary modal does it. */
-  // unit "1" / "3" = that unit's general rooms; "p1" / "p3" = that unit's private rooms (they go to ردهة الخاص);
-  // "p" = the private rooms of both units; empty = everything
-  // A general-ward patient lying in a private bed (labs._gen, «من الجناح العام») is ordered with the GENERAL chart of the bed's unit,
-  // never with ردهة الخاص: roomMayMatch picks the rooms to look at, bedMatches decides per patient.
-  function roomMayMatch(r, unit) {
-    if (!unit) return true;
-    if (unit === "p") return r.kind === "private";
-    if (unit === "p1" || unit === "p3") return r.kind === "private" && r.unit === unit.slice(1);
-    return r.unit === unit;
-  }
-  function bedMatches(r, unit, p) {
-    if (!unit) return true;
-    const kind = r.kind === "private" && p && p.labs && p.labs._gen === true ? "general" : r.kind;
-    if (unit === "p") return kind === "private";
-    if (unit === "p1" || unit === "p3") return kind === "private" && r.unit === unit.slice(1);
-    return r.unit === unit && kind === "general";
-  }
-
   // Albumin sometimes needs Lasix ampoules with it (a few more than the patient's own Lasix order):
   // med.lasixExtra on the albumin medicine = that many extra Lasix 20mg ampoules a day, added to the
   // Lasix quantity sent to the chart (the Lasix order itself is never changed).
@@ -177,86 +150,6 @@
       if (isAlbuminMed(pm)) n += parseInt(pm.lasixExtra, 10) || 0;
     });
     return n;
-  }
-
-  function collectPatientsFromApp(state, supplyDistribution, unit) {
-    const Ward = global.PharmacyWard;
-    if (!Ward || !Ward.ROOMS || !state || !state.patients) return [];
-
-    // Build a supply catalog lookup so we can get the supply's
-    // English name + the supply-id → bedKey → freq mapping.
-    const supplyCatalog = {};
-    (state.medications || []).forEach(m => {
-      if (m && m.id && (m.form === "supplies" || m.category === "supplies")) {
-        supplyCatalog[m.id] = m;
-      }
-    });
-
-    const out = [];
-    // unit "1" / "3" = that unit's general rooms; "p" = the private rooms of both units (ردهة الخاص)
-    Ward.ROOMS.filter(r => roomMayMatch(r, unit)).forEach(room => {
-      room.beds.forEach(bed => {
-        const key = Ward.bedKey(room.id, bed.number);
-        const p = state.patients[key];
-        if (!p || !p.name || !p.name.trim()) return;
-        if (!bedMatches(room, unit, p)) return;
-
-        const meds = (Array.isArray(p.medications) ? p.medications : [])
-          .filter(pm => pm && pm.id !== "syringe-5cc")
-          .map(pm => {
-            const catalog = (state.medications || []).find(m => m && m.id === pm.id);
-            const source = catalog || pm;
-            // Only medicines with «اسم الدواء في الجارت» (nameChart) are sent —
-            // a medicine without one is never sent (the user's rule; the chart
-            // would drop an unknown name anyway)
-            const name = String(source.nameChart || "").trim();
-            if (!name) return null;
-            const freq = pm.frequency || (catalog ? catalog.defaultFrequency : "") || "";
-            // Include the med id so buildChartTSV can look it up in
-            // CHART_QTY_EXCEPTIONS (e.g. heparin-vial → always "1").
-            const extraVial = extraVialOf(pm, p);
-            return Object.assign({ id: pm.id, name: name, freq: freq, form: source.form || pm.form || "", available: source.available !== false }, extraVial ? { extraQty: extraVial } : {}, orderRank(source));
-          })
-          .filter(Boolean);
-
-        // Lasix that goes with albumin (see lasixExtraOf): added to the patient's Lasix, or sent alone
-        const lasixExtra = lasixExtraOf(p);
-        if (lasixExtra > 0) {
-          const own = meds.find(m => m.id === LASIX_ID);
-          if (own) own.extraQty = lasixExtra;
-          else {
-            const cat = (state.medications || []).find(m => m && m.id === LASIX_ID);
-            const nm = cat ? String(cat.nameChart || "").trim() : "";
-            if (nm) meds.push(Object.assign({ id: LASIX_ID, name: nm, freq: "", form: cat.form || "ampule", extraQty: lasixExtra, onlyExtra: true }, orderRank(cat)));
-          }
-        }
-
-        // Inject distributed supplies as additional "meds" so the
-        // جارت الجارت chart shows them with their frequencies.
-        // supplyDistribution: { supplyId: { bedKey: freq, ... }, ... }
-        if (supplyDistribution && typeof supplyDistribution === "object") {
-          Object.keys(supplyDistribution).forEach(supplyId => {
-            const dist = supplyDistribution[supplyId];
-            if (!dist || typeof dist !== "object") return;
-            const freq = dist[key];  // frequency assigned to THIS patient
-            if (!freq) return;       // this patient didn't get this supply
-            const catalog = supplyCatalog[supplyId];
-            const name = (catalog && catalog.nameChart) || SUPPLY_CHART_NAMES[supplyId]
-              || (catalog && (catalog.nameTrade || catalog.nameEn || catalog.nameAr))
-              || supplyId;
-            meds.push({ name: name, freq: String(freq), group: 4, rank: 0 });
-          });
-        }
-
-        out.push({
-          name: p.name.trim(),
-          id: p.plateNumber || "",   // رقم الطبلة — اختياري
-          key: key,
-          meds: meds
-        });
-      });
-    });
-    return out;
   }
 
   /* تحويل التكرار إلى الكمية اليومية المكتوبة في خانة الجارت
@@ -328,115 +221,18 @@
     return q;
   }
 
-  function buildChartTSV(state, supplyDistribution, unit) {
-    const patients = collectPatientsFromApp(state, supplyDistribution, unit);
-
-    // رؤوس الأعمدة: كل دواء فريد يظهر مرة واحدة فقط
-    // مرتّبة: مضادات حيوية ← حبوب وشرابات… ← سرنجات جاهزة ← أمبولات وفيالات ← مستلزمات
-    const seen = new Map();
-    for (const p of patients)
-      for (const m of p.meds)
-        if (!seen.has(m.name)) seen.set(m.name, { name: m.name, group: m.group == null ? 3 : m.group, rank: m.rank == null ? 9 : m.rank });
-    const medOrder = Array.from(seen.values()).sort(compareOrder).map(x => x.name);
-
-    // الصف الأول: خليتان فارغتان (اسم + رقم) + أسماء الأدوية
-    const rows = [["", "", ...medOrder].join("\t")];
-
-    // بقية الصفوف: صف لكل مريض
-    for (const p of patients) {
-      const doses = medOrder.map(() => "");
-      for (const m of p.meds) {
-        const idx = medOrder.indexOf(m.name);
-        if (idx >= 0) {
-          // تحقق من استثناءات الكمية أولاً — بعض الأدوية (مثل
-          // الهيبارين) تأتي في زجاجة كبيرة تكفي لكل جرعات اليوم،
-          // فلا يكون التكرار مساوياً لعدد القطع المطلوبة. إذا كان
-          // مُعرّف الدواء موجوداً في CHART_QTY_EXCEPTIONS، نستخدم
-          // القيمة المُحدّدة هناك بدلاً من freqToDose.
-          doses[idx] = medQty(m);
-        }
-      }
-      rows.push([p.name ?? "", p.id ?? "", ...doses].join("\t"));
-    }
-    return rows.join("\n");
-  }
-
   /* الزر — يُربط في app.js */
-  // Opens the chart with the table in the link + copies it.
-  // The chart app has no import and can't be scripted from our site, so
-  // the table goes through our server function (api/chart-sync.js via
-  // chart-sync.js), which fills today's ward chart with the
-  // pharmacist's chart account. The result is kept on the log entry.
-  // date: the chart's day ("YYYY-MM-DD"); empty = today
-  async function sendTsv(tsv, logId, onProgress, date, unit) {
-    const Sync = global.PharmacyChartSync;
-    const Fx = global.PharmacyFx;
-    if (Fx && Fx.progress) Fx.progress.start();
-    let r;
-    try {
-      r = Sync ? await Sync.send(tsv, onProgress, date, unit) : { ok: false, message: "تعذّر تحميل وحدة الإرسال" };
-    } catch (e) {
-      if (Fx && Fx.progress) Fx.progress.done(false);
-      throw e;
-    }
-    if (Fx && Fx.progress) Fx.progress.done(r.cancelled ? null : !!r.ok);
-    if (r.ok && Fx && Fx.orderGlow) Fx.orderGlow(true);          // the order is ready to be read: «الطلبية» glows
-    if (logId && global.PharmacyChartLog && !r.cancelled) global.PharmacyChartLog.setResult(logId, r);
-    return r;
-  }
-
-  // One send for a unit page: its general-room patients go to that unit's chart, its private-room patients
-  // to «ردهة الخاص» (where the other unit's private patients already are or will be)
-  // kind "general" / "private" = only that kind; empty = both (the settings button)
-  async function sendChart(state, supplyDistribution, onProgress, date, unit, kind) {
-    // unit "p" = the private rooms of BOTH units → «ردهة الخاص»; "1" / "3" = that unit (kind picks general / private)
-    unit = unit === "3" || unit === "p" ? unit : "1";
-    const targets = unit === "p" ? [{ rooms: "p", server: "p" }]
-      : [{ rooms: unit, server: unit }, { rooms: "p" + unit, server: "p" }].filter((t, i) => !kind || (kind === "private") === (i === 1));
-    let first = null, any = false;
-    for (const t of targets) {
-      if (!collectPatientsFromApp(state, supplyDistribution, t.rooms).length) continue;
-      any = true;
-      const tsv = buildChartTSV(state, supplyDistribution, t.rooms);
-      // Keep the exact table in the send log (chart-send-log.js) first,
-      // so it can be re-sent if anything goes wrong on the way.
-      const entry = global.PharmacyChartLog
-        ? global.PharmacyChartLog.add(tsv, { withSupplies: !!(supplyDistribution && Object.keys(supplyDistribution).length), date: date || "", unit: t.server })
-        : null;
-      const r = await sendTsv(tsv, entry && entry.id, onProgress, date, t.server);
-      if (r.cancelled || !r.ok) return r;
-      if (t.server === "p" && global.PharmacyPrivateForm) {
-        try { global.PharmacyPrivateForm.record(collectPatientsFromApp(state, supplyDistribution, t.rooms), date); } catch (e) { console.warn("[private-form] record", e); }
-      }
-      if (!first) first = r;
-    }
-    return first || { ok: false, message: "لا يوجد مرضى لإرسالهم" };
-  }
-
-  // Manual fallback: open the chart site (the table is on the clipboard)
-  function openChart(tsv) {
-    try { if (tsv) navigator.clipboard.writeText(tsv).catch(() => {}); } catch (e) {}
-    window.open(CHART_URL, "_blank");
-  }
-
   /* ---- Exports ---- */
   global.PharmacyChartBridge = {
-    bedMatches,
-    sendChart,
-    sendTsv,
     medQty,
     ONE_CONTAINER_FORMS,
     SUPPLY_CHART_NAMES,
     ORDER_GROUPS, orderRank, compareOrder,
-    openChart,
-    collectPatientsFromApp,
     freqToDose,
     dailyQuantity,
     lasixExtraOf,
     extraVialOf,
     LASIX_ID,
-    buildChartTSV,
-    CHART_URL,
     CHART_QTY_EXCEPTIONS
   };
 

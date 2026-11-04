@@ -80,7 +80,6 @@
       UI.showView("home");
       flashHint("دخل " + (who || "شخص آخر") + " هذا السرير قبلك — خرجتَ منه");
     },
-    refreshDisplay: () => { if (_displayModeActive) renderDisplayMode(); },
     savePatient: (bedKey) => persistPatient(bedKey),
     // the patients we order for (no 7th-floor hematology), as a state copy
     orderingState: () => orderingState(),
@@ -98,16 +97,12 @@
     bindPwaInstall();
     applyRoleVisibility();
     initDarkMode();
-    initDisplayMode();
     global.PharmacyPatientSearch.init();
     global.PharmacyPatientHistory.init();
     global.PharmacyMonthlyReport.init();
     global.PharmacyBedDrag.init();
     global.PharmacyMedAvailability.init();
-    global.PharmacyChartLog.init();
-    if (global.PharmacyOrderExtras) global.PharmacyOrderExtras.init();
     if (global.PharmacyFileMark) global.PharmacyFileMark.init();
-    global.PharmacyTarbeet.init();
     // Show login overlay if not logged in, otherwise show the app
     if (Auth && Auth.isLoggedIn()) {
       showApp();
@@ -250,9 +245,6 @@
     await withTimeout(Archive.sync(), 8000, { ok: false });
     const archivesUploaded = Archive.pendingCount() === 0;
     Storage.wipeCloudBackedPatientData({ archives: archivesUploaded });
-    // Chart account + send log (patient names) stay on this device only
-    if (global.PharmacyChartSync) global.PharmacyChartSync.clearAccount();
-    if (global.PharmacyChartLog) global.PharmacyChartLog.clear();
     state.patients = {};
     state.currentBed = null;
     // Once confirmed, the user is logged out even if a UI refresh fails
@@ -330,106 +322,8 @@
       }
       // Retry discharged / dead records saved while offline
       if (global.PharmacyArchive.pendingCount() > 0) global.PharmacyArchive.sync();
-      // Also pull med requests from Supabase (so the admin sees new
-      // doctor requests even if Realtime failed to deliver them).
-      // This is the safety net for the med-request workflow.
-      const client = SB.getClient();
-      if (client) {
-        const { data: medReqData, error: medReqErr } = await client
-          .from("med_requests")
-          .select("*")
-          .order("requested_at", { ascending: false });
-        if (!medReqErr && Array.isArray(medReqData)) {
-          // Convert Supabase rows → local format + save
-          const localRequests = medReqData.map(r => ({
-            id: r.id, nameTrade: r.name_trade || "", nameEn: r.name_en || "",
-            nameAr: r.name_ar || "", dose: r.dose || "", form: r.form || "tablet",
-            frequency: r.frequency || "1×1", notes: r.notes || "",
-            requestedBy: r.requested_by || "", requestedAt: r.requested_at || "",
-            status: r.status || "pending", reviewedBy: r.reviewed_by || "",
-            reviewedAt: r.reviewed_at || "", approvedMedId: r.approved_med_id || ""
-          }));
-          // Only update if something changed (compare count to avoid
-          // unnecessary re-renders on every poll)
-          const oldCount = Storage.loadMedRequests().length;
-          Storage.saveMedRequests(localRequests);
-          if (localRequests.length !== oldCount) {
-            console.log("[Poll] med requests changed:", oldCount, "→", localRequests.length);
-            // Re-render the admin med requests list if open
-            const adminView = document.getElementById("view-admin");
-            if (adminView && !adminView.hidden) {
-              renderMedRequests();
-            }
-            // Update the settings row badge count
-            if (Auth && Auth.isAdmin && Auth.isAdmin()) {
-              const pendingCount = Storage.getPendingMedRequestsCount();
-              const valEl = $("settings-med-request-value");
-              if (valEl) valEl.textContent = pendingCount > 0 ? `${pendingCount} طلب` : "";
-            }
-          }
-        }
-      }
     } catch (e) {
       console.warn("[Poll] pull failed:", e);
-    }
-  }
-
-  // -------- Pull med requests from Supabase --------
-  // Called on boot (onLoginSuccess) + on openAdminView + every 30s
-  // via pollOnce. Pulls all med_requests from Supabase, saves them
-  // locally, and pushes a notification for any NEW pending requests
-  // that the admin hasn't seen yet.
-  async function pullMedRequestsFromCloud() {
-    if (!SB || !SB.isConfigured || !SB.isConfigured()) return;
-    const client = SB.getClient();
-    if (!client) return;
-    try {
-      const { data, error } = await client
-        .from("med_requests")
-        .select("*")
-        .order("requested_at", { ascending: false });
-      if (error || !Array.isArray(data)) return;
-      // Convert Supabase rows → local format
-      const localRequests = data.map(r => ({
-        id: r.id, nameTrade: r.name_trade || "", nameEn: r.name_en || "",
-        nameAr: r.name_ar || "", dose: r.dose || "", form: r.form || "tablet",
-        frequency: r.frequency || "1×1", notes: r.notes || "",
-        requestedBy: r.requested_by || "", requestedAt: r.requested_at || "",
-        status: r.status || "pending", reviewedBy: r.reviewed_by || "",
-        reviewedAt: r.reviewed_at || "", approvedMedId: r.approved_med_id || ""
-      }));
-      // Detect NEW pending requests that we didn't have locally
-      const oldRequests = Storage.loadMedRequests();
-      const oldIds = new Set(oldRequests.map(r => r.id));
-      const newPending = localRequests.filter(r =>
-        r.status === "pending" && !oldIds.has(r.id)
-      );
-      // Save to localStorage
-      Storage.saveMedRequests(localRequests);
-      // For each NEW pending request, push a notification + play sound
-      // (so the admin actually hears/sees the alert)
-      const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-      newPending.forEach(r => {
-        // Don't notify about our own requests
-        if (r.requestedBy !== (user ? user.username : "")) {
-          pushNotification("med_request",
-            `طلب دواء جديد: ${r.nameTrade} — من ${displayNameOf(r.requestedBy)}`,
-            r.nameTrade, "");
-        }
-      });
-      // Re-render admin list if open
-      const adminView = document.getElementById("view-admin");
-      if (adminView && !adminView.hidden) {
-        renderMedRequests();
-      }
-      // Update settings badge
-      if (Auth && Auth.isAdmin && Auth.isAdmin()) {
-        const pendingCount = Storage.getPendingMedRequestsCount();
-        const valEl = $("settings-med-request-value");
-        if (valEl) valEl.textContent = pendingCount > 0 ? `${pendingCount} طلب` : "";
-      }
-    } catch (e) {
-      console.warn("[Pull] med requests failed:", e);
     }
   }
 
@@ -465,12 +359,6 @@
     });
   }
 
-  // -------- Display Mode (TV / large screen, view-only) --------
-  // Detects large screens (>= 1280px) or TV user agents, and offers
-  // a full-screen display mode showing the ward map for monitoring.
-  let _displayModeActive = false;
-  let _displayClockTimer = null;
-
   // -------- Last supply distribution memory --------
   // When the user generates the chart via the supply-order modal, the
   // supplyDistribution is saved here. Later, if the user opens the
@@ -482,179 +370,6 @@
   // The supplies of the last SUCCESSFUL send to the chart (kept on this device)
   // — «الطلبية» lists them next to the medicines.
   const SENT_SUPPLIES_KEY = "pharma.lastSentSupplies.v1";
-  function saveSentSupplies(dist, day, unit) {
-    try { localStorage.setItem(SENT_SUPPLIES_KEY + "." + (unit || "1"), JSON.stringify({ at: Date.now(), day: day || "", dist: dist || {} })); } catch (e) { /* ignore */ }
-  }
-  function loadSentSupplies(unit) {
-    try {
-      const v = JSON.parse(localStorage.getItem(SENT_SUPPLIES_KEY + "." + (unit || "1")) || "null");
-      return v && typeof v === "object" && v.dist ? v : null;
-    } catch (e) { return null; }
-  }
-
-  function initDisplayMode() {
-    const btn = $("display-mode-exit");
-    if (btn) {
-      // the TV account cannot leave the display: its button signs out
-      btn.addEventListener("click", () => {
-        if (Auth && Auth.isTv && Auth.isTv()) { userLogout(); return; }
-        exitDisplayMode();
-      });
-    }
-    // Check if we should auto-enter display mode
-    // (after login, not on first load — user might want normal mode)
-    // We add a button in the header for manual toggle, and auto-enter
-    // only if the screen is very large AND user agent suggests a TV.
-  }
-
-  function shouldOfferDisplayMode() {
-    const isLargeScreen = window.innerWidth >= 1280;
-    const ua = (navigator.userAgent || "").toLowerCase();
-    const isTV = ua.indexOf("tv") >= 0 || ua.indexOf("smarttv") >= 0 ||
-                 ua.indexOf("webos") >= 0 || ua.indexOf("tizen") >= 0;
-    return isLargeScreen || isTV;
-  }
-
-  function enterDisplayMode() {
-    const dm = $("display-mode");
-    if (!dm) return;
-    _displayModeActive = true;
-    dm.hidden = false;
-    // Try to enter browser fullscreen
-    try {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-      }
-    } catch (e) { /* may fail if not user-initiated */ }
-    renderDisplayMode();
-    // Beds light up after medicine changes / discharge / death (tv-alerts.js)
-    if (global.PharmacyTvAlerts) global.PharmacyTvAlerts.start();
-    // The admin's choice of saying (daily-quotes.js)
-    if (global.PharmacyDailyQuotes) global.PharmacyDailyQuotes.start();
-    // Start clock
-    updateDisplayClock();
-    _displayClockTimer = setInterval(updateDisplayClock, 1000);
-  }
-
-  function exitDisplayMode() {
-    const dm = $("display-mode");
-    if (!dm) return;
-    _displayModeActive = false;
-    dm.hidden = true;
-    if (global.PharmacyTvAlerts) global.PharmacyTvAlerts.stop();
-    if (_displayClockTimer) {
-      clearInterval(_displayClockTimer);
-      _displayClockTimer = null;
-    }
-    // Exit fullscreen if active
-    try {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen();
-      }
-    } catch (e) { /* ignore */ }
-  }
-
-  function updateDisplayClock() {
-    const el = $("display-mode-time");
-    if (!el) return;
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("ar", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
-    const timeStr = now.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    el.textContent = dateStr + " · " + timeStr;
-    // today's saying (changes after midnight); a verse shows its two halves
-    const q = $("display-mode-quote");
-    const Q = global.PharmacyDailyQuotes;
-    if (q && Q) {
-      if (now.getSeconds() === 0 && now.getMinutes() % 5 === 0) Q.load();   // backup for Realtime
-      const text = Q.current(now);
-      if (q.dataset.text !== text) {
-        q.dataset.text = text;
-        Q.renderInto(q, text);          // a verse = two lines, smaller font if needed
-      } else if (now.getSeconds() % 10 === 0) {
-        Q.fit(q);                       // the screen size may have changed
-      }
-    }
-  }
-
-  function renderDisplayMode() {
-    const container = $("display-mode-rooms");
-    if (!container) return;
-    container.innerHTML = "";
-    const TvA = global.PharmacyTvAlerts;
-    const Ward = global.PharmacyWard;
-    if (!Ward || !Ward.ROOMS) return;
-
-    // Local copy of bedSpecialFlags to avoid dependency on UI export
-    const dmBedFlags = (patient) => {
-      if (UI.bedSpecialFlags) return UI.bedSpecialFlags(patient);
-      const flags = { hasAlbumin: false, hasMeronem: false };
-      if (!patient || !Array.isArray(patient.medications)) return flags;
-      for (const pm of patient.medications) {
-        if (!pm) continue;
-        const id = (pm.id || "").toLowerCase();
-        const name = ((pm.nameTrade || "") + " " + (pm.nameEn || "") + " " + (pm.nameAr || "")).toLowerCase();
-        if (id.indexOf("albumin") >= 0 || name.indexOf("albumin") >= 0 || name.indexOf("ألبومين") >= 0) flags.hasAlbumin = true;
-        if (id.indexOf("meronem") >= 0 || id.indexOf("meropenem") >= 0 || name.indexOf("meronem") >= 0 || name.indexOf("meropenem") >= 0 || name.indexOf("ميرونيم") >= 0 || name.indexOf("ميروبينيم") >= 0) flags.hasMeronem = true;
-      }
-      return flags;
-    };
-
-    Ward.ROOMS.forEach(room => {
-      const occupied = room.beds.filter(b => {
-        const key = Ward.bedKey(room.id, b.number);
-        const p = state.patients[key];
-        return p && p.name && p.name.trim();
-      }).length;
-      const roomCard = document.createElement("div");
-      roomCard.className = "dm-room dm-room-" + room.bedCount;   // 6-bed / 4-bed grids
-      roomCard.innerHTML = `
-        <div class="dm-room-head">
-          <div class="dm-room-num">${global.PharmacyWard.roomTitle(room.id)}</div>
-          <div class="dm-room-occ">${occupied} / ${room.bedCount} مشغول</div>
-        </div>
-        <div class="dm-beds"></div>
-      `;
-      const bedsGrid = roomCard.querySelector(".dm-beds");
-      // laid out like the ward (and the rooms view): row by row top → bottom,
-      // in each row the right bed then the left one (2 columns, RTL)
-      const sides = room.bedCount === 6 ? ["top", "middle", "bottom"] : ["top", "bottom"];
-      const placed = [];
-      sides.forEach(side => room.beds.filter(b => b.side === side)
-        .sort((a, b) => (a.column === "left" ? 1 : 0) - (b.column === "left" ? 1 : 0))
-        .forEach(b => placed.push(b)));
-      placed.forEach(bed => {
-        const key = Ward.bedKey(room.id, bed.number);
-        const p = state.patients[key] || null;
-        const hasName = p && p.name && p.name.trim();
-        const hasMeds = hasName && Array.isArray(p.medications) && p.medications.length > 0;
-        const flags = hasName ? dmBedFlags(p) : { hasAlbumin: false, hasMeronem: false };
-        let cls = "dm-bed-empty";
-        let nameText = "فارغ";
-        let flagHtml = "";
-        if (hasName) {
-          // albumin / meronem: only the dots — the bed keeps its normal colour
-          cls = hasMeds ? "dm-bed-meds" : "dm-bed-occupied";
-          // albumin green, meronem red, I.V.I.G orange
-          const dots = (flags.hasAlbumin ? "🟢" : "") + (flags.hasMeronem ? "🔴" : "") + (flags.hasIvig ? "🟠" : "");
-          if (dots) flagHtml = '<span class="dm-bed-flag">' + dots + '</span>';
-          nameText = p.name.trim();
-        }
-        const bedEl = document.createElement("div");
-        const alert = TvA ? TvA.alertFor(key) : null;
-        bedEl.className = "dm-bed " + cls + (alert ? " dm-alert dm-alert-" + alert.type : "");
-        // an emptied bed shows who left / died while it is lit
-        const shownName = alert && alert.type !== "med" && !hasName ? alert.name : nameText;
-        bedEl.innerHTML = `
-          <div class="dm-bed-num">سرير ${global.PharmacyWard.bedLabel(room.id, bed.number)}</div>
-          <div class="dm-bed-name">${escapeHtml(shownName)}</div>
-          ${flagHtml}
-          ${alert ? '<div class="dm-alert-text">' + (alert.type === "med" ? "" : escapeHtml(alert.detail) + ' · ') + escapeHtml(TvA.ago(alert.at)) + '</div>' : ""}
-        `;
-        bedsGrid.appendChild(bedEl);
-      });
-      container.appendChild(roomCard);
-    });
-  }
   // We toggle the `is-authed` / `is-unauthed` class on <html> so the
   // pre-paint CSS gate (in <head>) stays in sync with runtime auth
   // state. The HTML default has `#app` visible and `#login-screen`
@@ -727,9 +442,6 @@
     } else {
       root.classList.add('role-pharmacist');
     }
-    // TV account: straight into the ward display, nothing else
-    if (isTv && !_displayModeActive) enterDisplayMode();
-    if (!isTv && _displayModeActive && !isAdmin) exitDisplayMode();
 
     // Gear button (settings/admin): always visible for ALL roles.
     // For admin → opens full admin view (med catalog + users + audit).
@@ -751,25 +463,13 @@
     // (Handler + chart-image.js kept; set CHART_PRINT_ENABLED to bring it back for the admin.)
     const chartBtn = $("print-chart-btn");
     if (chartBtn) chartBtn.hidden = !(CHART_PRINT_ENABLED && isAdmin);
-    // Note: med-summary-btn was removed from the header (its modal
-    // is still opened programmatically by the distribute-send-btn
-    // workflow). No need to set its hidden attribute.
-    // Pills form + "send patient data to the chart": pharmacist + admin
-    // (the ordering roles). Hidden for doctors.
+    // Pills form: pharmacist + admin (the ordering roles). Hidden for doctors.
     const isOrderingRole = isAdmin || !isDoctor;
     const pillsBtn = $("print-pills-form-btn");
     if (pillsBtn) pillsBtn.hidden = !isOrderingRole;
-    const distributeSendBtn = $("distribute-send-btn");
-    if (distributeSendBtn) distributeSendBtn.hidden = !isOrderingRole;
-    const orderListBtn = $("order-list-btn");
-    if (orderListBtn) orderListBtn.hidden = !isOrderingRole;
     // Medication availability list: editable by pharmacists + admin
     const availBtn = $("settings-availability-btn");
     if (availBtn) availBtn.hidden = !isOrderingRole;
-    const ministryBtn = $("settings-ministry-btn");
-    if (ministryBtn) ministryBtn.hidden = !(Auth && Auth.canMinistry && Auth.canMinistry());      // the admin + the pharmacists he allowed
-    const sendlogBtn = $("settings-sendlog-btn");
-    if (sendlogBtn) sendlogBtn.hidden = !isOrderingRole;
 
     // Print ALL patient sheets button: admin + doctor only.
     // The pharmacist prints individual sheets from the patient view.
@@ -783,8 +483,6 @@
     // access them via the Settings view instead).
     const darkBtn = $("darkmode-toggle");
     if (darkBtn) darkBtn.hidden = !isAdmin;
-    const displayBtn = $("display-mode-btn");
-    if (displayBtn) displayBtn.hidden = !isAdmin;
     const logoutBtn = $("logout-btn");
     if (logoutBtn) logoutBtn.hidden = !isAdmin;
 
@@ -852,9 +550,6 @@
     pullCatalogOnBoot();
     initRealtime();
     startPolling();
-    // Also pull med requests immediately on login (so the admin sees
-    // pending requests without waiting 30s for the first poll)
-    pullMedRequestsFromCloud();
     updateNotifBadge();
     const user = Auth.getCurrentUser();
     // Personalized welcome: "أهلاً دكتور [name]" or "أهلاً دكتورة [name]"
@@ -869,39 +564,6 @@
   }
 
   // -------- Supabase: pull catalog on boot --------
-  // If Supabase is configured and reachable, replace the local catalog
-  // with the cloud version — UNLESS the last push failed recently,
-  // in which case the local catalog is fresher and we skip the pull
-  // to avoid blowing away local edits that never made it to the cloud.
-  // "اسم الدواء في الجارت": fill it from the chart's medicine list for
-  // every medicine that lacks a valid one (chart-names.js), then save the
-  // catalogue for every device. Pharmacists + admin (they may write the
-  // catalogue); runs only when something changes.
-  function fillChartNames() {
-    const Names = global.PharmacyChartNames;
-    const canWrite = Auth && (Auth.isAdmin() || Auth.isPharmacist());
-    if (!Names || !canWrite || !Array.isArray(state.medications) || !state.medications.length) return;
-    const changes = Names.autoFill(state.medications);
-    if (!changes.length) return;
-    Storage.saveMedications(state.medications);
-    console.log("[chart-names] filled", changes.length, "chart names");
-    if (SBSync && SBSync.pushCatalog) {
-      SBSync.pushCatalog().then(r => {
-        if (r.ok && (r.stripped || []).includes("name_chart")) {
-          // The cloud has no name_chart column: names stay on this device
-          // only and would be filled again on every start — say why, once.
-          let told = false;
-          try { told = sessionStorage.getItem("pharma.name-chart-missing") === "1"; sessionStorage.setItem("pharma.name-chart-missing", "1"); } catch (e) { /* blocked */ }
-          if (!told) flashHint("⚠ أسماء الجارت لم تُحفظ في السحابة — شغّل features.sql في Supabase (عمود name_chart ناقص)");
-        } else if (r.ok) {
-          // filled silently (no notice at sign-in)
-        } else {
-          console.warn("[chart-names] catalog push failed:", r.error);
-        }
-      });
-    }
-  }
-
   async function pullCatalogOnBoot() {
     if (!SB || !SBSync || !SB.isConfigured()) {
       updateSupabaseStatusUI("غير مربوط");
@@ -919,7 +581,6 @@
     const res = await SBSync.pullCatalog();
     if (res.ok) {
       state.medications = Storage.loadMedications();
-      fillChartNames();
       UI.renderAdminMedList(state.medications, null);
       updateSupabaseStatusUI(`مربوط · ${res.count} دواء`, "connected");
       // ONE-TIME CLOUD SEED: ONLY seed the cloud if it's COMPLETELY
@@ -973,7 +634,6 @@
       global._notifPoll = setInterval(pullCloudNotifications, 30000);
       document.addEventListener("visibilitychange", () => { if (!document.hidden) pullCloudNotifications(); });
     }
-    global.PharmacyTarbeet.start();
     if (global.PharmacyOrnaments) global.PharmacyOrnaments.start();
     if (global.PharmacySpecialistsAdmin) global.PharmacySpecialistsAdmin.start();   // the admin's specialists list, for every device
     if (global.PharmacyGreetings) global.PharmacyGreetings.start();   // a welcome-back / birthday card for a named colleague
@@ -998,12 +658,6 @@
           { event: "*", schema: "public", table: "medications" },
           (payload) => {
             handleMedicationRealtimeChange(payload);
-          }
-        )
-        .on("postgres_changes",
-          { event: "*", schema: "public", table: "med_requests" },
-          (payload) => {
-            handleMedRequestRealtimeChange(payload);
           }
         )
         .on("postgres_changes",
@@ -1132,8 +786,6 @@
       }
     }
     refreshStatsAndRooms();
-    // If display mode is active, refresh it too
-    if (_displayModeActive) renderDisplayMode();
     // If the patient view is open, refresh it (after the user finishes
     // typing if a field is focused)
     if (state.currentBed && (state.currentBed.key !== _openKey || _openView(state.patients[_openKey]) !== _openBefore)) {
@@ -1175,62 +827,6 @@
     });
   }
 
-  // Handles Realtime changes to the 'med_requests' table from OTHER
-  // devices. When a doctor submits a med request, it's pushed to
-  // Supabase. This handler fires on the admin's device → adds the
-  // request to the local list + plays a notification sound + pushes
-  // a local notification so the admin sees the badge update.
-  function handleMedRequestRealtimeChange(payload) {
-    if (!SB || !SB.isConfigured()) return;
-    const row = payload.new || payload.old;
-    if (!row || !row.id) return;
-    // Pull all med requests from Supabase + merge with local
-    const client = SB.getClient();
-    if (!client) return;
-    client.from("med_requests").select("*").order("requested_at", { ascending: false }).then(({ data, error }) => {
-      if (error || !Array.isArray(data)) return;
-      // Convert Supabase rows → local format + save
-      const localRequests = data.map(r => ({
-        id: r.id,
-        nameTrade: r.name_trade || "",
-        nameEn: r.name_en || "",
-        nameAr: r.name_ar || "",
-        dose: r.dose || "",
-        form: r.form || "tablet",
-        frequency: r.frequency || "1×1",
-        notes: r.notes || "",
-        requestedBy: r.requested_by || "",
-        requestedAt: r.requested_at || "",
-        status: r.status || "pending",
-        reviewedBy: r.reviewed_by || "",
-        reviewedAt: r.reviewed_at || "",
-        approvedMedId: r.approved_med_id || ""
-      }));
-      Storage.saveMedRequests(localRequests);
-      // Re-render the med requests list if the admin view is open
-      const adminView = document.getElementById("view-admin");
-      if (adminView && !adminView.hidden) {
-        renderMedRequests();
-      }
-      // If this is a NEW request (INSERT) from another device, play
-      // the notification sound + push a local notification
-      if (payload.eventType === "INSERT") {
-        const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-        // Don't echo back to the sender
-        if (row.requested_by !== (user ? user.username : "")) {
-          pushNotification("med_request",
-            `طلب دواء جديد: ${row.name_trade || "—"} — من ${displayNameOf(row.requested_by)}`,
-            row.name_trade || "", "");
-        }
-      }
-      // Update the settings row badge count (for admin)
-      if (Auth && Auth.isAdmin && Auth.isAdmin()) {
-        const pendingCount = Storage.getPendingMedRequestsCount();
-        const valEl = $("settings-med-request-value");
-        if (valEl) valEl.textContent = pendingCount > 0 ? `${pendingCount} طلب` : "";
-      }
-    });
-  }
   // Push the local catalog to Supabase (called after every admin save).
   // If the push fails, the user is shown a clear warning so they know
   // their edits are local-only and won't appear on other devices until
@@ -1539,7 +1135,6 @@
     UI.renderRooms(ghost ? Object.assign({}, state.patients, { [_pendingExit.bedKey]: _pendingExit.snapshot }) : state.patients);
     UI.renderPatientsList(state.patients);
     if (global.PharmacyPillsPage) global.PharmacyPillsPage.refreshIfOpen();
-    if (_displayModeActive) renderDisplayMode();   // the TV / display shows changes too
     // Restore scroll position if we were on the home view
     // (so the user doesn't lose their place in the rooms grid).
     const homeView = document.getElementById("view-home");
@@ -1558,34 +1153,6 @@
   }
   function orderingState() {
     return Object.assign({}, state, { patients: orderedPatientsMap() });
-  }
-  // «الطلبية» and the chart send work on ONE unit: the unit page the user is on. On any other page
-  // (pills, patients…) they ask to choose a unit first.
-  let _flowUnit = null, _flowKind = "general";
-  function pickFlowUnit() {
-    if (!(UI.currentView && UI.currentView() === "home")) { flashHint("اختر الوحدة أولاً"); return false; }
-    // «خاص» mode = the private rooms of BOTH units together (one chart, one order); «عام» = this unit only
-    _flowKind = UI.getKind();
-    _flowUnit = _flowKind === "private" ? "p" : UI.getUnit();
-    return true;
-  }
-  function flowUnitName() {
-    const u = global.PharmacyWard.UNITS.find(x => x.id === _flowUnit);
-    return _flowUnit === "p" ? "ردهة الخاص (الوحدتان)" : (u ? u.name + " — العام" : "");
-  }
-  // storage key part: the sent supplies are kept per unit and kind
-  function flowKey() { return _flowUnit; }
-  function flowPatientsMap() {
-    const all = orderedPatientsMap();
-    if (!_flowUnit) return all;
-    const out = {};
-    const CB = global.PharmacyChartBridge;
-    // a general-ward patient in a private bed (labs._gen) belongs to the general order of that unit
-    global.PharmacyWard.ROOMS.filter(r => _flowUnit === "p" ? r.kind === "private" : r.unit === _flowUnit).forEach(room => room.beds.forEach(b => {
-      const k = global.PharmacyWard.bedKey(room.id, b.number);
-      if (all[k] && (!CB || !CB.bedMatches || CB.bedMatches(room, _flowUnit, all[k]))) out[k] = all[k];
-    }));
-    return out;
   }
   function occupiedCount(map) {
     return Object.values(map || {}).filter(p => p && p.name && p.name.trim()).length;
@@ -3532,11 +3099,8 @@
     // catalogue, theme, audit…) are behind his second button.
     $("open-admin").addEventListener("click", () => openSettingsView());
     $("admin-tools-btn").addEventListener("click", () => { if (Auth && Auth.isAdmin()) openAdminView(); });
-    // the admin's tools (his settings page): the ward display, printing every patient's sheet and
-    // requesting a new medicine — they use the existing handlers
-    $("admin-tv-btn").addEventListener("click", () => { if (Auth && Auth.isAdmin()) $("settings-tv-btn").click(); });
+    // the admin's tools (his settings page): printing every patient's sheet — it uses the existing handler
     $("admin-print-sheets-btn").addEventListener("click", () => { if (Auth && Auth.isAdmin()) $("print-all-sheets-btn").click(); });
-    $("admin-med-request-btn").addEventListener("click", () => { if (Auth && Auth.isAdmin()) $("settings-med-request-btn").click(); });
 
     // ----- Print Chart (التشارت) -----
     // Instead of printing directly, we first open the Supply Order
@@ -3619,211 +3183,6 @@
         }
       }, 50);
     });
-
-    // ----- Med Summary Modal (إحصاء الأدوية — shown after chart) -----
-    // After the chart is generated, show a modal list of all meds +
-    // supplies with their total daily count across all patients.
-    // This gives the pharmacist an at-a-glance view of what was
-    // distributed, including the supplies just assigned in the
-    // supply-order modal.
-
-    function closeMedSummary() {
-      const overlay = $("med-summary-overlay");
-      const modal = $("med-summary-modal");
-      if (overlay) overlay.hidden = true;
-      if (modal) modal.hidden = true;
-    }
-
-    // Build and show the med summary modal. Includes BOTH:
-    //   - Patient-prescribed meds (from patient.medications[])
-    //   - Auto-injected supplies (from supplyDistribution)
-    // chartOnly: the send review — only what is sent (medicines with a chart name)
-    // opts.order: the «الطلبية» view — chart names, a title and a note about
-    // the supplies' send date
-    function showMedSummaryList(supplyDistribution, chartOnly, opts) {
-      opts = opts || {};
-      const body = $("med-summary-body");
-      const footer = $("med-summary-footer");
-      const overlay = $("med-summary-overlay");
-      const modal = $("med-summary-modal");
-      if (!body || !overlay || !modal) return;
-
-      const Meds = global.PharmacyMedications || {};
-      const FORM_LABELS = Meds.FORM_LABELS || {};
-      const FORM_ORDER = Meds.FORM_ORDER ||
-        ["vial", "ampule", "prefilled-syringe", "tablet", "effervescent", "syrup-and-oral-drop", "suppository", "solution", "supplies"];
-
-      // Daily quantity — exactly what the chart receives ("1×3" → 3,
-      // "2×2" → 4, quantity exceptions like heparin → 1); 0 = non-daily
-      function parseFreq(freq, medId) {
-        const q = global.PharmacyChartBridge.dailyQuantity(medId, freq);
-        return q == null ? 0 : q;
-      }
-
-      // Helper: get display label (Arabic preferred). The order view shows the
-      // name as written in the chart, so it can be copied by hand.
-      function getLabel(m) {
-        if (!m) return "";
-        if (opts.order) {
-          const SN = (global.PharmacyChartBridge && global.PharmacyChartBridge.SUPPLY_CHART_NAMES) || {};
-          return m.nameChart || SN[m.id] || m.nameTrade || m.nameEn || m.nameAr || m.name || m.id || "";
-        }
-        return m.nameAr || m.nameTrade || m.nameEn || m.name || m.id || "";
-      }
-      const titleEl = document.querySelector("#med-summary-modal .med-summary-head h3");
-      // «الطلبية» on a Thursday: every number is doubled (the order covers Friday too)
-      // (except the medicines the chart app does not double: opts.noDouble, a Set of names)
-      const mult = opts.order && new Date().getDay() === 4 ? 2 : 1;
-      const skipsDouble = (cat) => mult === 2 && opts.noDouble && opts.noDouble.has(getLabel(cat).toLowerCase().replace(/\s+/g, " ").trim());
-      const factorOf = (t) => skipsDouble(t.catalog) ? 1 : mult;
-      if (titleEl) titleEl.textContent = (opts.title || "إحصاء الأدوية والمستلزمات") + (mult === 2 ? " — الخميس ×2" : "");
-
-      // Build med-by-id lookup
-      const medById = {};
-      (state.medications || []).forEach(m => {
-        if (m && m.id) medById[m.id] = m;
-      });
-
-      // Tally counts across all occupied patients
-      const tally = {};
-      const occupiedPatients = Object.values(flowPatientsMap())
-        .filter(p => p && p.name && p.name.trim());
-
-      occupiedPatients.forEach(p => {
-        const seen = new Set();
-        (p.medications || []).forEach(pm => {
-          if (!pm || !pm.id) return;
-          const catalog = medById[pm.id];
-          if (!catalog) return;
-          if (chartOnly && catalog.form !== "supplies" && !String(catalog.nameChart || "").trim()) return;   // not sent
-          if (!tally[pm.id]) {
-            tally[pm.id] = {
-              catalog: catalog,
-              total: 0,
-              custom: false
-            };
-          }
-          const freq = pm.frequency || catalog.defaultFrequency || "";
-          const n = parseFreq(freq, pm.id);
-          if (n === 0 && freq) tally[pm.id].custom = true;
-          // tigecycline on its first day: one extra vial (the first dose is 2 vials)
-          const extraVial = n > 0 && global.PharmacyChartBridge.extraVialOf ? global.PharmacyChartBridge.extraVialOf(pm, p) : 0;
-          tally[pm.id].total += n + extraVial;
-          if (!seen.has(pm.id)) {
-            seen.add(pm.id);
-          }
-        });
-        // Lasix ampoules that go with this patient's albumin
-        const lasixExtra = global.PharmacyChartBridge.lasixExtraOf(p);
-        const lasixId = global.PharmacyChartBridge.LASIX_ID;
-        const lasixCat = lasixExtra > 0 ? medById[lasixId] : null;
-        if (lasixCat && !(chartOnly && !String(lasixCat.nameChart || "").trim())) {
-          if (!tally[lasixId]) tally[lasixId] = { catalog: lasixCat, total: 0, custom: false };
-          tally[lasixId].total += lasixExtra;
-        }
-      });
-
-      // Inject auto-distributed supplies as additional "patients" of
-      // the supplies category. supplyDistribution maps supplyId →
-      // { bedKey: freq }. Sum the frequencies across all bedKeys.
-      if (supplyDistribution && typeof supplyDistribution === "object") {
-        Object.keys(supplyDistribution).forEach(supplyId => {
-          const dist = supplyDistribution[supplyId];
-          if (!dist || typeof dist !== "object") return;
-          let total = 0;
-          Object.values(dist).forEach(freq => { total += (freq || 0); });
-          if (total === 0) return;  // supply wasn't distributed to anyone
-
-          const catalog = medById[supplyId] || { id: supplyId, form: "supplies", nameTrade: supplyId };
-          tally[supplyId] = {
-            catalog: catalog,
-            total: total,
-            custom: false
-          };
-        });
-      }
-
-      // Group like the chart's columns: antibiotics (any form) ← tablets, syrups,
-      // ointments, suppositories, solutions ← prefilled syringes ← ampoules and
-      // vials ← supplies (chart-bridge ORDER_GROUPS)
-      const Bridge = global.PharmacyChartBridge;
-      const GROUPS = Bridge.ORDER_GROUPS;
-      const groups = {};
-      GROUPS.forEach(g => { groups[g.key] = []; });
-      Object.values(tally).forEach(t => {
-        const r = Bridge.orderRank(t.catalog);
-        t.rank = r.rank;
-        groups[GROUPS[r.group].key].push(t);
-      });
-      // inside a group: by form, then by name
-      Object.values(groups).forEach(arr => {
-        arr.sort((a, b) => (a.rank - b.rank) || getLabel(a.catalog).localeCompare(getLabel(b.catalog)));
-      });
-
-      // Render HTML
-      let html = "";
-      let firstGroup = true;
-      GROUPS.forEach(g => {
-        const form = g.key;
-        const arr = groups[form] || [];
-        if (arr.length === 0) return;
-        if (!firstGroup) html += "";
-        firstGroup = false;
-        const formLabel = g.label;
-        html += `<div class="med-summary-group">`;
-        html += `<div class="med-summary-group-title">`;
-        html += `<span>${formLabel}</span>`;
-        html += `<span class="med-summary-group-count">${arr.length} دواء</span>`;
-        html += `</div>`;
-        arr.forEach(t => {
-          const name = getLabel(t.catalog);
-          const countText = t.custom ? "—" : String(t.total * factorOf(t));
-          const countClass = t.custom ? "med-summary-row-count custom" : "med-summary-row-count";
-          html += `<div class="med-summary-row">`;
-          html += `<span class="med-summary-row-name">${name}${skipsDouble(t.catalog) ? ' <small style="font-weight:600;color:var(--text-muted)">(لا يُضاعف)</small>' : ""}</span>`;
-          html += `<span class="${countClass}">${countText}</span>`;
-          html += `</div>`;
-        });
-        html += `</div>`;
-      });
-
-      if (firstGroup) {
-        // No groups at all — no patient has any medication
-        html = `<div style="text-align:center;padding:40px;color:var(--text-muted);">لا يوجد أدوية موصوفة</div>`;
-      }
-
-      body.innerHTML = html;
-
-      // Footer with totals
-      const totalCount = Object.values(tally).reduce((s, t) => s + (t.custom ? 0 : t.total * factorOf(t)), 0);
-      const totalMeds = Object.keys(tally).length;
-      const totalPatients = occupiedPatients.length;
-      footer.innerHTML = `
-        <div>إجمالي التكرارات اليومية: ${totalCount}</div>
-        <div>عدد الأدوية والمستلزمات: ${totalMeds}  ·  عدد المرضى: ${totalPatients}</div>
-        ${mult === 2 ? "<div>" + (opts.noDouble ? "يوم الخميس: الأعداد مضاعفة (×2) عدا ما لا يُضاعف في الجارت" : "يوم الخميس: كل الأعداد مضاعفة (×2)" + (opts.noDoubleError ? " — تعذّرت قراءة المستثنى من الجارت" : "")) + "</div>" : ""}
-        ${opts.note ? `<div>${escapeHtml(opts.note)}</div>` : ""}
-      `;
-
-      // Show modal
-      overlay.hidden = false;
-      modal.hidden = false;
-    }
-
-    // Close handlers for med summary modal
-    $("med-summary-close").addEventListener("click", closeMedSummary);
-    $("med-summary-overlay").addEventListener("click", closeMedSummary);
-
-    // Note: The med-summary-btn (red bar-chart icon) was removed from
-    // the header. The med-summary MODAL still exists in the HTML +
-    // is opened programmatically by the distribute-send-btn workflow
-    // (showMedSummaryList is called inside the supply-order submit
-    // handler in distribute+send mode). The close handlers above
-    // remain so the user can close the modal that the distribute-send
-    // workflow opened.
-
-    // ----- Display Mode (TV / large screen) -----
-    $("display-mode-btn").addEventListener("click", () => { if (Auth && Auth.isAdmin && Auth.isAdmin()) enterDisplayMode(); });
 
     // ----- Supply Order Modal -----
     // SUPPLY_RULES: one entry per supply that can be distributed.
@@ -3913,7 +3272,7 @@
       // Count occupied patients we order for (supplies go to them only)
       const occupiedKeys = [];
       const Ward = global.PharmacyWard;
-      const ordered = flowPatientsMap();
+      const ordered = orderedPatientsMap();
       Ward.ROOMS.forEach(room => {
         room.beds.forEach(bed => {
           const key = Ward.bedKey(room.id, bed.number);
@@ -4012,180 +3371,26 @@
       const supplyDistribution = collectAndDistributeSupplies();
       if (!supplyDistribution) return;
 
-      // Branch based on which button opened the modal:
-      if (_supplyOrderMode === "send") {
-        // ----- Distribute + Send mode (new "distribute-send-btn") -----
-        // Show the med-summary modal first so the user can review the
-        // final tally (meds + distributed supplies) before sending.
-        // The user then clicks "إرسال إلى جارت الجارت" inside that
-        // modal to actually send the data.
-        showMedSummaryList(supplyDistribution, true, { title: "مراجعة الإرسال — " + flowUnitName() });
-        // Replace the med-summary footer with a "send to جارت الجارت"
-        // button so the user can review the summary, then click to send.
-        const footer = $("med-summary-footer");
-        if (footer) {
-          footer.innerHTML = "";
-          // The day of the chart to fill (the chart app's own date) — today
-          // by default; another day when sending for it
-          const dateWrap = document.createElement("label");
-          dateWrap.className = "med-summary-date";
-          const dateLbl = document.createElement("span");
-          dateLbl.textContent = "تاريخ الجارت";
-          const dateInput = document.createElement("input");
-          dateInput.type = "date";
-          dateInput.value = global.PharmacyChartSync.todayISO();
-          dateWrap.appendChild(dateLbl);
-          dateWrap.appendChild(dateInput);
-          footer.appendChild(dateWrap);
-          // (the target is the unit page it was opened from: its chart, private rooms to ردهة الخاص)
-          const sendBtn = document.createElement("button");
-          sendBtn.type = "button";
-          sendBtn.className = "med-summary-send-btn";
-          sendBtn.textContent = "📤 إرسال بيانات المرضى إلى الجارت";
-          sendBtn.addEventListener("click", async () => {
-            if (!global.PharmacyChartBridge) {
-              flashHint("تعذّر تحميل وحدة جسر الجارت");
-              return;
-            }
-            sendBtn.disabled = true;
-            try {
-              const day = /^\d{4}-\d{2}-\d{2}$/.test(dateInput.value) ? dateInput.value : global.PharmacyChartSync.todayISO();
-              if (day !== global.PharmacyChartSync.todayISO() && !confirm("الإرسال إلى جارت يوم " + day + " (ليس اليوم)؟")) return;
-              const r = await global.PharmacyChartBridge.sendChart(orderingState(), supplyDistribution, flashHint, day, _flowUnit);
-              if (r.cancelled) return;
-              flashHint(global.PharmacyChartSync.describe(r) + (r.ok ? "" : " — يمكنك إعادة الإرسال من «سجل الإرسال إلى الجارت»"));
-              if (r.ok) { saveSentSupplies(supplyDistribution, day, flowKey()); closeMedSummary(); if (global.PharmacyFx) global.PharmacyFx.rocket(); }
-            } catch (err) {
-              flashHint("تعذّر الإرسال: " + (err.message || err));
-            } finally {
-              sendBtn.disabled = false;
-            }
-          });
-          footer.appendChild(sendBtn);
-          // Also add a "skip / close" button so the user can review
-          // without sending.
-          const closeBtn = document.createElement("button");
-          closeBtn.type = "button";
-          closeBtn.className = "med-summary-cancel-btn";
-          closeBtn.textContent = "إغلاق بدون إرسال";
-          closeBtn.addEventListener("click", closeMedSummary);
-          footer.appendChild(closeBtn);
-        }
-      } else {
-        // ----- Chart mode (original "print-chart-btn") -----
-        // Generate chart as a downloadable image overlay on the
-        // reference chart template (img/chart-reference.png).
-        flashHint("يتم توليد صورة الجارت... انتظر قليلاً");
-        const wrapState = {
-          patients: orderedPatientsMap(),
-          meds: state.medications,
-          supplyDistribution: supplyDistribution
-        };
-        setTimeout(async () => {
-          try {
-            const pages = await global.PharmacyChartImage.generateChartImage(wrapState);
-            if (pages && pages.length > 0) {
-              flashHint(`تم توليد ${pages.length} صفحة جارت — تحقق من التنزيلات`);
-            }
-          } catch (err) {
-            console.error("[chart-image] error:", err);
-            flashHint("تعذّر توليد صورة الجارت: " + (err.message || err));
+      // ----- Chart mode (original "print-chart-btn") -----
+      // Generate chart as a downloadable image overlay on the
+      // reference chart template (img/chart-reference.png).
+      flashHint("يتم توليد صورة الجارت... انتظر قليلاً");
+      const wrapState = {
+        patients: orderedPatientsMap(),
+        meds: state.medications,
+        supplyDistribution: supplyDistribution
+      };
+      setTimeout(async () => {
+        try {
+          const pages = await global.PharmacyChartImage.generateChartImage(wrapState);
+          if (pages && pages.length > 0) {
+            flashHint(`تم توليد ${pages.length} صفحة جارت — تحقق من التنزيلات`);
           }
-        }, 50);
-      }
-    });
-
-    // ----- Distribute + Send button (توزيع المستلزمات + إرسال) -----
-    // Combines the supply-order modal + med-summary review + chart
-    // bridge into ONE workflow:
-    //   1. Open the supply-order modal (same modal the chart button
-    //      uses, but with a different submit-button label)
-    //   2. On submit: distribute the supplies across patients + save
-    //      the distribution
-    //   3. Show the med-summary modal so the user can review the
-    //      tally (meds + supplies) before sending
-    //   4. The footer of the med-summary modal has "إرسال إلى جارت
-    //      الجارت" + "إغلاق بدون إرسال" buttons.
-    //   5. When the user clicks "إرسال", call
-    //      PharmacyChartBridge.sendChart(state, supplyDistribution)
-    //      which now accepts the supply distribution as a 2nd arg
-    //      and injects the supplies into each patient's med list.
-    $("distribute-send-btn").addEventListener("click", () => {
-      if (!pickFlowUnit()) return;
-      if (!state.medications || state.medications.length === 0) {
-        flashHint("لا توجد أدوية في الكتالوج");
-        return;
-      }
-      // Count occupied patients we order for (this unit)
-      const occCount = occupiedCount(flowPatientsMap());
-      if (occCount === 0) {
-        flashHint("لا يوجد مرضى مشغولون");
-        return;
-      }
-      // Set the mode so the supply-order submit handler knows to
-      // take the "send" branch instead of the "chart" branch.
-      _supplyOrderMode = "send";
-      // Update the submit button label so the user knows what
-      // happens after they enter the supply quantities.
-      const submitBtn = $("supply-order-submit");
-      if (submitBtn) {
-        submitBtn.textContent = "متابعة → مراجعة البيانات";
-      }
-      // Update the modal title so the user knows this is a
-      // distribute+send workflow, not a chart-generation workflow.
-      // (The title lives inside the modal's <h3> header.)
-      const modalTitle = document.querySelector("#supply-order-modal .supply-order-head h3");
-      if (modalTitle) {
-        modalTitle.textContent = "توزيع المستلزمات ثم إرسال بيانات " + flowUnitName() + " إلى الجارت";
-      }
-      openSupplyOrderModal(occCount);
-    });
-
-    // ----- «الطلبية» (pharmacists + admin) -----
-    // Every medicine of the patients we order for with its total daily count
-    // (what the chart receives), plus the supplies of the last successful send
-    // to the chart — so the order can be written by hand.
-    $("order-list-btn").addEventListener("click", async () => {
-      if (!pickFlowUnit()) return;
-      if (!state.medications || state.medications.length === 0) { flashHint("لا توجد أدوية في الكتالوج"); return; }
-      if (occupiedCount(flowPatientsMap()) === 0) { flashHint("لا يوجد مرضى مشغولون"); return; }
-      const sent = loadSentSupplies(flowKey());
-      // Thursday: the chart app doubles every medicine except the ones flagged
-      // «لا يُضاعف يوم الخميس» there — read those so the order matches the chart
-      let noDouble = null, noDoubleError = false;
-      if (new Date().getDay() === 4 && global.PharmacyChartSync && global.PharmacyChartSync.noDouble) {
-        const Bridge = global.PharmacyChartBridge || {};
-        const SN = Bridge.SUPPLY_CHART_NAMES || {};
-        const byId = {};
-        (state.medications || []).forEach(m => { if (m && m.id) byId[m.id] = m; });
-        const names = new Set();
-        Object.values(flowPatientsMap()).forEach(p => {
-          if (!p || !p.name || !p.name.trim()) return;
-          (p.medications || []).forEach(pm => {
-            const c = pm && byId[pm.id];
-            const n = c && String(c.nameChart || SN[c.id] || c.nameTrade || "").trim();
-            if (n) names.add(n);
-          });
-        });
-        if (sent && sent.dist) Object.keys(sent.dist).forEach(id => {
-          const c = byId[id];
-          const n = String((c && c.nameChart) || SN[id] || (c && (c.nameTrade || c.nameEn)) || "").trim();
-          if (n) names.add(n);
-        });
-        const r = await global.PharmacyChartSync.noDouble(Array.from(names), flashHint);
-        if (r.cancelled) return;
-        if (r.ok) noDouble = new Set((r.noDouble || []).map(n => String(n).toLowerCase().replace(/\s+/g, " ").trim()));
-        else noDoubleError = true;
-      }
-      const when = sent && sent.at ? new Date(sent.at).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" }) : "";
-      showMedSummaryList(sent ? sent.dist : null, true, {   // true = only what goes to the chart: no chart name → not in the order
-        order: true,
-        noDouble, noDoubleError,
-        title: "الطلبية — " + flowUnitName(),
-        note: sent
-          ? "المستلزمات: آخر إرسال إلى الجارت" + (sent.day ? " ليوم " + sent.day : "") + (when ? " (" + when + ")" : "")
-          : "لم تُرسل مستلزمات إلى الجارت من هذا الجهاز بعد"
-      });
+        } catch (err) {
+          console.error("[chart-image] error:", err);
+          flashHint("تعذّر توليد صورة الجارت: " + (err.message || err));
+        }
+      }, 50);
     });
 
     // The print-chart-btn still works as before (chart mode):
@@ -4251,27 +3456,6 @@
     // Settings: change own password
     $("settings-password-btn").addEventListener("click", openPasswordDialog);
 
-    // Settings: chart bridge
-    $("settings-bridge-btn").addEventListener("click", async () => {
-      if (!global.PharmacyChartBridge) {
-        flashHint("تعذّر تحميل وحدة جسر الجارت");
-        return;
-      }
-      const unit = await askChoice("إرسال بيانات أي ردهة إلى الجارت؟", [["1", "الوحدة الأولى (نساء)"], ["3", "الوحدة الثالثة (رجال)"], ["p", "ردهة الخاص (الوحدتان)"]]);
-      if (!unit) return;
-      UI.showView("home");
-      flashHint("يتم إرسال بيانات المرضى إلى الجارت...");
-      setTimeout(async () => {
-        try {
-          const r = await global.PharmacyChartBridge.sendChart(orderingState(), null, flashHint, undefined, unit, unit === "p" ? "private" : "general");
-          if (!r.cancelled) flashHint(global.PharmacyChartSync.describe(r));
-          if (r.ok && global.PharmacyFx) global.PharmacyFx.rocket();
-        } catch (err) {
-          flashHint("تعذّر الإرسال: " + (err.message || err));
-        }
-      }, 50);
-    });
-
     // Settings: dark mode toggle button
     $("settings-darkmode-btn").addEventListener("click", () => {
       const html = document.documentElement;
@@ -4294,119 +3478,6 @@
     // Settings: catalogue editing (an allowed pharmacist)
     $("settings-catalog-btn").addEventListener("click", openCatalogEditor);
     $("settings-quotes-btn").addEventListener("click", openQuotesEditor);
-
-    // Settings: TV display mode entry
-    $("settings-tv-btn").addEventListener("click", () => {
-      if (!(Auth && Auth.isAdmin && Auth.isAdmin())) return;   // admin + the TV account only
-      // Close the settings view first, then enter display mode
-      UI.showView("home");
-      enterDisplayMode();
-    });
-
-    // ----- Med Request Modal (doctor → admin) -----
-    // Opens a modal where the doctor enters the details of a new
-    // medication not in the catalog. On submit, the request is saved
-    // to localStorage + a notification is pushed for the admin.
-    // The admin reviews it in the admin view and can approve (adds
-    // the med to the catalog) or reject it.
-    function openMedRequestModal() {
-      // Clear all fields
-      ["med-req-name-trade", "med-req-name-en", "med-req-name-ar",
-       "med-req-dose", "med-req-notes"].forEach(id => {
-        const el = $(id);
-        if (el) el.value = "";
-      });
-      const formEl = $("med-req-form");
-      if (formEl) formEl.value = "";
-      const freqEl = $("med-req-frequency");
-      if (freqEl) freqEl.value = "";
-      const errEl = $("med-req-error");
-      if (errEl) errEl.hidden = true;
-      // Show modal
-      $("med-request-overlay").hidden = false;
-      $("med-request-modal").hidden = false;
-      setTimeout(() => $("med-req-name-trade")?.focus(), 50);
-    }
-    function closeMedRequestModal() {
-      $("med-request-overlay").hidden = true;
-      $("med-request-modal").hidden = true;
-    }
-    function submitMedRequest() {
-      // Doctors give only the name, the dosage form and the dose
-      const nameTrade = ($("med-req-name-trade")?.value || "").trim();
-      const missing = !nameTrade ? "med-req-name-trade"
-        : !($("med-req-form")?.value || "").trim() ? "med-req-form"
-        : !($("med-req-dose")?.value || "").trim() ? "med-req-dose" : null;
-      if (missing) {
-        $("med-req-error").hidden = false;
-        $(missing)?.focus();
-        return;
-      }
-      const nameEn = ($("med-req-name-en")?.value || "").trim();
-      const nameAr = ($("med-req-name-ar")?.value || "").trim();
-      const dose = ($("med-req-dose")?.value || "").trim();
-      const form = ($("med-req-form")?.value || "").trim() || "tablet";
-      const frequency = ($("med-req-frequency")?.value || "").trim() || "1×1";
-      const notes = ($("med-req-notes")?.value || "").trim();
-      const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-
-      const record = {
-        id: "med-req-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8),
-        nameTrade: nameTrade,
-        nameEn: nameEn,
-        nameAr: nameAr,
-        dose: dose,
-        form: form,
-        frequency: frequency,
-        notes: notes,
-        requestedBy: user ? user.username : "—",
-        requestedAt: new Date().toISOString(),
-        status: "pending"
-      };
-      Storage.addMedRequest(record);
-      // Push to Supabase so the admin on ANOTHER device sees the request
-      if (SB && SB.isConfigured && SB.isConfigured()) {
-        const client = SB.getClient();
-        if (client) {
-          client.from("med_requests").upsert({
-            id: record.id,
-            name_trade: record.nameTrade,
-            name_en: record.nameEn,
-            name_ar: record.nameAr,
-            dose: record.dose,
-            form: record.form,
-            frequency: record.frequency,
-            notes: record.notes,
-            requested_by: record.requestedBy,
-            requested_at: record.requestedAt,
-            status: "pending"
-          }).then(({ error }) => {
-            if (error) console.warn("[Supabase] med request push failed:", error.message);
-          });
-        }
-      }
-      // Push a notification so the admin sees a new request waiting
-      pushNotification("med_request",
-        `طلب دواء جديد: ${nameTrade} — من ${user ? (user.displayName || user.username) : "—"}`,
-        nameTrade, "");
-      closeMedRequestModal();
-      flashHint("تم إرسال طلب إضافة الدواء — سيتم مراجعته من قبل المسؤول");
-    }
-    $("settings-med-request-btn").addEventListener("click", openMedRequestModal);
-    $("med-request-close").addEventListener("click", closeMedRequestModal);
-    $("med-request-cancel").addEventListener("click", closeMedRequestModal);
-    $("med-request-overlay").addEventListener("click", closeMedRequestModal);
-    $("med-request-submit").addEventListener("click", submitMedRequest);
-
-    // ----- Admin: render med requests list -----
-    // Renders the pending + reviewed med requests in the admin view.
-    // The admin can approve (adds to catalog) or reject each request.
-    // NOTE: These functions are ALSO defined at the top-level scope
-    // (outside bindEvents) so openAdminView() can call renderMedRequests().
-    // The top-level definitions are the REAL ones — these are kept
-    // here only for the event-listener binding that references
-    // approveMedRequest/rejectMedRequest via closure.
-    // The actual implementations are at the top-level after bindEvents.
 
     // Settings: logout button
     $("settings-logout-btn").addEventListener("click", userLogout);
@@ -4594,7 +3665,6 @@
           nameTrade: data.nameTrade,
           nameAr:    data.nameAr,
           nameEn:    data.nameEn,
-          nameChart: data.nameChart,
           priceRef:  data.priceRef,
           priceSeen: data.priceSeen,
           form:      data.form,
@@ -4622,7 +3692,6 @@
         m.nameTrade = data.nameTrade;
         m.nameAr = data.nameAr;
         m.nameEn = data.nameEn;
-        m.nameChart = data.nameChart;
         m.priceRef = data.priceRef;
         m.priceSeen = data.priceSeen;
         m.form = data.form;
@@ -4755,7 +3824,7 @@
         const on = !flagBtn.dataset.on;
         const what = flagBtn.dataset.flag === "can_exit_patients"
           ? "تسجيل الخروج والوفاة والعودة إلى الطابق"
-          : flagBtn.dataset.flag === "can_ministry" ? "رفع مواقف وزارة الصحة" : "إدارة مقولات شاشة العرض";
+          : "إدارة مقولات شاشة العرض";
         if (!confirm((on ? "السماح لـ «" : "إلغاء سماح «") + flagBtn.dataset.name + "» بـ" + what + "؟")) return;
         const res = await Auth.setUserFlag(flagBtn.dataset.uid, flagBtn.dataset.flag, on);
         flashHint(res.ok ? (on ? "✓ تم منح الصلاحية (تظهر بعد تسجيل الدخول من جديد)" : "أُلغيت الصلاحية") : "تعذّر الحفظ: " + res.error);
@@ -4809,7 +3878,6 @@
     // module top-level so openAdminView() can call them.
     $("audit-refresh-btn").addEventListener("click", refreshAuditLog);
     $("audit-clear-btn").addEventListener("click", clearAuditLog);
-    $("med-requests-clear-btn").addEventListener("click", clearReviewedMedRequests);
 
     // ----- Supabase: test / save / clear -----
     $("sb-test").addEventListener("click", async () => {
@@ -4931,7 +3999,7 @@
         </div>
         <div class="admin-user-actions">
           <button class="btn-user-reset" data-uid="${uid}" data-name="${cleanName}" type="button">🔑 كلمة مرور</button>
-          ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الخروج والوفاة والعودة" : "الخروج والوفاة والعودة"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button><button class="btn-user-catalog btn-user-flag${u.can_ministry ? " is-on" : ""}" data-flag="can_ministry" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_ministry ? "1" : ""}" type="button">${u.can_ministry ? "✓ مواقف الوزارة" : "مواقف الوزارة"}</button><button class="btn-user-catalog${u.can_edit_catalog ? " is-on" : ""}" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_catalog ? "1" : ""}" type="button">${u.can_edit_catalog ? "✓ الكتالوج" : "الكتالوج"}</button>` : ""}
+          ${u.role === "pharmacist" ? `<button class="btn-user-catalog btn-user-flag${u.can_exit_patients ? " is-on" : ""}" data-flag="can_exit_patients" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_exit_patients ? "1" : ""}" type="button">${u.can_exit_patients ? "✓ الخروج والوفاة والعودة" : "الخروج والوفاة والعودة"}</button><button class="btn-user-catalog btn-user-flag${u.can_edit_quotes ? " is-on" : ""}" data-flag="can_edit_quotes" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_quotes ? "1" : ""}" type="button">${u.can_edit_quotes ? "✓ المقولات" : "المقولات"}</button><button class="btn-user-catalog${u.can_edit_catalog ? " is-on" : ""}" data-uid="${uid}" data-name="${cleanName}" data-on="${u.can_edit_catalog ? "1" : ""}" type="button">${u.can_edit_catalog ? "✓ الكتالوج" : "الكتالوج"}</button>` : ""}
           <button class="btn-user-toggle" data-uid="${uid}" data-active="${u.active}" type="button">${u.active === false ? "تفعيل" : "تعطيل"}</button>
           <button class="btn-user-delete" data-uid="${uid}" data-username="${uname}" data-name="${cleanName}" type="button">🗑 حذف</button>
         </div>
@@ -5007,173 +4075,8 @@
     flashHint("تم مسح سجل النشاط الحساس");
     refreshAuditLog();
   }
-  // Admin: remove approved / rejected med requests; pending ones stay
-  // (they still need a decision).
-  async function clearReviewedMedRequests() {
-    if (!(Auth && Auth.isAdmin && Auth.isAdmin())) return;
-    const all = Storage.loadMedRequests();
-    const reviewed = all.filter(r => r.status === "approved" || r.status === "rejected");
-    if (!reviewed.length) { flashHint("لا توجد طلبات مُراجَعة للمسح"); return; }
-    if (!confirm("مسح " + reviewed.length + " طلباً مُراجَعاً (موافَق عليه أو مرفوض)؟\nالطلبات المعلّقة تبقى.")) return;
-    const client = SB && SB.getClient ? SB.getClient() : null;
-    if (client) {
-      const { error } = await client.from("med_requests").delete().in("status", ["approved", "rejected"]);
-      if (error) { alert("تعذّر مسح الطلبات: " + error.message); return; }
-    }
-    Storage.saveMedRequests(all.filter(r => r.status !== "approved" && r.status !== "rejected"));
-    renderMedRequests();
-    flashHint("تم مسح الطلبات المُراجَعة");
-  }
-
   // -------- Settings view (for non-admin pharmacists) --------
   // -------- Admin: Med Requests (top-level, outside bindEvents) --------
-  // These functions are defined here (top-level scope, NOT inside
-  // bindEvents) so openAdminView() can call renderMedRequests().
-  // (bindEvents is a separate closure — functions defined inside it
-  // are not accessible from openAdminView which lives at the top level.)
-  function renderMedRequests() {
-    const list = $("admin-med-requests-list");
-    if (!list) return;
-    list.innerHTML = "";
-    const requests = Storage.loadMedRequests();
-    if (requests.length === 0) {
-      list.innerHTML = `<p class="admin-discharged-hint">لا توجد طلبات حالياً</p>`;
-      return;
-    }
-    const formLabels = (global.PharmacyMedications && global.PharmacyMedications.FORM_LABELS) || {};
-    requests.forEach(r => {
-      const dateStr = r.requestedAt
-        ? new Date(r.requestedAt).toLocaleDateString("ar", { year: "numeric", month: "short", day: "numeric" })
-        : "—";
-      const statusBadge = r.status === "pending"
-        ? `<span style="background:#FEF3C7;color:#A16207;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;">بانتظار</span>`
-        : r.status === "approved"
-        ? `<span style="background:#DCFCE7;color:#15803D;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;">موافق</span>`
-        : `<span style="background:#FEE2E2;color:#B91C1C;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:800;">مرفوض</span>`;
-      const card = document.createElement("div");
-      card.className = "discharged-row";
-      let actionsHtml = "";
-      if (r.status === "pending") {
-        actionsHtml = `
-          <div style="display:flex;gap:6px;margin-top:6px;">
-            <button type="button" data-action="approve" data-id="${r.id}"
-              style="flex:1;padding:8px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
-              ✅ موافقة وإضافة
-            </button>
-            <button type="button" data-action="reject" data-id="${r.id}"
-              style="flex:1;padding:8px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
-              ❌ رفض
-            </button>
-          </div>
-        `;
-      }
-      card.innerHTML = `
-        <div class="discharged-row-head">
-          <div class="discharged-row-name">${escapeHtml(r.nameTrade || "—")}</div>
-          <div class="discharged-row-date">${dateStr} ${statusBadge}</div>
-        </div>
-        <div class="discharged-row-meta">
-          <span>${escapeHtml(r.nameEn || "")}</span>
-          ${r.nameAr ? `<span>· ${escapeHtml(r.nameAr)}</span>` : ""}
-          ${r.dose ? `<span>· ${escapeHtml(r.dose)}</span>` : ""}
-          <span>· ${escapeHtml(formLabels[r.form] || r.form || "—")}</span>
-          <span>· ${escapeHtml(r.frequency || "—")}</span>
-          ${r.notes ? `<span>· 📝 ${escapeHtml(r.notes)}</span>` : ""}
-          <span>· طلب: ${escapeHtml(r.requestedBy || "—")}</span>
-        </div>
-        ${actionsHtml}
-      `;
-      list.appendChild(card);
-    });
-    list.querySelectorAll("button[data-action]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-        if (action === "approve") approveMedRequest(id);
-        else if (action === "reject") rejectMedRequest(id);
-      });
-    });
-  }
-  function approveMedRequest(id) {
-    const requests = Storage.loadMedRequests();
-    const req = requests.find(r => r.id === id);
-    if (!req) return;
-    const slug = (req.nameTrade || req.nameEn || "med")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "med-" + Date.now();
-    const medId = slug + "-" + Date.now().toString(36);
-    const meds = Storage.loadMedications();
-    meds.push({
-      id: medId,
-      nameTrade: req.nameTrade || "",
-      nameAr: req.nameAr || "",
-      nameEn: req.nameEn || "",
-      form: req.form || "tablet",
-      defaultDose: req.dose || "",
-      defaultFrequency: req.frequency || "1×1"
-    });
-    Storage.saveMedications(meds);
-    state.medications = meds;
-    if (SBSync && SBSync.pushCatalog) {
-      SBSync.pushCatalog().then(r => {
-        if (!r.ok) console.warn("[Supabase] catalog push failed:", r.error);
-      });
-    }
-    const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-    const reviewedAt = new Date().toISOString();
-    Storage.updateMedRequest(id, {
-      status: "approved",
-      reviewedBy: user ? user.username : "—",
-      reviewedAt: reviewedAt,
-      approvedMedId: medId
-    });
-    // Also update Supabase so the status syncs to other devices
-    if (SB && SB.isConfigured && SB.isConfigured()) {
-      const client = SB.getClient();
-      if (client) {
-        client.from("med_requests").update({
-          status: "approved",
-          reviewed_by: user ? user.username : "—",
-          reviewed_at: reviewedAt,
-          approved_med_id: medId
-        }).eq("id", id).then(({ error }) => {
-          if (error) console.warn("[Supabase] med request update failed:", error.message);
-        });
-      }
-    }
-    UI.renderAdminMedList(meds, null);
-    renderMedRequests();
-    flashHint(`تمت إضافة "${req.nameTrade}" إلى كتالوج الأدوية`);
-  }
-  function rejectMedRequest(id) {
-    const requests = Storage.loadMedRequests();
-    const req = requests.find(r => r.id === id);
-    if (!req) return;
-    const user = Auth && Auth.getCurrentUser ? Auth.getCurrentUser() : null;
-    const reviewedAt = new Date().toISOString();
-    Storage.updateMedRequest(id, {
-      status: "rejected",
-      reviewedBy: user ? user.username : "—",
-      reviewedAt: reviewedAt
-    });
-    // Also update Supabase so the status syncs to other devices
-    if (SB && SB.isConfigured && SB.isConfigured()) {
-      const client = SB.getClient();
-      if (client) {
-        client.from("med_requests").update({
-          status: "rejected",
-          reviewed_by: user ? user.username : "—",
-          reviewed_at: reviewedAt
-        }).eq("id", id).then(({ error }) => {
-          if (error) console.warn("[Supabase] med request update failed:", error.message);
-        });
-      }
-    }
-    renderMedRequests();
-    flashHint(`تم رفض طلب "${req.nameTrade}"`);
-  }
-
   // Shows a simplified settings page with:
   //   - Dark/light mode toggle
   //   - TV display mode entry
@@ -5194,35 +4097,11 @@
     if (catRow) catRow.hidden = !(Auth && Auth.canEditCatalog && Auth.canEditCatalog() && !(Auth.isAdmin && Auth.isAdmin()));
     const quotesRow = $("settings-quotes-btn");
     if (quotesRow) quotesRow.hidden = !(Auth && Auth.canEditQuotes && Auth.canEditQuotes() && !(Auth.isAdmin && Auth.isAdmin()));
-    const tvRow = $("settings-tv-btn");
-    if (tvRow) tvRow.hidden = !(Auth && Auth.isAdmin && Auth.isAdmin());
-    // Hide the chart bridge row for ALL roles — its functionality is
-    // now integrated into the new "distribute-send-btn" in the header
-    // (which combines supply distribution + med-summary review +
-    // chart-bridge send into one workflow). Admins + pharmacists
-    // use that header button; doctors don't see it (it's a
-    // pharmacist task).
-    const bridgeRow = $("settings-bridge-btn");
-    if (bridgeRow) bridgeRow.hidden = true;
     // Hide ABX + Albumin monitoring row for doctors. That monitoring
     // is a pharmacist task — doctors don't need to see antibiotic
     // usage reports. Admins + pharmacists still see it.
     const abxRow = $("settings-abx-btn");
     if (abxRow) abxRow.hidden = isDoctor;
-    // Show the "request new medication" row only for doctors (the
-    // primary users who request new meds) + admins (who may also
-    // want to add meds directly). Hide it for pharmacists.
-    const medReqRow = $("settings-med-request-btn");
-    if (medReqRow) {
-      const isAdmin = Auth && Auth.isAdmin();
-      medReqRow.hidden = !(isDoctor || isAdmin);
-    }
-    // Show pending med requests count for admins in the row value
-    if (Auth && Auth.isAdmin && Auth.isAdmin()) {
-      const pendingCount = Storage.getPendingMedRequestsCount();
-      const valEl = $("settings-med-request-value");
-      if (valEl) valEl.textContent = pendingCount > 0 ? `${pendingCount} طلب` : "";
-    }
     // The discharged/dead patients list row stays visible to ALL
     // roles (admin + doctor + pharmacist) — every role may need
     // to look up a returning patient's history.
@@ -5287,9 +4166,6 @@
       refreshUsersList();
       refreshAuditLog();
       if (global.PharmacyDailyQuotes) global.PharmacyDailyQuotes.renderAdmin();
-      // Pull latest med requests from Supabase (so the admin sees
-      // new requests from doctors immediately when opening admin view)
-      pullMedRequestsFromCloud();
     }
     UI.showView("admin");
   }
@@ -5828,9 +4704,7 @@
         r.parts.push(nm && dose ? dose + "×" + nm.m : [dose, e.freq].filter(Boolean).join(" "));
       } else {
         const q = Bridge.dailyQuantity ? Bridge.dailyQuantity(e.medId, e.freq, e.form) : null;
-        const PFm = global.PharmacyPatientForms;
-        if (PFm && PFm.medRejectedToday && PFm.medRejectedToday(state.patients[e.key], { id: e.medId })) r.refused = true;       // Not indicated today
-        else r.qty += q || 0;
+        r.qty += q || 0;
       }
     });
     const list = Array.from(rows.values()).sort((a, b) =>
