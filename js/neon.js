@@ -23,7 +23,7 @@
     setTimeout(function () { el.classList.remove(cls); }, ms);
   }
 
-  // a bed: steady glow while pressed, a soft fade-out only when the finger leaves the screen — a scroll / drag does NOT end it (pointercancel is ignored on purpose: the browser fires it when a scroll starts)
+  // any button / bed: steady glow while pressed, a soft fade-out only when the finger leaves the screen — a scroll / drag does NOT end it (pointercancel is ignored on purpose: the browser fires it when a scroll starts)
   var heldBed = null, heldTimer = 0;
   function releaseBed() {
     if (!heldBed) return;
@@ -48,8 +48,8 @@
     if (!allowed()) return;
     var t = e.target && e.target.closest ? e.target.closest(TARGET) : null;
     if (!t || t.disabled || t.hidden) return;
-    if (t.classList.contains("bed-btn")) { holdBed(t); return; }   // a bed glows for as long as the finger stays on it
-    flash(t, t.matches(FIRE) ? "fx-fire" : "neon-hit", t.matches(FIRE) ? 950 : 1550);
+    if (t.matches(FIRE)) flash(t, "fx-fire", 950);
+    else holdBed(t);                                              // every button glows for as long as the finger stays on it
     // the عام / خاص toggle redraws the whole unit header on a tap, which would drop the effect with the old button:
     // put it on the new button of the same kind
     if (t.classList.contains("kind-btn")) {

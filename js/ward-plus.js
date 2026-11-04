@@ -38,50 +38,6 @@
     return out;
   }
 
-  // ---------- السابق / التالي ----------
-  let nav = null;
-  function buildNav() {
-    const back = $("back-btn");
-    if (!back || nav) return;
-    nav = el("div", "wp-nav");
-    nav.hidden = true;
-    nav.innerHTML = '<button type="button" class="wp-prev" aria-label="المريض السابق">› السابق</button><div class="wp-nav-mid"><b></b><span></span></div><button type="button" class="wp-next" aria-label="المريض التالي">التالي ‹</button>';
-    back.insertAdjacentElement("afterend", nav);
-    nav.querySelector(".wp-prev").addEventListener("click", () => go(-1));
-    nav.querySelector(".wp-next").addEventListener("click", () => go(1));
-  }
-  function updateNav() {
-    buildNav();
-    const app = App(), cb = app && app.state.currentBed;
-    const list = occupied();
-    const i = cb ? list.findIndex(o => o.key === cb.key) : -1;
-    if (!nav) return;
-    nav.hidden = i < 0 || list.length < 2;
-    if (nav.hidden) return;
-    nav.querySelector(".wp-nav-mid b").textContent = (i + 1) + " من " + list.length;
-    const nxt = list[(i + 1) % list.length];
-    nav.querySelector(".wp-nav-mid span").textContent = "التالي: " + nxt.p.name.trim();
-  }
-  function go(dir) {
-    const app = App(), cb = app && app.state.currentBed;
-    if (!cb) return;
-    const list = occupied();
-    const i = list.findIndex(o => o.key === cb.key);
-    if (i < 0 || list.length < 2) return;
-    for (let step = 1; step < list.length; step++) {
-      const t = list[(i + dir * step + list.length * step) % list.length];
-      app.openPatient({ key: t.key, roomId: t.roomId, bed: t.bed });
-      if (app.state.currentBed && app.state.currentBed.key === t.key) {      // قد يمنعه قفل السرير
-        haptic(12);
-        if (UI.setScrollY) UI.setScrollY(0);
-        const g = G();
-        if (g) g.fromTo("#view-patient", { x: dir > 0 ? -34 : 34, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: "power2.out", clearProps: "transform,opacity" });
-        return;
-      }
-    }
-  }
-  function onCard() { updateNav(); }
-
   // ---------- السحب على السرير ----------
   function initSwipe() {
     const grid = $("rooms-grid");
@@ -275,7 +231,7 @@
     Object.defineProperty(UI.showView, "_lastView", { get: () => origShow._lastView, set: (v) => { origShow._lastView = v; } });   // handover.js / duty-roster.js read it
     UI.renderPatientView = function () {
       const r = origRender.apply(UI, arguments);
-      try { buildCalcButton(); onCard(); } catch (e) { /* never break the card */ }
+      try { buildCalcButton(); } catch (e) { /* never break the card */ }
       return r;
     };
   }
@@ -283,10 +239,9 @@
   function init() {
     if (!UI || !Ward) return;
     wrapUI();
-    buildNav();
     initSwipe();
   }
 
-  global.PharmacyWardPlus = { spark, openCalc, occupied, go };
+  global.PharmacyWardPlus = { spark, openCalc, occupied };
   init();
 })(window);

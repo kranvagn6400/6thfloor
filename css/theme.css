@@ -2319,13 +2319,13 @@ html[data-theme="dark"] { --neon: var(--pal-accent, #5DCAA5); }
   100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent, 0 0 0 0 transparent; }
 }
 .neon-hit { animation: neonPress 1500ms ease-in-out; }
-/* a bed: the glow stays while the finger is down, then fades */
+/* any pressed button / bed: the glow stays while the finger is down, then fades */
 @keyframes neonRelease {
   0%   { box-shadow: 0 0 0 1px var(--neon), 0 0 12px 2px var(--neon), 0 0 30px 8px color-mix(in srgb, var(--neon) 40%, transparent); }
   100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent, 0 0 0 0 transparent; }
 }
-.bed-btn.neon-hold { box-shadow: 0 0 0 1px var(--neon), 0 0 12px 2px var(--neon), 0 0 30px 8px color-mix(in srgb, var(--neon) 40%, transparent) !important; }
-.bed-btn.neon-release { animation: neonRelease 500ms ease-out; }
+.neon-hold { box-shadow: 0 0 0 1px var(--neon), 0 0 12px 2px var(--neon), 0 0 30px 8px color-mix(in srgb, var(--neon) 40%, transparent) !important; }
+.neon-release { animation: neonRelease 500ms ease-out; }
 
 /* header colours (shared by the header, the sayings popup and its button; palettes.css overrides them) */
 :root { --hdr1: #1D5048; --hdr2: #17433D; --hdr3: #10322D; }
