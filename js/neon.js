@@ -23,10 +23,32 @@
     setTimeout(function () { el.classList.remove(cls); }, ms);
   }
 
+  // a bed: steady glow while pressed, a soft fade-out when the finger leaves the screen (or the press turns into a scroll / drag)
+  var heldBed = null, heldTimer = 0;
+  function releaseBed() {
+    if (!heldBed) return;
+    var bed = heldBed;
+    heldBed = null;
+    clearTimeout(heldTimer);
+    bed.classList.remove("neon-hold");
+    flash(bed, "neon-release", 520);
+  }
+  function holdBed(bed) {
+    releaseBed();
+    heldBed = bed;
+    bed.classList.remove("neon-release");
+    bed.classList.add("neon-hold");
+    heldTimer = setTimeout(releaseBed, 20000);   // safety: never stays lit if an up event is lost
+  }
+  ["pointerup", "pointercancel", "touchend", "touchcancel", "mouseup", "dragend", "blur"].forEach(function (ev) {
+    (ev === "blur" ? global : document).addEventListener(ev, releaseBed, true);
+  });
+
   document.addEventListener("pointerdown", function (e) {
     if (!allowed()) return;
     var t = e.target && e.target.closest ? e.target.closest(TARGET) : null;
     if (!t || t.disabled || t.hidden) return;
+    if (t.classList.contains("bed-btn")) { holdBed(t); return; }   // a bed glows for as long as the finger stays on it
     flash(t, t.matches(FIRE) ? "fx-fire" : "neon-hit", t.matches(FIRE) ? 950 : 1550);
     // the عام / خاص toggle redraws the whole unit header on a tap, which would drop the effect with the old button:
     // put it on the new button of the same kind

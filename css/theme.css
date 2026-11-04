@@ -2319,6 +2319,13 @@ html[data-theme="dark"] { --neon: var(--pal-accent, #5DCAA5); }
   100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent, 0 0 0 0 transparent; }
 }
 .neon-hit { animation: neonPress 1500ms ease-in-out; }
+/* a bed: the glow stays while the finger is down, then fades */
+@keyframes neonRelease {
+  0%   { box-shadow: 0 0 0 1px var(--neon), 0 0 12px 2px var(--neon), 0 0 30px 8px color-mix(in srgb, var(--neon) 40%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+.bed-btn.neon-hold { box-shadow: 0 0 0 1px var(--neon), 0 0 12px 2px var(--neon), 0 0 30px 8px color-mix(in srgb, var(--neon) 40%, transparent) !important; }
+.bed-btn.neon-release { animation: neonRelease 500ms ease-out; }
 
 /* header colours (shared by the header, the sayings popup and its button; palettes.css overrides them) */
 :root { --hdr1: #1D5048; --hdr2: #17433D; --hdr3: #10322D; }
@@ -2356,7 +2363,7 @@ html[data-theme="dark"] { --hdr1: #143832; --hdr2: #0F2925; --hdr3: #0B1D1A; }
 .fx-double { position: relative; }
 .fx-double::before, .fx-double::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; border: 2px solid var(--neon); box-shadow: 0 0 10px var(--neon); animation: fxDouble 700ms ease-out; }
 .fx-double::after { animation-delay: 180ms; opacity: 0; animation-fill-mode: backwards; }
-@media (prefers-reduced-motion: reduce) { .neon-hit, .fx-fire, .fx-shine, .fx-laser-ring, .fx-plasma, .fx-ice, .fx-rainbow::before, .fx-gold, .fx-scan::after, .fx-double::before, .fx-double::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .neon-hit, .neon-release, .fx-fire, .fx-shine, .fx-laser-ring, .fx-plasma, .fx-ice, .fx-rainbow::before, .fx-gold, .fx-scan::after, .fx-double::before, .fx-double::after { animation: none; } }
 
 /* a bed someone else has open (presence.js): a scanning line sweeps it until they leave */
 @keyframes fxScanLive { 0% { top: -6px; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: calc(100% - 2px); opacity: 0; } }
