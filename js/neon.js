@@ -23,7 +23,7 @@
     setTimeout(function () { el.classList.remove(cls); }, ms);
   }
 
-  // a bed: steady glow while pressed, a soft fade-out when the finger leaves the screen (or the press turns into a scroll / drag)
+  // a bed: steady glow while pressed, a soft fade-out only when the finger leaves the screen — a scroll / drag does NOT end it (pointercancel is ignored on purpose: the browser fires it when a scroll starts)
   var heldBed = null, heldTimer = 0;
   function releaseBed() {
     if (!heldBed) return;
@@ -38,9 +38,9 @@
     heldBed = bed;
     bed.classList.remove("neon-release");
     bed.classList.add("neon-hold");
-    heldTimer = setTimeout(releaseBed, 20000);   // safety: never stays lit if an up event is lost
+    heldTimer = setTimeout(releaseBed, 60000);   // safety: never stays lit if an up event is lost
   }
-  ["pointerup", "pointercancel", "touchend", "touchcancel", "mouseup", "dragend", "blur"].forEach(function (ev) {
+  ["pointerup", "touchend", "touchcancel", "mouseup", "dragend", "blur"].forEach(function (ev) {
     (ev === "blur" ? global : document).addEventListener(ev, releaseBed, true);
   });
 
