@@ -5,7 +5,6 @@
    2) السحب على السرير: يسارًا = إضافة علاج، يمينًا = Bird Vision.
    3) رسوم التحاليل المصغّرة (spark) تستدعيها ui.js.
    4) حاسبات سريعة (تسريب مل/س، وظائف الكلى).
-   5) تلاشٍ خفيف عند تبديل الصفحات (CSS فقط).
    المكتبة (GSAP) من CDN وهي اختيارية: إن لم
    تتوفر يعمل كل شيء بدونها. كل الحركة تتوقف مع prefers-reduced-motion.
    دعم قرار فقط — الحاسبات لا تحل محل بروتوكول المستشفى.
@@ -261,17 +260,9 @@
     bar.insertBefore(b, $("open-med-sheet"));
   }
 
-  // ---------- تلاشٍ خفيف عند تبديل الصفحات + ربط الواجهة ----------
-  // (بلا لقطات للصفحة ولا تمدّد — CSS فقط، حتى يبقى الفتح سلسًا على الجوالات المتوسطة)
+  // ---------- ربط الواجهة (بلا أي انتقال: الفتح والرجوع فوريان) ----------
   function afterShow(name) {
     if (name !== "patient") closeCalc();
-    if (reduce()) return;
-    const v = document.querySelector(".view[data-view=\"" + name + "\"]");
-    if (!v) return;
-    v.classList.remove("wp-fade");
-    void v.offsetWidth;
-    v.classList.add("wp-fade");
-    setTimeout(() => v.classList.remove("wp-fade"), 220);
   }
   function wrapUI() {
     const origShow = UI.showView, origRender = UI.renderPatientView;
