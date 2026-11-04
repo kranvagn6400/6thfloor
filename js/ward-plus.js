@@ -1,12 +1,9 @@
 /* ============================================================
    ward-plus.js  —  أدوات العمل اليومي داخل الردهة
    ============================================================
-   1) السابق / التالي بين المرضى داخل بطاقة المريض.
-   2) السحب على السرير: يسارًا = إضافة علاج، يمينًا = Bird Vision.
-   3) رسوم التحاليل المصغّرة (spark) تستدعيها ui.js.
-   4) حاسبات سريعة (تسريب مل/س، وظائف الكلى).
-   المكتبة (GSAP) من CDN وهي اختيارية: إن لم
-   تتوفر يعمل كل شيء بدونها. كل الحركة تتوقف مع prefers-reduced-motion.
+   1) السحب على السرير: يسارًا = إضافة علاج، يمينًا = Bird Vision.
+   2) Drops Calculator (تسريب مل/س، وظائف الكلى).
+   كل الحركة تتوقف مع prefers-reduced-motion.
    دعم قرار فقط — الحاسبات لا تحل محل بروتوكول المستشفى.
    ============================================================ */
 
@@ -94,45 +91,6 @@
     grid.addEventListener("touchend", () => finish(false));
     grid.addEventListener("touchcancel", () => finish(true));
     grid.addEventListener("click", (e) => { if (block) { e.stopPropagation(); e.preventDefault(); } }, true);
-  }
-
-  // ---------- رسوم التحاليل المصغّرة ----------
-  function labNum(key, v) {
-    let n = parseFloat(String(v == null ? "" : v).replace(/,/g, ""));
-    if (!isFinite(n)) return null;
-    if ((key === "wbc" || key === "plt") && n >= 1000) n /= 1000;
-    return n;
-  }
-  function spark(labs, hist, key, status) {
-    const pts = [];
-    (hist || []).forEach(h => {
-      if (!h || h.key !== key) return;
-      const n = labNum(key, h.value);
-      if (n != null) pts.push({ d: String(h.date || ""), n });
-    });
-    pts.sort((a, b) => a.d.localeCompare(b.d));
-    const cur = labNum(key, labs && labs[key]);
-    if (cur != null) pts.push({ d: "9999", n: cur });
-    const s = pts.slice(-6);
-    if (s.length < 2) return null;
-    const W = 56, H = 18, P = 3;
-    const lo = Math.min.apply(null, s.map(p => p.n)), hi = Math.max.apply(null, s.map(p => p.n));
-    const X = (i) => P + (W - 2 * P) * (i / (s.length - 1));
-    const Y = (n) => hi === lo ? H / 2 : H - P - (H - 2 * P) * ((n - lo) / (hi - lo));
-    const NS = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(NS, "svg");
-    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
-    svg.setAttribute("aria-hidden", "true");
-    const pl = document.createElementNS(NS, "polyline");
-    pl.setAttribute("points", s.map((p, i) => X(i).toFixed(1) + "," + Y(p.n).toFixed(1)).join(" "));
-    svg.appendChild(pl);
-    const c = document.createElementNS(NS, "circle");
-    c.setAttribute("cx", X(s.length - 1).toFixed(1)); c.setAttribute("cy", Y(s[s.length - 1].n).toFixed(1)); c.setAttribute("r", "2.4");
-    svg.appendChild(c);
-    const w = el("div", "lab-spark" + (status === "high" ? " is-high" : status === "low" ? " is-low" : ""));
-    w.title = s.map(p => p.n).join(" ← ");
-    w.appendChild(svg);
-    return w;
   }
 
   // ---------- الحاسبات ----------
@@ -243,6 +201,6 @@
     initSwipe();
   }
 
-  global.PharmacyWardPlus = { spark, openCalc, occupied };
+  global.PharmacyWardPlus = { openCalc, occupied };
   init();
 })(window);
