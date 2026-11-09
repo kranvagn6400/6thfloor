@@ -68,15 +68,15 @@
     }
     return items.map(x => ({ k: x.k, n: x.n, q: x.q }));
   }
-  function recordToday(key) {
+  function recordToday(key, silent) {
     const app = App(), p = app && key && app.state.patients[key];
     if (!p) return false;
     const items = todaysItems(p);
-    if (!items.length) { app.flashHint("لا أدوية متوفرة لتسجيلها لهذا المريض"); return false; }
+    if (!items.length) { if (!silent) app.flashHint("لا أدوية متوفرة لتسجيلها لهذا المريض"); return false; }
     priv(p, true).days[todayISO()] = { items };               // pressed again the same day → replaces that day
     app.savePatient(key);
     if (S && S.key === key) { S.pr = priv(p, true); renderAll(); }
-    app.flashHint("✓ سُجّل صرف اليوم (" + items.length + " مادة)");
+    if (!silent) app.flashHint("✓ سُجّل صرف اليوم (" + items.length + " مادة)");
     return true;
   }
 
@@ -261,6 +261,8 @@
       h += box("v", 790, 940, 86, 44, esc(form.from), 11);     // centred between «من تاريخ:» and «لغاية:»
       h += box("s b v", 700, 780, 86, 44, lab("لغاية:"), 11);
       h += box("s v", 540, 728, 86, 44, esc(form.to), 11);      // right next to «لغاية:»
+      h += box("s b v", 395, 500, 125, 44, lab("الردهة:"), 11);
+      h += box("s v", 91, 390, 125, 44, esc(form.floor || ""), 11);
       h += box("s b v", 1085, 1218, 125, 44, lab("اسم المريض:"), 11);
       h += box("s v", 800, 1104, 125, 44, esc(form.name), 11);
       h += box("s b v", 680, 808, 125, 44, lab("رقم الطبلة:"), 11);
@@ -274,13 +276,13 @@
       HEAD.forEach(([t], i) => { h += box("b", COLS[i + 1], COLS[i], TOP, HEAD_B - TOP, t, 10); });
       form.rows.slice(pi * ROWS, (pi + 1) * ROWS).forEach((r, i) => {
         const y = HEAD_B + i * ROW_H;
-        const cells = [String(pi * ROWS + i + 1), ltr(String(r.n)), r.q ? String(r.q) : "", esc(r.src), fmt(r.price), fmt(r.sum), fmt(r.fee), fmt(r.total)];
+        const cells = [String(pi * ROWS + i + 1), ltr(String(r.pn || r.n)), r.q ? String(r.q) : "", esc(r.src), fmt(r.price), fmt(r.sum), fmt(r.fee), fmt(r.total)];
         cells.forEach((c, ci) => {
-          const long = ci === 1 && String(r.n).length > 26;
+          const long = ci === 1 && String(r.pn || r.n).length > 26;
           h += box(ci === 1 ? "s" : "", COLS[ci + 1], COLS[ci], y, ROW_H, c, long ? 8.5 : 11);
         });
       });
-      h += box("b", 947, 1247, 828, 48, "الصيدلي السريري", 11);
+      h += box("b", 947, 1247, 828, 48, (global.PharmacyAuth && global.PharmacyAuth.jobTitleOf ? global.PharmacyAuth.jobTitleOf() : "الصيدلي السريري"), 11);
       h += box("b", 555, 855, 828, 48, "محاسب الجناح الخاص", 11);
       h += box("b", 161, 461, 828, 48, "مدير الجناح الخاص", 11);
       pages.push(h + "</div>");
@@ -354,7 +356,24 @@
     clearTimeout(t._t);
     t._t = setTimeout(() => { t.hidden = true; }, 5000);
   }
+  // the manual form (no bed): a draft kept on this device only, until «مسح الاستمارة»
+  // «الردهة» of the paper: a free text, «الطابق السادس» by default
+  const DEF_FLOOR = "الطابق السادس";
+  const wardText = (any) => String(any || "").trim() || DEF_FLOOR;
+  const DRAFT_KEY = "pharma.privform.draft.v1";
+  let manualP = null;
+  function manualDraft() {
+    if (manualP) return manualP;
+    manualP = { name: "", plateNumber: "", labs: {} };
+    try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); if (d && typeof d === "object") manualP = { name: String(d.name || ""), plateNumber: String(d.plateNumber || ""), labs: { _priv: d.priv || {} } }; } catch (e) { /* blocked */ }
+    return manualP;
+  }
+  function saveDraft() {
+    if (!manualP) return;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ name: manualP.name, plateNumber: manualP.plateNumber, priv: manualP.labs._priv || {}, floor: S && S.floor })); } catch (e) { /* blocked */ }
+  }
   function saveSoon() {
+    if (S && S.manual) { clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 400); return; }
     if (!S || !S.key) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { const a = App(); if (a && S && S.key) a.savePatient(S.key); }, 700);
@@ -416,10 +435,29 @@
     #pf-editor details.pfe-card > .pfe-in { margin-top: 12px; }
     #pf-editor .pfe-day { border-top: 1px dashed var(--border, #dbe2e8); padding-top: 10px; margin-top: 10px; }
     #pf-editor .pfe-day > b { font-size: 13px; color: var(--text-muted, #5c6b73); }
-    #pf-editor .pfe-it { display: grid; grid-template-columns: 1fr 78px 38px; gap: 8px; align-items: center; margin-top: 8px; font-size: 13.5px; }
+    #pf-editor .pfe-it { display: grid; grid-template-columns: 1fr auto 32px; gap: 8px; align-items: center; margin-top: 8px; font-size: 13.5px; }
+    #pf-editor .pfe-stp { display: flex; align-items: center; gap: 4px; }
+    #pf-editor .pfe-stp button { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 9px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font: inherit; font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer; }
+    #pf-editor .pfe-stp input { width: 44px; height: 30px; padding: 0 2px; font-size: 14px; border-radius: 9px; }
     #pf-editor .pfe-it span { overflow-wrap: anywhere; font-weight: 700; }
-    #pf-editor .pfe-it input { height: 38px; text-align: center; }
-    #pf-editor .pfe-it button { height: 38px; border: 0; border-radius: 10px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font-size: 14px; cursor: pointer; }
+    #pf-editor .pfe-it span small { display: block; font-weight: 600; font-size: 11px; color: var(--text-muted, #5c6b73); direction: ltr; text-align: start; }
+    #pf-editor .pfe-it input { height: 30px; text-align: center; }
+    #pf-editor .pfe-it > button { height: 32px; border: 0; border-radius: 10px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font-size: 14px; cursor: pointer; }
+    #pf-editor .pfe-sheet-back { position: fixed; inset: 0; z-index: 50; background: rgba(0,0,0,.45); display: flex; align-items: flex-end; }
+    #pf-editor .pfe-sheet { width: 100%; max-height: 82vh; display: flex; flex-direction: column; background: var(--surface, #fff); border-radius: 20px 20px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.3); padding: 12px 14px calc(env(safe-area-inset-bottom, 0px) + 12px); }
+    #pf-editor .pfe-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 16px; font-weight: 800; }
+    #pf-editor .pfe-sheet-head button { border: 0; background: var(--bg, #eef2f6); color: inherit; border-radius: 10px; height: 34px; padding: 0 14px; font: inherit; font-weight: 800; cursor: pointer; }
+    #pf-editor .pfe-sheet-body { overflow: auto; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    #pf-editor .pfe-sec { font-size: 12px; font-weight: 800; color: var(--text-muted, #5c6b73); margin: 6px 2px 0; }
+    #pf-editor .pfe-row .ctl { display: flex; align-items: center; gap: 5px; width: 100%; justify-content: flex-end; }
+    #pf-editor .pfe-row .ctl .ok { margin-inline-end: auto; }
+    #pf-editor .pfe-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; border: 1px solid var(--border, #dbe2e8); border-radius: 12px; padding: 8px 10px; }
+    #pf-editor .pfe-row .nm { flex: 1 1 100%; min-width: 0; font-size: 14px; font-weight: 700; direction: ltr; text-align: start; overflow-wrap: anywhere; }
+    #pf-editor .pfe-row .nm small { display: block; color: var(--text-muted, #5c6b73); font-weight: 600; font-size: 11.5px; direction: rtl; }
+    #pf-editor .pfe-row button.step { flex: none; width: 30px; height: 30px; border: 0; border-radius: 10px; background: var(--bg, #eef2f6); color: var(--text, #14211f); font: inherit; font-size: 18px; font-weight: 800; line-height: 1; cursor: pointer; }
+    #pf-editor .pfe-row input.q { height: 30px; font-size: 14px; border-radius: 9px; width: 46px; flex: none; text-align: center; padding: 0 4px; }
+    #pf-editor .pfe-row .ok { color: #1b8a3a; font-weight: 800; font-size: 12px; }
+    #pf-editor .pfe-row button.x { border: 0; background: transparent; color: #b3261e; font-size: 18px; cursor: pointer; }
     #pf-editor .pfe-addrow { display: grid; grid-template-columns: 1fr 78px; gap: 8px; margin-top: 10px; }
     #pf-editor .pfe-ac { position: relative; min-width: 0; }
     #pf-editor .pfe-sug { position: absolute; inset-inline: 0; top: calc(100% + 4px); z-index: 5; max-height: 240px; overflow-y: auto; background: var(--surface, #fff); border: 1px solid var(--border, #dbe2e8); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
@@ -441,13 +479,15 @@
     document.head.appendChild(st);
   }
 
+  function loadDraftFloor() { try { const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); return d && d.floor ? String(d.floor) : ""; } catch (e) { return ""; } }
+
   function close() {
     const pv = $("pf-preview");
     if (pv) pv.remove();
-    if (global.visualViewport) global.visualViewport.removeEventListener("resize", fitSuggestions);
     const e = $("pf-editor");
     if (e) e.remove();
-    if (S && S.key) { clearTimeout(saveTimer); const a = App(); if (a) a.savePatient(S.key); }
+    if (S && S.manual) { clearTimeout(saveTimer); saveDraft(); }
+    else if (S && S.key) { clearTimeout(saveTimer); const a = App(); if (a) a.savePatient(S.key); }
     S = null;
   }
 
@@ -456,9 +496,9 @@
     const rows = rowsOf(S.pr, r.from, r.to).map(x => {
       const meta = S.pr.meta[x.k] || {};
       // المجموع / فراض ادارية / الإجمالي are the accountant's: left blank on the paper
-      return { n: x.n, k: x.k, q: x.q, src: srcOf(meta), price: num(meta.price), sum: null, fee: null, total: null };
+      return { n: x.n, pn: printedName(x.n), k: x.k, q: x.q, src: srcOf(meta), price: num(meta.price), sum: null, fee: null, total: null };
     });
-    return { name: S.name, plate: S.plate, from: r.from.replace(/-/g, "/"), to: r.to.replace(/-/g, "/"), rows };
+    return { name: S.name, plate: S.plate, floor: S.floor, from: r.from.replace(/-/g, "/"), to: r.to.replace(/-/g, "/"), rows };
   }
 
   const fmtDay = (d) => d.replace(/-/g, "/");
@@ -472,7 +512,7 @@
     box.innerHTML = days.map(d => {
       const items = (pr.days[d] || {}).items || [];
       return '<div class="pfe-day" data-day="' + d + '"><b>' + fmtDay(d) + "</b>" +
-        items.map((it, i) => '<div class="pfe-it" data-i="' + i + '"><span dir="auto">' + esc(it.n) + '</span><input type="number" min="0" inputmode="numeric" class="pfe-dq" value="' + esc(it.q) + '" aria-label="الكمية"><button type="button" class="pfe-dx" aria-label="حذف">✕</button></div>').join("") +
+        items.map((it, i) => '<div class="pfe-it" data-i="' + i + '"><span dir="auto"><b>' + esc(printedName(it.n)) + '</b>' + (printedName(it.n) !== String(it.n) ? '<small>' + esc(it.n) + '</small>' : "") + '</span><span class="pfe-stp"><button type="button" class="pfe-step" data-d="1" aria-label="زيادة">+</button><input type="number" min="0" inputmode="numeric" class="pfe-dq" value="' + esc(it.q) + '" aria-label="الكمية"><button type="button" class="pfe-step" data-d="-1" aria-label="إنقاص">−</button></span><button type="button" class="pfe-dx" aria-label="حذف">✕</button></div>').join("") +
         "</div>";
     }).join("");
   }
@@ -480,7 +520,7 @@
   function renderExtra() {
     const ex = S.pr.extra;
     $("pfe-extra-count").textContent = ex.length ? ex.length + " مادة" : "";
-    $("pfe-extra").innerHTML = ex.map((x, i) => '<div class="pfe-it" data-i="' + i + '"><span dir="auto">' + esc(x.n) + '</span><input type="number" min="0" inputmode="numeric" class="pfe-eq" value="' + esc(x.q) + '" aria-label="العدد"><button type="button" class="pfe-ex" aria-label="حذف">✕</button></div>').join("");
+    $("pfe-extra").innerHTML = ex.map((x, i) => '<div class="pfe-it" data-i="' + i + '"><span dir="auto"><b>' + esc(printedName(x.n)) + '</b>' + (printedName(x.n) !== String(x.n) ? '<small>' + esc(x.n) + '</small>' : "") + '</span><span class="pfe-stp"><button type="button" class="pfe-step" data-d="1" aria-label="زيادة">+</button><input type="number" min="0" inputmode="numeric" class="pfe-eq" value="' + esc(x.q) + '" aria-label="العدد"><button type="button" class="pfe-step" data-d="-1" aria-label="إنقاص">−</button></span><button type="button" class="pfe-ex" aria-label="حذف">✕</button></div>').join("");
   }
 
   function renderTable() {
@@ -503,7 +543,32 @@
     $("pfe-sum").innerHTML = f.rows.length ? "<b>" + f.rows.length + "</b> مادة · <b>" + units + "</b> وحدة" : "لا توجد مواد";
   }
 
-  function renderAll() { renderDays(); renderExtra(); renderTable(); }
+  // unit prices (سعر المفرد): the drug LINKED to the price site (catalogue → «الدواء في موقع الأسعار») first — read live by its id —, else a match by name;
+  // a price typed by hand is never replaced. Prices only the rows that have none. → true when something was priced
+  function linkedPrice(chartName, lists) {
+    const med = ((App() && App().state.medications) || []).find(m => m && m.priceRef && nameOf(m) === chartName);
+    if (!med) return null;
+    for (const list of lists) { const e = list.find(x => x.id === med.priceRef); if (e) return e.price; }
+    return null;
+  }
+  function fillPrices() {
+    if (!S || !S.lists) return false;
+    let any = false;
+    rowsOf(S.pr, rng().from, rng().to).forEach(x => {
+      const meta = (S.pr.meta[x.k] = S.pr.meta[x.k] || {});
+      if (meta.price || meta.hand) return;
+      const lp = linkedPrice(x.n, S.lists);
+      const p = lp != null ? lp : pickPrice(x.n, S.lists);
+      if (p != null) { meta.price = String(p); meta.auto = true; any = true; }
+    });
+    return any;
+  }
+  // before the paper is drawn: wait for the price lists (they may still be loading) and price the rows added meanwhile
+  async function settlePrices() {
+    if (S && S.listsP) { try { await S.listsP; } catch (e) { /* offline */ } }
+    fillPrices();
+  }
+  function renderAll() { if (fillPrices()) saveSoon(); renderDays(); renderExtra(); renderTable(); }
 
   // catalogue suggestions for the typed text: every typed word must be in the medicine's names / dose
   function suggestions(q) {
@@ -520,32 +585,71 @@
     });
     return out;
   }
-  // On a phone the keyboard covers the lower part of the screen: bring the field to the top of the visible area,
-  // give the page room to scroll, and size the list to what is left above the keyboard.
-  function fitSuggestions() {
-    const box = $("pfe-sug"), xn = $("pfe-xn");
-    const sc = document.querySelector("#pf-editor .pfe-scroll"), top = document.querySelector("#pf-editor .pfe-top");
-    if (!box || !xn || !sc || !top || box.hidden) return;
-    const vv = global.visualViewport;
-    const visibleBottom = (vv ? vv.offsetTop + vv.height : global.innerHeight) - 8;
-    sc.style.paddingBottom = "70vh";
-    sc.scrollTop += xn.getBoundingClientRect().top - (top.getBoundingClientRect().bottom + 12);
-    box.style.maxHeight = Math.max(110, Math.min(260, visibleBottom - xn.getBoundingClientRect().bottom - 8)) + "px";
+  // ---- the «دواء +» sheet: search + the catalogue (no templates) ----
+  // the medicine's printed name: its Arabic name (+ the strength) when the catalogue has one, else the name as stored
+  function printedName(n) {
+    const meds = (App() && App().state.medications) || [];
+    const m = meds.find(x => x && nameOf(x) === n);
+    const ar = m && String(m.nameAr || "").trim();
+    if (!ar) return String(n);
+    const dose = String(m.defaultDose || "").trim();
+    return dose && ar.indexOf(dose) < 0 ? ar + " " + dose : ar;
   }
-  function relaxScroll() { const sc = document.querySelector("#pf-editor .pfe-scroll"); if (sc) sc.style.paddingBottom = ""; }
-
-  function showSuggestions() {
-    const box = $("pfe-sug"), q = $("pfe-xn").value.trim();
-    if (!box) return;
-    if (!q) { box.hidden = true; box.innerHTML = ""; return; }
-    const list = suggestions(q);
-    box.innerHTML = list.length
-      ? list.map((x, i) => '<button type="button" data-i="' + i + '"><span dir="auto">' + esc(x.label) + "</span>" + (x.sub ? "<small dir=\"auto\">" + esc(x.sub) + "</small>" : "") + "</button>").join("")
-      : '<div class="pfe-none">لا يوجد في الكتالوج — يُضاف بالاسم كما كتبته</div>';
-    box._list = list;
-    box.hidden = false;
-    fitSuggestions();
-    setTimeout(fitSuggestions, 250);          // again once the keyboard has finished opening
+  function addExtra(n, q) {
+    q = parseInt(q, 10);
+    if (!n || isNaN(q) || q < 1) return false;
+    const same = S.pr.extra.find(x => String(x.n).toLowerCase() === String(n).toLowerCase());
+    if (same) same.q = (Number(same.q) || 0) + q; else S.pr.extra.push({ k: "x:" + Date.now() + ":" + S.pr.extra.length, n, q });
+    return true;
+  }
+  function openSheet() {
+    const ed = $("pf-editor");
+    if (!ed || $("pfe-sheet")) return;
+    const back = document.createElement("div");
+    back.className = "pfe-sheet-back"; back.id = "pfe-sheet";
+    back.innerHTML = '<div class="pfe-sheet"><div class="pfe-sheet-head"><span>إضافة دواء</span><button type="button" id="pfe-sheet-x">تم</button></div><input id="pfe-sheet-q" type="search" placeholder="ابحث عن دواء…" autocomplete="off" dir="ltr"><div class="pfe-sheet-body" id="pfe-sheet-body"></div></div>';
+    ed.appendChild(back);
+    const added = {};
+    const body = $("pfe-sheet-body"), qEl = $("pfe-sheet-q");
+    // the sheet follows the VISIBLE part of the screen: with the keyboard open it sits right above it (the search field is never hidden behind it)
+    const vv = global.visualViewport;
+    const fit = () => {
+      if (!vv) return;
+      back.style.top = vv.offsetTop + "px"; back.style.bottom = "auto"; back.style.height = vv.height + "px";
+      const sh = back.firstElementChild;
+      const kb = vv.height < global.innerHeight - 100;      // keyboard open: use all the visible height
+      if (sh) sh.style.maxHeight = (kb ? Math.max(220, vv.height - 8) : Math.round(vv.height * 0.82)) + "px";
+    };
+    if (vv) { vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); fit(); }
+    const closeSheet = () => { if (vv) { vv.removeEventListener("resize", fit); vv.removeEventListener("scroll", fit); } back.remove(); renderAll(); saveSoon(); };
+    const catalogue = () => ((App() && App().state.medications) || []).filter(m => m && (m.nameChart || m.nameTrade || m.nameEn));
+    const labelOf = (m) => String(m.nameChart || "").trim() || [m.nameTrade || m.nameEn, m.defaultDose].filter(Boolean).join(" ");
+    function draw() {
+      const q = qEl.value.trim().toLowerCase(), words = q.split(/\s+/).filter(Boolean);
+      let h = "";
+      const list = catalogue().filter(m => !words.length || words.every(w => [m.nameTrade, m.nameEn, m.nameAr, m.nameChart, m.defaultDose, m.id].join(" ").toLowerCase().indexOf(w) >= 0)).slice(0, q ? 60 : 40);
+      h += '<div class="pfe-sec">' + (q ? "نتائج البحث" : "الأدوية (اكتب للبحث)") + '</div>' + (list.length ? list.map(m => {
+        const lab = labelOf(m), sub = [m.nameAr, m.available === false ? "غير متوفر" : ""].filter(Boolean).join(" · ");
+        return '<div class="pfe-row" data-lab="' + esc(lab) + '"><div class="nm">' + esc(lab) + (sub ? '<small>' + esc(sub) + '</small>' : "") + '</div><div class="ctl">' + (added[lab] ? '<span class="ok">✓ ' + added[lab] + '</span>' : "") + '<button type="button" class="step" data-d="1" aria-label="زيادة">+</button><input class="q" type="number" min="1" inputmode="numeric" value="1"><button type="button" class="step" data-d="-1" aria-label="إنقاص">−</button><button type="button" class="pick">إضافة</button></div></div>';
+      }).join("") : '<div class="pfe-empty">لا يوجد في الكتالوج — اكتب الاسم في خانة «اسم الدواء» أسفل القائمة</div>');
+      body.innerHTML = h;
+    }
+    qEl.addEventListener("input", () => { draw(); });
+    qEl.addEventListener("focus", () => { fit(); setTimeout(fit, 300); });                     // again once the keyboard has finished opening
+    $("pfe-sheet-x").addEventListener("click", closeSheet);
+    back.addEventListener("click", (e) => { if (e.target === back) closeSheet(); });
+    body.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.classList.contains("step")) {
+        const inp = b.parentElement.querySelector("input.q"), v = Math.max(1, (parseInt(inp.value, 10) || 1) + parseInt(b.dataset.d, 10));
+        inp.value = v;
+      } else if (b.classList.contains("pick")) {
+        const row = b.closest(".pfe-row"), q = parseInt(row.querySelector(".q").value, 10), lab = row.dataset.lab;
+        if (addExtra(lab, q)) { added[lab] = (added[lab] || 0) + q; draw(); renderAll(); saveSoon(); }
+      }
+    });
+    draw();
   }
 
   // key = a bed in the ward; or key null + source = an archived record (المرضى السابقون) with opts { roomId, exit }
@@ -553,14 +657,15 @@
     const A = global.PharmacyAuth;
     if (!(A && (A.isAdmin() || (A.isPharmacist && A.isPharmacist())))) return;
     const app = App();
-    const p = source || (app && app.state.patients[key]);
+    opts = opts || {};
+    const p = opts.manual ? manualDraft() : (source || (app && app.state.patients[key]));
     if (!p) return;
     ensureStyle();
-    opts = opts || {};
     const r = key ? roomOfKey(key) : (opts.roomId ? global.PharmacyWard.roomById(opts.roomId) : null);
     const pr = priv(p, true);
     // الردهة is left empty (the unit is already known in the app); the pharmacist may type it
-    const mine0 = S = { key: key || null, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim() };
+    const defFloor = DEF_FLOOR;
+    const mine0 = S = { key: key || null, manual: !!opts.manual, p, pr, admitted: "", exit: opts.exit || "", name: String(p.name || "").trim(), plate: String(p.plateNumber || "").trim(), floor: wardText(pr.floor || (opts.manual ? loadDraftFloor() : "") || defFloor) };
     const old = $("pf-editor");
     if (old) old.remove();
     const el = document.createElement("div");
@@ -568,23 +673,26 @@
     const rg = rng();
     const initial = (S.name || "؟").charAt(0);
     el.innerHTML =
-      '<div class="pfe-top"><button type="button" class="pfe-x" id="pfe-close" aria-label="إغلاق">✕</button><div><h3>استمارة خروج الخاص</h3><small>' + esc(S.name) + "</small></div></div>" +
+      '<div class="pfe-top"><button type="button" class="pfe-x" id="pfe-close" aria-label="إغلاق">✕</button><div><h3>استمارة خروج الخاص' + (S.manual ? " — جديدة" : "") + '</h3><small id="pfe-sub">' + esc(S.name || (S.manual ? "بدون مريض مسجّل" : "")) + "</small></div></div>" +
       '<div class="pfe-scroll"><div class="pfe-wrap">' +
         '<div class="pfe-card"><h4 class="pfe-h">بيانات المريض</h4>' +
-          '<div class="pfe-who"><span class="pfe-av">' + esc(initial) + "</span><div><b>" + esc(S.name) + '</b><span class="pfe-chip">رقم الطبلة: ' + esc(S.plate || "—") + "</span></div></div>" +
+          (S.manual ? '' : '<div class="pfe-who"><span class="pfe-av">' + esc(initial) + "</span><div><b>" + esc(S.name) + '</b><span class="pfe-chip">رقم الطبلة: ' + esc(S.plate || "—") + "</span></div></div>") +
           '<div class="pfe-fields">' +
+            (S.manual ? '<label class="pfe-f">اسم المريض<input type="text" id="pfe-name" value="' + esc(S.name) + '" autocomplete="off"></label><label class="pfe-f">رقم الطبلة<input type="text" id="pfe-plate" inputmode="numeric" maxlength="5" value="' + esc(S.plate) + '" autocomplete="off"></label>' : "") +
+            '<label class="pfe-f">الردهة<input type="text" id="pfe-floor" value="' + esc(S.floor) + '" autocomplete="off"></label>' +
             '<label class="pfe-f">تاريخ الدخول<input type="date" id="pfe-from" value="' + rg.from + '"></label>' +
             '<label class="pfe-f">تاريخ الخروج<input type="date" id="pfe-to" value="' + rg.to + '"></label>' +
-          "</div>" + (S.key ? "" : '<p class="pfe-hint">هذا السجل من المرضى السابقين: يمكنك تعديل الأرقام والطباعة، لكن التعديلات لا تُحفظ.</p>') + "</div>" +
-        '<div class="pfe-card"><h4 class="pfe-h">المواد المصروفة <span class="pfe-badge" id="pfe-count">—</span></h4><div id="pfe-tbody"></div>' +
+          "</div>" + (S.manual ? "" : S.key ? "" : '<p class="pfe-hint">هذا السجل من المرضى السابقين: يمكنك تعديل الأرقام والطباعة، لكن التعديلات لا تُحفظ.</p>') + "</div>" +
+        '<div class="pfe-card" hidden style="display:none"><h4 class="pfe-h">المواد المصروفة <span class="pfe-badge" id="pfe-count">—</span></h4><div id="pfe-tbody"></div>' +
           '<p class="pfe-hint">أعمدة المجموع والفراض الإدارية والإجمالي تُترك فارغة في الورقة (تخص المحاسب). سعر المفرد يُجلب من موقع الأسعار تلقائيًا ويمكنك تعديله.</p></div>' +
-        '<details class="pfe-card"><summary>الصرف المسجّل يوميًا <span class="pfe-badge" id="pfe-days-count">—</span></summary><div class="pfe-in">' + (S.key ? '<button type="button" class="pfe-go" id="pfe-rec-today" style="width:100%;margin-bottom:8px">تسجيل صرف اليوم</button>' : "") + '<div id="pfe-days"></div>' +
+        '<details class="pfe-card"' + (S.manual ? ' style="display:none"' : "") + '><summary>الصرف المسجّل يوميًا <span class="pfe-badge" id="pfe-days-count">—</span></summary><div class="pfe-in">' + (S.key ? '<button type="button" class="pfe-go" id="pfe-rec-today" style="width:100%;margin-bottom:8px">تسجيل صرف اليوم</button>' : "") + '<div id="pfe-days"></div>' +
           '<p class="pfe-hint">«تسجيل صرف اليوم» يحفظ أدوية المريض <b>المتوفرة</b> الآن بكمياتها اليومية؛ اضغطه مرة كل يوم. عدّل الكمية أو احذف المادة إن لم يستلمها المريض.</p></div></details>' +
-        '<details class="pfe-card"' + (S.pr.extra.length ? " open" : "") + '><summary>أدوية أضافها الخفر <span class="pfe-badge" id="pfe-extra-count"></span></summary><div class="pfe-in">' +
-          '<p class="pfe-hint" style="margin:0 0 6px">أدوية أضافها صيدلي الخفر ولم تُسجَّل من هنا. اكتب اسم الدواء فتظهر اقتراحات من الكتالوج.</p><div id="pfe-extra"></div>' +
-          '<div class="pfe-addrow"><div class="pfe-ac"><input id="pfe-xn" placeholder="اسم الدواء" autocomplete="off" autocorrect="off" spellcheck="false"><div class="pfe-sug" id="pfe-sug" hidden></div></div><input id="pfe-xq" type="number" min="1" inputmode="numeric" placeholder="العدد"><button type="button" class="pfe-addbtn" id="pfe-xadd">+ إضافة الدواء</button></div></div></details>' +
+        '<details class="pfe-card"' + (S.pr.extra.length || S.manual ? " open" : "") + '><summary>' + (S.manual ? "الأدوية والكميات" : "أدوية أضافها الخفر") + ' <span class="pfe-badge" id="pfe-extra-count"></span></summary><div class="pfe-in">' +
+          '<div id="pfe-extra"></div>' +
+          '<button type="button" class="pfe-go" id="pfe-sheet-open" style="width:100%;margin:6px 0 0">دواء +</button></div></details>' +
+        (S.manual ? '<button type="button" class="pfe-go" id="pfe-clear" style="width:100%;margin:6px 0 4px;background:#b3261e">مسح الاستمارة وبدء واحدة جديدة</button>' : "") +
       "</div></div>" +
-      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-pv" id="pfe-preview">معاينة</button><button type="button" class="pfe-go" id="pfe-pdf">📄 حفظ PDF</button></div>';
+      '<div class="pfe-bottom"><div class="pfe-sum" id="pfe-sum"></div><button type="button" class="pfe-pv" id="pfe-preview">معاينة</button><button type="button" class="pfe-go" id="pfe-pdf">🖨 طباعة</button></div>';
     document.body.appendChild(el);
     renderAll();
     const recBtn = $("pfe-rec-today");
@@ -604,41 +712,14 @@
       }).catch(() => { /* offline: the first sent day is used */ });
     }
 
-    // unit prices: the drug LINKED to the price site (catalogue → «الدواء في موقع الأسعار») first — read live by its id —,
-    // else a match by name; a price typed by hand is never replaced
-    const linkedPrice = (chartName, lists) => {
-      const med = ((App() && App().state.medications) || []).find(m => m && m.priceRef && nameOf(m) === chartName);
-      if (!med) return null;
-      for (const list of lists) { const e = list.find(x => x.id === med.priceRef); if (e) return e.price; }
-      return null;
-    };
-    fetchLists().then(lists => {
+    // unit prices: read once (the lists are kept in S.lists); fillPrices() prices every row that has none — again after each medicine added
+    S.listsP = fetchLists().then(lists => {
       if (S !== mine0) return;
-      let any = false;
-      rowsOf(S.pr, rng().from, rng().to).forEach(x => {
-        const meta = (S.pr.meta[x.k] = S.pr.meta[x.k] || {});
-        if (meta.price || meta.hand) return;
-        const lp = linkedPrice(x.n, lists);
-        const p = lp != null ? lp : pickPrice(x.n, lists);
-        if (p != null) { meta.price = String(p); meta.auto = true; any = true; }
-      });
-      if (any) { saveSoon(); renderTable(); }
+      S.lists = lists;
+      if (fillPrices()) { saveSoon(); renderTable(); }
     }).catch(() => {});
 
     $("pfe-close").addEventListener("click", close);
-    $("pfe-xn").addEventListener("input", showSuggestions);
-    $("pfe-xn").addEventListener("focus", showSuggestions);
-    $("pfe-xn").addEventListener("blur", () => setTimeout(() => { const sg = $("pfe-sug"); if (sg) sg.hidden = true; relaxScroll(); }, 200));
-    $("pfe-sug").addEventListener("mousedown", (e) => e.preventDefault());       // choosing a suggestion keeps the keyboard / field focus
-    if (global.visualViewport) global.visualViewport.addEventListener("resize", fitSuggestions);
-    $("pfe-sug").addEventListener("click", (e) => {
-      const b = e.target.closest("button[data-i]");
-      if (!b) return;
-      const pick = $("pfe-sug")._list[+b.dataset.i];
-      $("pfe-xn").value = pick.label;
-      $("pfe-sug").hidden = true;
-      $("pfe-xq").focus();
-    });
     ["pfe-from", "pfe-to"].forEach(id => $(id).addEventListener("change", (e) => {
       if (!isDay(e.target.value)) return;
       S.pr[id === "pfe-from" ? "from" : "to"] = e.target.value;
@@ -673,22 +754,37 @@
     });
     el.addEventListener("click", (e) => {
       const t = e.target;
-      if (!t.closest(".pfe-ac")) { const sg = $("pfe-sug"); if (sg) sg.hidden = true; }
+      if (t.classList.contains("pfe-step")) {
+        const inp = t.parentElement.querySelector("input");
+        inp.value = Math.max(1, (parseInt(inp.value, 10) || 0) + parseInt(t.dataset.d, 10));
+        inp.dispatchEvent(new Event("change", { bubbles: true }));
+        return;
+      }
       if (t.classList.contains("pfe-dx")) {
         const day = t.closest(".pfe-day").dataset.day, i = +t.closest(".pfe-it").dataset.i;
+        if (!confirm("حذف «" + printedName(S.pr.days[day].items[i].n) + "» من الاستمارة؟")) return;
         S.pr.days[day].items.splice(i, 1);
         if (!S.pr.days[day].items.length) delete S.pr.days[day];
         saveSoon(); renderAll();
       } else if (t.classList.contains("pfe-ex")) {
+        const ex = S.pr.extra[+t.closest(".pfe-it").dataset.i];
+        if (!confirm("حذف «" + printedName(ex ? ex.n : "") + "» من الاستمارة؟")) return;
         S.pr.extra.splice(+t.closest(".pfe-it").dataset.i, 1);
         saveSoon(); renderAll();
-      } else if (t.id === "pfe-xadd") {
-        const n = $("pfe-xn").value.trim(), q = parseInt($("pfe-xq").value, 10);
-        if (!n || isNaN(q) || q < 1) { flash("اكتب اسم الدواء والعدد"); return; }
-        S.pr.extra.push({ k: "x:" + Date.now(), n, q });
-        $("pfe-xn").value = ""; $("pfe-xq").value = ""; $("pfe-sug").hidden = true;
-        saveSoon(); renderAll();
       }
+    });
+    const sheetBtn = $("pfe-sheet-open");
+    if (sheetBtn) sheetBtn.addEventListener("click", openSheet);
+    const bindText = (id, fn) => { const x = $(id); if (x) x.addEventListener("input", (e) => { fn(e.target.value); saveSoon(); }); };
+    const fl = $("pfe-floor");
+    if (fl) fl.addEventListener("input", () => { S.floor = fl.value.trim() || DEF_FLOOR; S.pr.floor = S.floor; saveSoon(); });
+    bindText("pfe-name", (v) => { S.name = v.trim(); S.p.name = S.name; const sb = $("pfe-sub"); if (sb) sb.textContent = S.name || "بدون مريض مسجّل"; });
+    bindText("pfe-plate", (v) => { S.plate = v.replace(/[^0-9٠-٩]/g, "").slice(0, 5); S.p.plateNumber = S.plate; });
+    const clr = $("pfe-clear");
+    if (clr) clr.addEventListener("click", () => {
+      if (!confirm("مسح الاستمارة الحالية (الاسم والأدوية) وبدء واحدة جديدة؟")) return;
+      manualP = null; try { localStorage.removeItem(DRAFT_KEY); } catch (e) { /* blocked */ }
+      open(null, null, { manual: true });
     });
     $("pfe-pdf").addEventListener("click", () => savePdf($("pfe-pdf")));
     $("pfe-preview").addEventListener("click", () => showPreview($("pfe-preview")));
@@ -699,6 +795,7 @@
     const label = b ? b.textContent : "";
     if (b) { b.disabled = true; b.textContent = "جارٍ إنشاء الملف…"; }
     try {
+      await settlePrices();
       const f = formData();
       if (!f.rows.length) { flash("لا توجد مواد في الفترة المختارة"); return; }
       const blob = await buildPdf(pagesOf(f));
@@ -722,7 +819,7 @@
     el.innerHTML =
       '<div class="pfv-bar"><button type="button" class="pfv-x" id="pfv-close" aria-label="إغلاق">✕</button><strong>معاينة الاستمارة' + (urls.length > 1 ? " (" + urls.length + " صفحات)" : "") + '</strong>' +
       '<button type="button" class="pfv-z" id="pfv-out" aria-label="تصغير">−</button><button type="button" class="pfv-z" id="pfv-in" aria-label="تكبير">+</button>' +
-      '<button type="button" class="pfv-save" id="pfv-save">📄 حفظ PDF</button></div>' +
+      '<button type="button" class="pfv-save" id="pfv-save">🖨 طباعة</button></div>' +
       '<div class="pfv-body" id="pfv-body">' + urls.map(u => '<img alt="" src="' + u + '">').join("") + "</div>";
     document.body.appendChild(el);
     let zoom = 100;
@@ -737,6 +834,7 @@
 
   async function showPreview(b) {
     if (!S || b.disabled) return;
+    await settlePrices();
     const f = formData();
     if (!f.rows.length) { flash("لا توجد مواد في الفترة المختارة"); return; }
     const label = b.textContent;
@@ -766,7 +864,7 @@
     });
   }
 
-  global.PharmacyPrivateForm = { recordToday, open, pickEntry, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
+  global.PharmacyPrivateForm = { recordToday, open, openManual: () => open(null, null, { manual: true }), pickEntry, isPrivateBed, isPrivateRoom: (id) => { const r = global.PharmacyWard.roomById(id); return !!(r && r.kind === "private"); }, localDay, rowsOf, pagesOf, buildPdf, money, pickPrice, renderPages, openViewer, ensureStyle, flash };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })(typeof window !== "undefined" ? window : globalThis);

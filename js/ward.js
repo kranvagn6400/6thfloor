@@ -57,6 +57,8 @@
   }
 
   function roomById(roomId) { return ROOMS.find(r => r.id === Number(roomId)) || null; }
+  function isPrivateRoom(roomId) { const r = roomById(roomId); return !!(r && r.kind === "private"); }
+  function isPrivateKey(key) { const m = String(key || "").match(/room-(\d+)-bed-/); return !!m && isPrivateRoom(+m[1]); }
   // "غرفة 3 · الوحدة الأولى" — the full name used in texts, logs and sheets
   function roomTitle(roomId) {
     const r = roomById(roomId);
@@ -119,6 +121,8 @@
     TOTAL_BEDS,
     bedKey,
     roomById,
+    isPrivateRoom,
+    isPrivateKey,
     roomTitle,
     roomTitleLong,
     unitLongName,

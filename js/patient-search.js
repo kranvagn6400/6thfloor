@@ -26,7 +26,9 @@
     const q = fold(query);
     if (!q || !App || !Ward) return [];
     const results = [];
+    const noPriv = !!(global.PharmacyAuth && global.PharmacyAuth.hidesPrivate && global.PharmacyAuth.hidesPrivate());
     Ward.ROOMS.forEach(room => {
+      if (noPriv && room.kind === "private") return;
       room.beds.forEach(b => {
         const key = Ward.bedKey(room.id, b.number);
         const p = App.state.patients[key];

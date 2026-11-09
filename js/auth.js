@@ -94,6 +94,11 @@
     const s = loadSession();
     return !!(s && s.role === "doctor");
   }
+  // «الخاص» (the private rooms) is hidden from doctors: no switch, no rooms, not in the lists
+  function hidesPrivate() { return isDoctor(); }
+  // The job title printed under the forms — only a NAME, it changes no permission
+  const DEFAULT_JOB_TITLE = "الصيدلي السريري";
+  function jobTitleOf() { return DEFAULT_JOB_TITLE; }
 
   // ---------- Helpers ----------
   function getClientOrError() {
@@ -488,7 +493,7 @@
     usernameToEmail,
     // session
     loadSession, saveSession, clearSession, verifySession,
-    isLoggedIn, getCurrentUser, isAdmin, isPharmacist, isDoctor, isTv, isLimitedAdmin, isSuperAdmin, canEditCatalog, setCatalogEditor,
+    isLoggedIn, getCurrentUser, jobTitleOf, hidesPrivate, isAdmin, isPharmacist, isDoctor, isTv, isLimitedAdmin, isSuperAdmin, canEditCatalog, setCatalogEditor,
     canExitPatients, canEditQuotes, canMinistry, setUserFlag,
     // login / logout
     login, logout,

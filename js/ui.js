@@ -71,7 +71,9 @@
     let patientCount = 0;
     let albuminCount = 0;
     let meronemCount = 0;
-    for (const p of Object.values(patientsMap)) {
+    const hideP = !!(global.PharmacyAuth && global.PharmacyAuth.hidesPrivate && global.PharmacyAuth.hidesPrivate());
+    for (const [pk, p] of Object.entries(patientsMap)) {
+      if (hideP && global.PharmacyWard.isPrivateKey(pk)) continue;
       if (p && p.name && p.name.trim()) {
         patientCount++;
         const flags = bedSpecialFlags(p);
@@ -172,13 +174,18 @@
     // The unit's heading with the عام / خاص switch: one kind of rooms at a time
     {
       const unit = global.PharmacyWard.UNITS.find(u => u.id === currentUnit);
+      const AuP = global.PharmacyAuth, noPrivate = !!(AuP && AuP.hidesPrivate && AuP.hidesPrivate());
+      if (noPrivate) currentKind = "general";
       const sw = h("span", { class: "kind-toggle", role: "group", "aria-label": "عام / خاص" },
         [["general", "عام"], ["private", "خاص"]].map(([k, t]) =>
           h("button", { type: "button", class: "kind-btn" + (currentKind === k ? " is-on" : ""), dataset: { kind: k } }, t)));
       const kids = [h("span", {}, unit.name + " (" + unit.label + ")")];
       const FM = global.PharmacyFileMark, fmN = FM && FM.enabled() ? FM.count() : 0;
       if (fmN) kids.push(h("button", { type: "button", class: "oe-chip fm-chip", dataset: { fmAll: "1" } }, "الطبلات الغير موجودة اثناء الجارت (" + fmN + ")"));
-      kids.push(sw);
+      if (currentKind === "private" && AuP && (AuP.isAdmin() || (AuP.isPharmacist && AuP.isPharmacist()))) {
+        kids.push(h("button", { type: "button", class: "oe-chip pf-new-chip", dataset: { privFormNew: "1" } }, "استمارة خروج الخاص (بدون سرير)"));
+      }
+      if (!noPrivate) kids.push(sw);
       out.appendChild(h("div", { class: "unit-head" }, kids));
     }
     global.PharmacyWard.ROOMS.filter(r => r.unit === currentUnit && r.kind === currentKind).forEach(room => {
@@ -853,9 +860,11 @@
     const empty = document.getElementById("empty-patients");
     container.innerHTML = "";
 
+    const hideP = !!(global.PharmacyAuth && global.PharmacyAuth.hidesPrivate && global.PharmacyAuth.hidesPrivate());
     const all = Object.entries(patientsMap)
       .map(([key, p]) => ({ key, ...p }))
       .filter(p => p && p.name && p.name.trim())
+      .filter(p => !(hideP && global.PharmacyWard.isPrivateKey(p.key)))
       // by bed number (the ward-wide 1-50)
       .sort((a, b) => (global.PharmacyWard.bedLabelOfKey(a.key) || 999) - (global.PharmacyWard.bedLabelOfKey(b.key) || 999));
 

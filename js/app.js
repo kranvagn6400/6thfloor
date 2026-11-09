@@ -2869,6 +2869,8 @@
 
     // ----- عام / خاص switch on the unit page -----
     $("rooms-grid").addEventListener("click", (e) => {
+      // «استمارة خروج الخاص (بدون سرير)»: the same form with no bed — name, plate number, medicines typed in
+      if (e.target.closest("[data-priv-form-new]")) { if (global.PharmacyPrivateForm && global.PharmacyPrivateForm.openManual) global.PharmacyPrivateForm.openManual(); return; }
       const b = e.target.closest(".kind-btn");
       if (!b) return;
       UI.setKind(b.dataset.kind);
